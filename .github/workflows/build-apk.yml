@@ -25,14 +25,18 @@ jobs:
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
-      - name: SDK Pakete installieren
+      - name: Android SDK Pakete installieren
         run: |
-          sdkmanager "platform-tools" \
+          yes | sdkmanager --licenses || true
+          sdkmanager --install \
+            "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: ZIP-Datei finden und entpacken
+      - name: ZIP finden und entpacken
         run: |
           mkdir -p extracted
 
@@ -43,34 +47,31 @@ jobs:
             exit 1
           fi
 
-          echo "Gefundene ZIP: $ZIP_FILE"
+          echo "ZIP gefunden: $ZIP_FILE"
           unzip -q "$ZIP_FILE" -d extracted
 
-      - name: Android-Projekt finden
+      - name: Android Projekt finden
         run: |
-          PROJECT_DIR=$(dirname "$(find extracted \
-            -type f \( -name settings.gradle.kts -o -name settings.gradle \) \
-            -print -quit)")
+          PROJECT_FILE=$(find extracted -type f \
+            \( -name settings.gradle.kts -o -name settings.gradle \) \
+            -print -quit)
 
-          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "extracted" ]; then
-            if [ -f "extracted/settings.gradle.kts" ] || [ -f "extracted/settings.gradle" ]; then
-              PROJECT_DIR="extracted"
-            else
-              echo "FEHLER: Android-Projekt nicht gefunden!"
-              find extracted -maxdepth 4 -type f | head -100
-              exit 1
-            fi
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
+            exit 1
           fi
 
+          PROJECT_DIR=$(dirname "$PROJECT_FILE")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Projekt gefunden: $PROJECT_DIR"
+
+          echo "Projektordner: $PROJECT_DIR"
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Android APK bauen
+      - name: APK bauen
         run: |
           cd "$PROJECT_DIR"
 
@@ -81,11 +82,11 @@ jobs:
             gradle --no-daemon assembleDebug
           fi
 
-      - name: APK bereitstellen
+      - name: APK hochladen
         uses: actions/upload-artifact@v4
         with:
           name: Saitenwerk-Alpha-6-APK
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+        
           retention-days: 30
-
