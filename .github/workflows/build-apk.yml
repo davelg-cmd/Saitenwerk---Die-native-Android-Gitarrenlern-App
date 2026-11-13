@@ -1,5 +1,5 @@
 
-name: Saitenwerk Alpha 6 - APK Build
+name: Saitenwerk Alpha 7 - APK Build
 
 on:
   workflow_dispatch:
@@ -36,14 +36,13 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: ZIP finden und entpacken
+      - name: Alpha 7 ZIP finden und entpacken
         run: |
           mkdir -p extracted
-
-          ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*.zip" | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*ALPHA_7*.zip" | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "FEHLER: Keine ZIP-Datei gefunden!"
+            echo "FEHLER: Alpha-7-ZIP nicht gefunden!"
             exit 1
           fi
 
@@ -64,17 +63,14 @@ jobs:
           PROJECT_DIR=$(dirname "$PROJECT_FILE")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-          echo "Projektordner: $PROJECT_DIR"
-
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.10.2'
 
       - name: APK bauen
         run: |
           cd "$PROJECT_DIR"
-
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
             ./gradlew --no-daemon assembleDebug
@@ -82,21 +78,20 @@ jobs:
             gradle --no-daemon assembleDebug
           fi
 
-      - name: APK hochladen
+      - name: Alpha 7 APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Saitenwerk-Alpha-6-APK
+          name: Saitenwerk-Alpha-7-APK
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-        
           retention-days: 30
-          
-      - name: Alpha-6-Quellprojekt bereitstellen
+
+      - name: Alpha 7 Quellprojekt bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Saitenwerk-Alpha-6-Quellprojekt
+          name: Saitenwerk-Alpha-7-Quellprojekt
           path: ${{ env.PROJECT_DIR }}/
           include-hidden-files: true
           if-no-files-found: error
+         
           retention-days: 7
-            
