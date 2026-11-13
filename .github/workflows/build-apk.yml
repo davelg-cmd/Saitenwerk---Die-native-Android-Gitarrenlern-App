@@ -90,3 +90,13 @@ jobs:
           if-no-files-found: error
         
           retention-days: 30
+          
+        - name: Alpha-6-Quellprojekt bereitstellen
+          uses: actions/upload-artifact@v4
+          with:
+            name: Saitenwerk-Alpha-6-Quellprojekt
+            path: ${{ env.PROJECT_DIR }}/
+            include-hidden-files: true
+            if-no-files-found: error
+            retention-days: 7
+            
