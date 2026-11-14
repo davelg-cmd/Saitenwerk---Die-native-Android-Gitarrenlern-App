@@ -1,4 +1,3 @@
-
 name: Saitenwerk Alpha 7 - APK Build
 
 on:
@@ -61,7 +60,7 @@ jobs:
         run: |
           VERSION_CODE=$((1000 + RUN_NUMBER))
           VERSION_NAME="3.1.0-alpha7.${RUN_NUMBER}"
-          VERSION_CODE="$VERSION_CODE" VERSION_NAME="$VERSION_NAME" python3 - <<'PY'
+          VERSION_CODE="$VERSION_CODE" VERSION_NAME="$VERSION_NAME" python3 - <<'PY2'
           import os, re
           from pathlib import Path
           p = Path(os.environ['PROJECT_DIR']) / 'app/build.gradle.kts'
@@ -71,7 +70,7 @@ jobs:
           if count != 1:
               raise SystemExit('Versionseintrag in app/build.gradle.kts nicht gefunden')
           p.write_text(s)
-          PY
+          PY2
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
 
@@ -102,14 +101,28 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" saitenwerk-alpha7.apk
-          git tag -f alpha-latest "$GITHUB_SHA"
-          git push origin :refs/tags/alpha-latest || true
-          git push origin alpha-latest --force
-          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
-          if gh release view alpha-latest >/dev/null 2>&1; then
-            gh release edit alpha-latest --title "Saitenwerk Alpha 7 – aktueller Stand" --notes "$NOTES" --prerelease
-          else
-            gh release create alpha-latest --title "Saitenwerk Alpha 7 – aktueller Stand" --notes "$NOTES" --prerelease
-          fi
-          gh release upload alpha-latest saitenwerk-alpha7.apk --clobber
+          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update
+versionCode=%s
+versionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
+          RELEASE_API="repos/$GITHUB_REPOSITORY/releases"
 
+          # Release explizit mit dem stabilen Tag alpha-latest anlegen/aktualisieren.
+          # Die bisherige gh-release-Erstellung lieferte einen untagged-Release;
+          # die App kann diesen nicht unter alpha-latest finden.
+          if RELEASE_ID=$(gh api "$RELEASE_API/tags/alpha-latest" --jq .id 2>/dev/null); then
+            echo "Vorhandenes Alpha-Release $RELEASE_ID wird aktualisiert."
+            gh api "$RELEASE_API/$RELEASE_ID" --method PATCH \
+              -f name="Saitenwerk Alpha 7 – aktueller Stand" \
+              -f body="$NOTES" -F prerelease=true >/dev/null
+          else
+            echo "Alpha-Release wird mit dem festen Tag alpha-latest angelegt."
+            gh api "$RELEASE_API" --method POST \
+              -f tag_name="alpha-latest" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f name="Saitenwerk Alpha 7 – aktueller Stand" \
+              -f body="$NOTES" -F prerelease=true >/dev/null
+          fi
+
+          # APK unter dem exakten Dateinamen veröffentlichen, den die App erwartet.
+          gh release upload alpha-latest saitenwerk-alpha7.apk --clobber
+          echo "Release-Asset veröffentlicht: saitenwerk-alpha7.apk"
