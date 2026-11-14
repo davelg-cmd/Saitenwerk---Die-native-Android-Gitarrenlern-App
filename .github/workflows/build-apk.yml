@@ -1,1 +1,115 @@
 
+name: Saitenwerk Alpha 7 - APK Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository herunterladen
+        uses: actions/checkout@v4
+
+      - name: Java 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      - name: Android SDK Pakete installieren
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Alpha-7-Projekt finden und entpacken
+        run: |
+          mkdir -p extracted
+          ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*ALPHA_7*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "FEHLER: Alpha-7-ZIP nicht gefunden!"
+            exit 1
+          fi
+          echo "Projektarchiv: $ZIP_FILE"
+          unzip -q "$ZIP_FILE" -d extracted
+          PROJECT_FILE=$(find extracted -type f \
+            \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
+            exit 1
+          fi
+          echo "PROJECT_DIR=$(dirname "$PROJECT_FILE")" >> "$GITHUB_ENV"
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Alpha-Version automatisch nummerieren
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          VERSION_CODE=$((1000 + RUN_NUMBER))
+          VERSION_NAME="3.1.0-alpha7.${RUN_NUMBER}"
+          VERSION_CODE="$VERSION_CODE" VERSION_NAME="$VERSION_NAME" python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          p = Path(os.environ['PROJECT_DIR']) / 'app/build.gradle.kts'
+          s = p.read_text()
+          s, count = re.subn(r'versionCode\s*=\s*\d+\s*;\s*versionName\s*=\s*"[^"]+"',
+              f'versionCode = {os.environ["VERSION_CODE"]}; versionName = "{os.environ["VERSION_NAME"]}"', s, count=1)
+          if count != 1:
+              raise SystemExit('Versionseintrag in app/build.gradle.kts nicht gefunden')
+          p.write_text(s)
+          PY
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+
+      - name: APK bauen
+        run: |
+          cd "$PROJECT_DIR"
+          gradle --no-daemon assembleDebug --stacktrace
+
+      - name: Alpha-7-APK bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saitenwerk-Alpha-7-APK
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Alpha-7-Quellprojekt bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saitenwerk-Alpha-7-Quellprojekt
+          path: ${{ env.PROJECT_DIR }}/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Aktuelles Alpha-Update als GitHub-Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" saitenwerk-alpha7.apk
+          git tag -f alpha-latest "$GITHUB_SHA"
+          git push origin :refs/tags/alpha-latest || true
+          git push origin alpha-latest --force
+          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
+          if gh release view alpha-latest >/dev/null 2>&1; then
+            gh release edit alpha-latest --title "Saitenwerk Alpha 7 – aktueller Stand" --notes "$NOTES" --prerelease
+          else
+            gh release create alpha-latest --title "Saitenwerk Alpha 7 – aktueller Stand" --notes "$NOTES" --prerelease
+          fi
+          gh release upload alpha-latest saitenwerk-alpha7.apk --clobber
+
