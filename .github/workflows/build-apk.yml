@@ -1,3 +1,4 @@
+
 name: Saitenwerk Alpha 7 - APK Build
 
 on:
@@ -11,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Repository herunterladen
         uses: actions/checkout@v4
@@ -35,18 +37,23 @@ jobs:
         run: |
           mkdir -p extracted
           ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*ALPHA_7*.zip" | head -n 1)
+
           if [ -z "$ZIP_FILE" ]; then
             echo "FEHLER: Alpha-7-ZIP nicht gefunden!"
             exit 1
           fi
+
           echo "Projektarchiv: $ZIP_FILE"
           unzip -q "$ZIP_FILE" -d extracted
+
           PROJECT_FILE=$(find extracted -type f \
             \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)
+
           if [ -z "$PROJECT_FILE" ]; then
             echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
             exit 1
           fi
+
           echo "PROJECT_DIR=$(dirname "$PROJECT_FILE")" >> "$GITHUB_ENV"
 
       - name: Gradle einrichten
@@ -60,17 +67,27 @@ jobs:
         run: |
           VERSION_CODE=$((1000 + RUN_NUMBER))
           VERSION_NAME="3.1.0-alpha7.${RUN_NUMBER}"
+
           VERSION_CODE="$VERSION_CODE" VERSION_NAME="$VERSION_NAME" python3 - <<'PY2'
           import os, re
           from pathlib import Path
+
           p = Path(os.environ['PROJECT_DIR']) / 'app/build.gradle.kts'
           s = p.read_text()
-          s, count = re.subn(r'versionCode\s*=\s*\d+\s*;\s*versionName\s*=\s*"[^"]+"',
-              f'versionCode = {os.environ["VERSION_CODE"]}; versionName = "{os.environ["VERSION_NAME"]}"', s, count=1)
+
+          s, count = re.subn(
+              r'versionCode\s*=\s*\d+\s*;\s*versionName\s*=\s*"[^"]+"',
+              f'versionCode = {os.environ["VERSION_CODE"]}; versionName = "{os.environ["VERSION_NAME"]}"',
+              s,
+              count=1
+          )
+
           if count != 1:
               raise SystemExit('Versionseintrag in app/build.gradle.kts nicht gefunden')
+
           p.write_text(s)
           PY2
+
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
 
@@ -101,28 +118,32 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" saitenwerk-alpha7.apk
-          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update
-versionCode=%s
-versionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
+
+          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
           RELEASE_API="repos/$GITHUB_REPOSITORY/releases"
 
-          # Release explizit mit dem stabilen Tag alpha-latest anlegen/aktualisieren.
-          # Die bisherige gh-release-Erstellung lieferte einen untagged-Release;
-          # die App kann diesen nicht unter alpha-latest finden.
+          # Vorhandenes Release mit dem festen Tag alpha-latest aktualisieren.
           if RELEASE_ID=$(gh api "$RELEASE_API/tags/alpha-latest" --jq .id 2>/dev/null); then
             echo "Vorhandenes Alpha-Release $RELEASE_ID wird aktualisiert."
+
             gh api "$RELEASE_API/$RELEASE_ID" --method PATCH \
               -f name="Saitenwerk Alpha 7 – aktueller Stand" \
-              -f body="$NOTES" -F prerelease=true >/dev/null
+              -f body="$NOTES" \
+              -F prerelease=true >/dev/null
+
           else
             echo "Alpha-Release wird mit dem festen Tag alpha-latest angelegt."
+
             gh api "$RELEASE_API" --method POST \
               -f tag_name="alpha-latest" \
               -f target_commitish="$GITHUB_SHA" \
               -f name="Saitenwerk Alpha 7 – aktueller Stand" \
-              -f body="$NOTES" -F prerelease=true >/dev/null
+              -f body="$NOTES" \
+              -F prerelease=true >/dev/null
           fi
 
-          # APK unter dem exakten Dateinamen veröffentlichen, den die App erwartet.
+          # APK unter dem Dateinamen veröffentlichen, den die App erwartet.
           gh release upload alpha-latest saitenwerk-alpha7.apk --clobber
+
           echo "Release-Asset veröffentlicht: saitenwerk-alpha7.apk"
+          
