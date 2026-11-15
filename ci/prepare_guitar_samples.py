@@ -54,7 +54,7 @@ with zipfile.ZipFile(archive) as zf:
         if output.stat().st_size < 4096:
             raise SystemExit(f"ERROR: Converted sample is unexpectedly short: {output.name}")
 
-    license_name = next((n for n in names if n.endswith("/LICENSE")), None)
+    license_name = next((n for n in names if n == "LICENSE" or n.endswith("/LICENSE")), None)
     if license_name:
         (assets / "LICENSE.txt").write_bytes(zf.read(license_name))
 
