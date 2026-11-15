@@ -77,6 +77,23 @@ if old_method in s:
 elif new_method not in s:
     raise SystemExit("ERROR: Guitar pluck playback method anchor missing.")
 
+# Remove the constant 110 Hz test tone from the former synthetic engine and
+# replace hard clipping with a gentle soft-knee limiter for layered real samples.
+old_hum = "sample += sin(2.0 * PI * 110.0 * (ms / 1000.0)) * 0.0015"
+new_hum = "// Recorded guitar samples already contain their own string and body resonances."
+if old_hum in s:
+    s = s.replace(old_hum, new_hum, 1)
+elif new_hum not in s:
+    raise SystemExit("ERROR: Synthetic 110 Hz body-tone anchor missing.")
+
+old_limiter = "val shaped = (sample * 0.92).coerceIn(-0.92, 0.92)"
+new_limiter = """val scaled = sample * 0.78
+                                val shaped = scaled / (1.0 + kotlin.math.abs(scaled) * 0.25)"""
+if old_limiter in s:
+    s = s.replace(old_limiter, new_limiter, 1)
+elif new_limiter not in s:
+    raise SystemExit("ERROR: Hard-clipping mix limiter anchor missing.")
+
 required = [
     "private data class GuitarSample(val rootMidi: Int, val samples: FloatArray)",
     "loadGuitarSample(midi)",
@@ -85,6 +102,8 @@ required = [
     "guitarPluck(pluckSamples[midi], midi, strumLocal,",
     "guitarPluck(pluckSamples[bass], bass, local,",
     "guitarPluck(pluckSamples[note.midi], note.midi, local,",
+    "val shaped = scaled / (1.0 + kotlin.math.abs(scaled) * 0.25)",
+    "Recorded guitar samples already contain their own string and body resonances.",
 ]
 missing = [token for token in required if token not in s]
 if missing:
