@@ -101,6 +101,17 @@ jobs:
           echo "Projektverzeichnis: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: Dauerhaften APK-Signaturschlüssel einrichten
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+          SAITENWERK_KEYSTORE_BASE64: ${{ secrets.SAITENWERK_KEYSTORE_BASE64 }}
+          SAITENWERK_KEYSTORE_PASSWORD: ${{ secrets.SAITENWERK_KEYSTORE_PASSWORD }}
+          SAITENWERK_KEY_ALIAS: ${{ secrets.SAITENWERK_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          python3 ci/configure_stable_signing.py
+
+
       # ------------------------------------------------------------
       # 5a. Verbindliche Inhaltsprüfung vor jedem Build
       # ------------------------------------------------------------
@@ -402,17 +413,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 ci/use_real_guitar_samples.py
-
-      - name: Dauerhaften APK-Signaturschlüssel einrichten
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-          SAITENWERK_KEYSTORE_BASE64: ${{ secrets.SAITENWERK_KEYSTORE_BASE64 }}
-          SAITENWERK_KEYSTORE_PASSWORD: ${{ secrets.SAITENWERK_KEYSTORE_PASSWORD }}
-          SAITENWERK_KEY_ALIAS: ${{ secrets.SAITENWERK_KEY_ALIAS }}
-        run: |
-          set -euo pipefail
-          python3 ci/configure_stable_signing.py
-
 
 
       # ------------------------------------------------------------
