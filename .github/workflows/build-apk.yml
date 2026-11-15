@@ -355,7 +355,41 @@ jobs:
 
 
       # ------------------------------------------------------------
-      # 10. APK als GitHub Actions Artifact bereitstellen
+      # 10. Dauerhaftes Build-Backup im Repository
+      # ------------------------------------------------------------
+      - name: Vollständigen Build-Stand dauerhaft sichern
+        run: |
+          set -euo pipefail
+
+          BACKUP_DIR="build-backups/alpha7/build-${GITHUB_RUN_NUMBER}"
+          mkdir -p "$BACKUP_DIR"
+
+          # Exakt den tatsächlich gebauten Quellstand sichern:
+          # inklusive CI-Fixes und automatisch gesetzter Versionsnummer.
+          tar -czf "$BACKUP_DIR/source-project.tar.gz" \
+            -C "$PROJECT_DIR" .
+
+          cat > "$BACKUP_DIR/build-info.txt" <<EOF
+          Product: Saitenwerk
+          Track: Alpha 7
+          Build number: $GITHUB_RUN_NUMBER
+          Version name: $VERSION_NAME
+          Version code: $VERSION_CODE
+          Source commit: $GITHUB_SHA
+          Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Backup created (UTC): $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          Contents: Complete project source as built by this workflow.
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -f "$BACKUP_DIR"
+          git commit -m "backup: Saitenwerk Alpha 7 build $GITHUB_RUN_NUMBER [skip ci]"
+          git push
+
+      # ------------------------------------------------------------
+      # 11. APK als GitHub Actions Artifact bereitstellen
       # ------------------------------------------------------------
       - name: Alpha-7-APK bereitstellen
         uses: actions/upload-artifact@v4
@@ -363,7 +397,7 @@ jobs:
           name: Saitenwerk-Alpha-7-APK
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
 
       # ------------------------------------------------------------
@@ -376,7 +410,7 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
 
 
       # ------------------------------------------------------------
