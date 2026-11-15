@@ -63,10 +63,11 @@ jobs:
 
           mkdir -p extracted
 
-          ZIP_FILE=$(find . -maxdepth 3 -type f -name '*ALPHA_7*.zip' | head -n 1)
+          # Verbindliche Quelle: exakt das geprüfte Songplayer-V3-Archiv.
+          ZIP_FILE="./Saitenwerk_ALPHA_7_Songplayer_V3_Start_Originaltempo_Realistic.zip"
 
-          if [ -z "$ZIP_FILE" ]; then
-            echo "FEHLER: Alpha-7-ZIP nicht gefunden!"
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "FEHLER: Verbindliches Songplayer-V3-Archiv fehlt: $ZIP_FILE"
             exit 1
           fi
 
@@ -94,6 +95,56 @@ jobs:
 
           echo "Projektverzeichnis: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------
+      # 5a. Verbindliche Inhaltsprüfung vor jedem Build
+      # ------------------------------------------------------------
+      - name: Songplayer-V3-Quellstand validieren
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ.get("PROJECT_DIR", ""))
+          if not root.is_dir():
+              raise SystemExit("FEHLER: Projektverzeichnis fehlt.")
+
+          kotlin_files = list(root.rglob("MainActivity.kt"))
+          if len(kotlin_files) != 1:
+              raise SystemExit(
+                  f"FEHLER: Erwartet genau eine MainActivity.kt, gefunden: {len(kotlin_files)}"
+              )
+
+          source = kotlin_files[0].read_text(encoding="utf-8")
+          required = {
+              "SongDetailFragment": "class SongDetailFragment",
+              "GuitarPlayerEngine": "class GuitarPlayerEngine",
+              "Song-Wiedergabe": "fun playSong(",
+              "Start-Schaltfläche": 'button("Start")',
+          }
+          missing = [label for label, token in required.items() if token not in source]
+          if missing:
+              raise SystemExit(
+                  "FEHLER: Songplayer-V3-Quellprüfung fehlgeschlagen: "
+                  + ", ".join(missing)
+              )
+
+          data_file = root / "app/src/main/assets/songs.json"
+          if not data_file.is_file():
+              raise SystemExit("FEHLER: Songdatenbank fehlt.")
+          songs = json.loads(data_file.read_text(encoding="utf-8"))
+          if not isinstance(songs, list) or not songs:
+              raise SystemExit("FEHLER: Songdatenbank ist leer oder ungültig.")
+
+          print("QUELLPRÜFUNG ERFOLGREICH")
+          print("Songplayer: SongDetailFragment vorhanden")
+          print("Audioengine: GuitarPlayerEngine vorhanden")
+          print("Wiedergabefunktion: playSong vorhanden")
+          print("Zentraler Button: Start vorhanden")
+          print(f"Songdatensätze im geprüften Archiv: {len(songs)}")
+          print("Hinweis: Diese Prüfung ersetzt keinen Gerätetest und keinen Hörtest.")
+          PY
 
       # ------------------------------------------------------------
       # 6. V3 Kotlin Build-Fix
@@ -367,6 +418,9 @@ jobs:
           # Exakt den tatsächlich gebauten Quellstand sichern:
           # inklusive CI-Fixes und automatisch gesetzter Versionsnummer.
           tar -czf "$BACKUP_DIR/source-project.tar.gz" \
+            --exclude='.gradle' \
+            --exclude='build' \
+            --exclude='*/build' \
             -C "$PROJECT_DIR" .
 
           cat > "$BACKUP_DIR/build-info.txt" <<EOF
