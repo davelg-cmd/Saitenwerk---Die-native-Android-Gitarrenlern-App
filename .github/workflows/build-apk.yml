@@ -378,6 +378,23 @@ jobs:
           set -euo pipefail
           python3 ci/fix_guitar_bass_cache.py
 
+      - name: Songansicht, Zurück-Navigation und Audio-Cleanup korrigieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_song_detail_navigation.py
+
+      - name: Dauerhaften APK-Signaturschlüssel einrichten
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+          SAITENWERK_KEYSTORE_BASE64: ${{ secrets.SAITENWERK_KEYSTORE_BASE64 }}
+          SAITENWERK_KEYSTORE_PASSWORD: ${{ secrets.SAITENWERK_KEYSTORE_PASSWORD }}
+          SAITENWERK_KEY_ALIAS: ${{ secrets.SAITENWERK_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          python3 ci/configure_stable_signing.py
+
 
 
       # ------------------------------------------------------------
