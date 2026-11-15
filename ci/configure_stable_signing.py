@@ -22,8 +22,9 @@ key_file.write_bytes(data)
 
 s = gradle.read_text(encoding='utf-8')
 if 'create("saitenwerkUpload")' not in s:
-    anchor = '    compileOptions {'
-    block = '''    signingConfigs {
+    anchor = 'android {'
+    block = '''
+    signingConfigs {
         create("saitenwerkUpload") {
             storeFile = rootProject.file("saitenwerk-upload.jks")
             storePassword = System.getenv("SAITENWERK_KEYSTORE_PASSWORD")
@@ -39,8 +40,8 @@ if 'create("saitenwerkUpload")' not in s:
 
 '''
     if anchor not in s:
-        raise SystemExit('FEHLER: Gradle-Android-Konfigurationsanker nicht gefunden.')
-    s = s.replace(anchor, block + anchor, 1)
+        raise SystemExit('FEHLER: Android-Block in app/build.gradle.kts nicht gefunden.')
+    s = s.replace(anchor, anchor + block, 1)
     gradle.write_text(s, encoding='utf-8')
 print('STABLE APK SIGNING CHECK: PASS')
 print('Persistent signing key loaded from GitHub Actions secrets.')
