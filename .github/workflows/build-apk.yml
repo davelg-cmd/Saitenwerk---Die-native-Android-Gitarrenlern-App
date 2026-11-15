@@ -371,6 +371,13 @@ jobs:
           set -euo pipefail
           python3 ci/improve_guitar_pluck.py
 
+      - name: Bass-Saiten und Audio-Masterclock korrigieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_guitar_bass_cache.py
+
 
 
       # ------------------------------------------------------------
