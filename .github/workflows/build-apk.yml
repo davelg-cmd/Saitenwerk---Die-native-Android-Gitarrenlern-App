@@ -352,6 +352,17 @@ jobs:
 
 
       # ------------------------------------------------------------
+      # 6b. Änderungen am Songblatt gegen laufende Audiozeit absichern
+      # ------------------------------------------------------------
+      - name: SongTimeline bei Songblatt-Änderungen schützen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/guard_song_timeline_edits.py
+
+
+      # ------------------------------------------------------------
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
