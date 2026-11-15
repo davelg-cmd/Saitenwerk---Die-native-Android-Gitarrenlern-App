@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# Serialize builds so backup commits and release uploads cannot race each other.
+concurrency:
+  group: saitenwerk-alpha7-build
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
