@@ -27,7 +27,7 @@ with zipfile.ZipFile(archive) as zf:
     for line in sfz.splitlines():
         if "Vel02" not in line:
             continue
-        match = re.search(r"<region>\\s+key=(\\d+).*?sample=([^\\s]+)", line)
+        match = re.search(r"<region>\s+key=(\d+).*?sample=([^\s]+)", line)
         if match:
             midi = int(match.group(1))
             if 40 <= midi <= 84:
@@ -67,7 +67,7 @@ manifest = {
     "midi_range": [40, 84],
     "velocity_layer": 2,
 }
-(assets / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\\n", encoding="utf-8")
+(assets / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 count = len(list(assets.glob("note_*.pcm")))
 if count != 45:
     raise SystemExit(f"ERROR: Expected 45 real guitar note samples, found {count}.")
