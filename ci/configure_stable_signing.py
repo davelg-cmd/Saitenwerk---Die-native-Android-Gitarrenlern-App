@@ -25,7 +25,7 @@ if 'create("saitenwerkUpload")' not in s:
     anchor = '    compileOptions {'
     block = '''    signingConfigs {
         create("saitenwerkUpload") {
-            storeFile = file("saitenwerk-upload.jks")
+            storeFile = rootProject.file("saitenwerk-upload.jks")
             storePassword = System.getenv("SAITENWERK_KEYSTORE_PASSWORD")
             keyAlias = System.getenv("SAITENWERK_KEY_ALIAS")
             keyPassword = System.getenv("SAITENWERK_KEYSTORE_PASSWORD")
