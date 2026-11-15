@@ -489,7 +489,11 @@ jobs:
       # 9. APK bauen
       # ------------------------------------------------------------
       - name: APK bauen
+        env:
+          SAITENWERK_KEYSTORE_PASSWORD: ${{ secrets.SAITENWERK_KEYSTORE_PASSWORD }}
+          SAITENWERK_KEY_ALIAS: ${{ secrets.SAITENWERK_KEY_ALIAS }}
         run: |
+          set -euo pipefail
           echo "=========================================="
           echo "Saitenwerk Alpha 7 wird gebaut"
           echo "=========================================="
@@ -499,6 +503,7 @@ jobs:
           echo "Version Code: $VERSION_CODE"
 
           cd "$PROJECT_DIR"
+          trap 'rm -f saitenwerk-upload.jks' EXIT
 
           gradle --no-daemon assembleDebug --stacktrace
 
@@ -516,6 +521,7 @@ jobs:
           # Exakt den tatsächlich gebauten Quellstand sichern:
           # inklusive CI-Fixes und automatisch gesetzter Versionsnummer.
           tar -czf "$BACKUP_DIR/source-project.tar.gz" \
+            --exclude='saitenwerk-upload.jks' \
             --exclude='.gradle' \
             --exclude='build' \
             --exclude='*/build' \
