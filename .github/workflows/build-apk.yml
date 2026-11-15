@@ -161,7 +161,7 @@ jobs:
           # --------------------------------------------------------
 
           fields = """    private var autoScroll: Boolean = false
-              private var scrollRunnable: Runnable = Runnable { }
+              private var scrollRunnable: Runnable? = null
               private val scrollHandler = Handler(Looper.getMainLooper())
               private var lastScrollTime: Long = 0L
               private var scrollRemainder: Float = 0f
@@ -265,18 +265,6 @@ jobs:
 
           PY
 
-
-      # Temporäre Diagnose: alle scrollRunnable-Verwendungen mit Kontext ausgeben
-      - name: Scroll-Runnable-Quellcode diagnostizieren
-        run: |
-          SOURCE="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
-          if [ ! -f "$SOURCE" ]; then
-            echo "FEHLER: MainActivity.kt am erwarteten Pfad nicht gefunden: $SOURCE"
-            find "$PROJECT_DIR" -name MainActivity.kt -print
-            exit 1
-          fi
-          echo "=== scrollRunnable-Verwendungen ==="
-          grep -n -C 10 -E 'scrollRunnable|scrollHandler' "$SOURCE" || true
 
       # ------------------------------------------------------------
       # 7. Gradle einrichten
