@@ -318,6 +318,35 @@ jobs:
 
 
       # ------------------------------------------------------------
+      # 6a. Zentrale SongTimeline als Master-Zeitbasis
+      # ------------------------------------------------------------
+      - name: SongTimeline integrieren und validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/apply_song_timeline.py
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          s = p.read_text(encoding="utf-8")
+          required = [
+              "private data class SongTimeline(",
+              "timeline: SongTimeline,",
+              "fun buildPlayerTimeline(raw: String): SongTimeline",
+              "currentTimeline?.chordIndexAt(position.toLong())",
+              "currentTimeline?.progressAt(position.toLong())",
+          ]
+          missing = [token for token in required if token not in s]
+          if missing:
+              raise SystemExit("SongTimeline-Prüfung fehlgeschlagen: " + ", ".join(missing))
+          print("SONGTIMELINE MASTER-CLOCK CHECK: PASS")
+          print("Audio, Akkordmarkierung und Fortschritt nutzen dieselbe Zeitachse.")
+          PY
+
+
+      # ------------------------------------------------------------
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
