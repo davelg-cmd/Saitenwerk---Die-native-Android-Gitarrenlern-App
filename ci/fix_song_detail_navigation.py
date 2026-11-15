@@ -17,7 +17,7 @@ elif new_back not in s:
 old_editor = 'root.addView(editorCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(a.dp(16), a.dp(14), a.dp(16), a.dp(12)) })'
 new_editor = '''// Bei einem vollständigen, mitgelieferten Song steht der Lesemodus im Vordergrund.
         // Das separate Arrangement-/Eingabefeld bleibt für eigene/unvollständige Songs verfügbar.
-        if (bundledSheet.optString("content").isBlank()) {
+        if (loadSection("Gesamter Song").optString("content").isBlank()) {
             root.addView(editorCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(a.dp(16), a.dp(14), a.dp(16), a.dp(12)) })
         }'''
 if old_editor in s:
@@ -52,7 +52,7 @@ if old_lifecycle in s:
 elif new_lifecycle not in s:
     raise SystemExit('Lifecycle cleanup anchor not found.')
 
-checks = [new_back, 'if (bundledSheet.optString("content").isBlank()) {',
+checks = [new_back, 'if (loadSection("Gesamter Song").optString("content").isBlank()) {',
           'readerScroll.addOnAttachStateChangeListener', 'stopPlayer(updateUi = false)']
 missing = [x for x in checks if x not in s]
 if missing:
