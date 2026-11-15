@@ -361,6 +361,17 @@ jobs:
           set -euo pipefail
           python3 ci/guard_song_timeline_edits.py
 
+      # ------------------------------------------------------------
+      # 6c. Natürlichere gezupfte Saiten statt additiver Sinustöne
+      # ------------------------------------------------------------
+      - name: Realistischeres Gitarren-Pluckmodell integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/improve_guitar_pluck.py
+
+
 
       # ------------------------------------------------------------
       # 7. Gradle einrichten
