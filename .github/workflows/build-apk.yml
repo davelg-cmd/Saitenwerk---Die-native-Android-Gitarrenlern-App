@@ -56,11 +56,14 @@ jobs:
       # ------------------------------------------------------------
       # 5. Alpha-7-Projekt finden und entpacken
       # ------------------------------------------------------------
-      - name: Alpha-7-Projekt finden und entpacken
+       - name: Alpha-7-Projekt finden und entpacken
+        shell: bash
         run: |
+          set -e
+
           mkdir -p extracted
 
-          ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*ALPHA_7*.zip" | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 3 -type f -name '*ALPHA_7*.zip' | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
             echo "FEHLER: Alpha-7-ZIP nicht gefunden!"
@@ -71,9 +74,16 @@ jobs:
 
           unzip -q "$ZIP_FILE" -d extracted
 
-          PROJECT_FILE=$(find extracted -type f \
-            -name settings.gradle.kts -o -name settings.gradle \
-            -print -quit)
+          PROJECT_FILE=""
+
+          while IFS= read -r file; do
+            case "$file" in
+              */settings.gradle.kts|*/settings.gradle)
+                PROJECT_FILE="$file"
+                break
+                ;;
+            esac
+          done < <(find extracted -type f)
 
           if [ -z "$PROJECT_FILE" ]; then
             echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
@@ -83,9 +93,7 @@ jobs:
           PROJECT_DIR=$(dirname "$PROJECT_FILE")
 
           echo "Projektverzeichnis: $PROJECT_DIR"
-
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
 
       # ------------------------------------------------------------
       # 6. V3 Kotlin Build-Fix
