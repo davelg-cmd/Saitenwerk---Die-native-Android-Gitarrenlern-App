@@ -1,4 +1,3 @@
-
 name: Saitenwerk Alpha 7 - APK Build
 
 on:
@@ -14,28 +13,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ------------------------------------------------------------
+      # 1. Repository auschecken
+      # ------------------------------------------------------------
       - name: Repository herunterladen
         uses: actions/checkout@v4
 
+
+      # ------------------------------------------------------------
+      # 2. Java 17
+      # ------------------------------------------------------------
       - name: Java 17 einrichten
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+
+      # ------------------------------------------------------------
+      # 3. Android SDK
+      # ------------------------------------------------------------
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v3
         with:
           packages: ''
 
+
+      # ------------------------------------------------------------
+      # 4. Android SDK Pakete installieren
+      # ------------------------------------------------------------
       - name: Android SDK Pakete installieren
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+
+      # ------------------------------------------------------------
+      # 5. Alpha-7-Projekt finden und entpacken
+      # ------------------------------------------------------------
       - name: Alpha-7-Projekt finden und entpacken
         run: |
           mkdir -p extracted
+
           ZIP_FILE=$(find . -maxdepth 3 -type f -iname "*ALPHA_7*.zip" | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
@@ -44,23 +68,208 @@ jobs:
           fi
 
           echo "Projektarchiv: $ZIP_FILE"
+
           unzip -q "$ZIP_FILE" -d extracted
 
           PROJECT_FILE=$(find extracted -type f \
-            \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)
+            -name settings.gradle.kts -o -name settings.gradle \
+            -print -quit)
 
           if [ -z "$PROJECT_FILE" ]; then
             echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
             exit 1
           fi
 
-          echo "PROJECT_DIR=$(dirname "$PROJECT_FILE")" >> "$GITHUB_ENV"
+          PROJECT_DIR=$(dirname "$PROJECT_FILE")
 
+          echo "Projektverzeichnis: $PROJECT_DIR"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+
+      # ------------------------------------------------------------
+      # 6. V3 Kotlin Build-Fix
+      #
+      # Behebt die beim V3-Build fehlenden Variablen:
+      # autoScroll
+      # scrollRunnable
+      # scrollHandler
+      # lastScrollTime
+      # scrollRemainder
+      # resumeAfterTouch
+      #
+      # Zusätzlich werden problematische direkte progress-
+      # Zuweisungen in SeekBar/ProgressBar auf setProgress()
+      # umgestellt.
+      # ------------------------------------------------------------
+      - name: V3-Kotlin-Build-Fix automatisch anwenden
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          print("=== Saitenwerk V3 Build-Fix ===")
+
+          roots = [
+              Path("extracted"),
+              Path(".")
+          ]
+
+          matches = []
+
+          for root in roots:
+              if root.exists():
+                  matches.extend(root.rglob("MainActivity.kt"))
+
+          # Doppelte Treffer entfernen
+          matches = list(dict.fromkeys(matches))
+
+          if not matches:
+              raise SystemExit(
+                  "FEHLER: MainActivity.kt nicht gefunden!"
+              )
+
+          print("Gefundene MainActivity.kt-Dateien:")
+
+          for match in matches:
+              print(f"  - {match}")
+
+          # Die MainActivity des entpackten Projektes bevorzugen
+          extracted_matches = [
+              p for p in matches
+              if str(p).startswith("extracted/")
+          ]
+
+          if extracted_matches:
+              p = extracted_matches[0]
+          else:
+              p = matches[0]
+
+          print(f"Verwende: {p}")
+
+          s = p.read_text(encoding="utf-8")
+
+          # --------------------------------------------------------
+          # Fehlende SongDetailFragment-Zustände wiederherstellen
+          # --------------------------------------------------------
+
+          fields = """    private var autoScroll: Boolean = false
+              private var scrollRunnable: Runnable = Runnable { }
+              private val scrollHandler = Handler(Looper.getMainLooper())
+              private var lastScrollTime: Long = 0L
+              private var scrollRemainder: Float = 0f
+              private var resumeAfterTouch: Boolean = false
+          """
+
+          marker = "class SongDetailFragment"
+
+          if "private var autoScroll: Boolean" not in s:
+
+              i = s.find(marker)
+
+              if i < 0:
+                  raise SystemExit(
+                      "FEHLER: SongDetailFragment nicht gefunden!"
+                  )
+
+              i = s.find("\n", i)
+
+              if i < 0:
+                  raise SystemExit(
+                      "FEHLER: Position zum Einfügen der V3-Felder nicht gefunden!"
+                  )
+
+              i += 1
+
+              s = s[:i] + fields + s[i:]
+
+              print(
+                  "OK: Fehlende SongDetailFragment-Variablen wurden ergänzt."
+              )
+
+          else:
+              print(
+                  "OK: SongDetailFragment-Variablen sind bereits vorhanden."
+              )
+
+
+          # --------------------------------------------------------
+          # ProgressBar / SeekBar:
+          # direkte progress-Zuweisungen vermeiden
+          # --------------------------------------------------------
+
+          old_1 = "apply { max = 100; progress = 0 }"
+          new_1 = "apply { max = 100; setProgress(0) }"
+
+          if old_1 in s:
+              s = s.replace(old_1, new_1)
+              print("OK: progress = 0 auf setProgress(0) umgestellt.")
+          else:
+              print("INFO: progress = 0 Muster nicht vorhanden.")
+
+
+          old_2 = "apply { max = 56; progress = 16 }"
+          new_2 = "apply { max = 56; setProgress(16) }"
+
+          if old_2 in s:
+              s = s.replace(old_2, new_2)
+              print("OK: progress = 16 auf setProgress(16) umgestellt.")
+          else:
+              print("INFO: progress = 16 Muster nicht vorhanden.")
+
+
+          # --------------------------------------------------------
+          # Datei speichern
+          # --------------------------------------------------------
+
+          p.write_text(s, encoding="utf-8")
+
+          print("")
+          print("V3-Fix erfolgreich angewendet.")
+          print(f"Datei: {p}")
+
+
+          # --------------------------------------------------------
+          # Sicherheitsprüfung
+          # --------------------------------------------------------
+
+          required = [
+              "autoScroll",
+              "scrollRunnable",
+              "scrollHandler",
+              "lastScrollTime",
+              "scrollRemainder",
+              "resumeAfterTouch",
+          ]
+
+          missing = [
+              name for name in required
+              if name not in s
+          ]
+
+          if missing:
+              raise SystemExit(
+                  "FEHLER: Folgende V3-Variablen fehlen weiterhin: "
+                  + ", ".join(missing)
+              )
+
+          print("")
+          print("=== V3-Fix-Prüfung erfolgreich ===")
+
+          PY
+
+
+      # ------------------------------------------------------------
+      # 7. Gradle einrichten
+      # ------------------------------------------------------------
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
 
+
+      # ------------------------------------------------------------
+      # 8. Alpha-Version automatisch nummerieren
+      # ------------------------------------------------------------
       - name: Alpha-Version automatisch nummerieren
         env:
           RUN_NUMBER: ${{ github.run_number }}
@@ -68,34 +277,78 @@ jobs:
           VERSION_CODE=$((1000 + RUN_NUMBER))
           VERSION_NAME="3.1.0-alpha7.${RUN_NUMBER}"
 
-          VERSION_CODE="$VERSION_CODE" VERSION_NAME="$VERSION_NAME" python3 - <<'PY2'
-          import os, re
+          echo "Version Code: $VERSION_CODE"
+          echo "Version Name: $VERSION_NAME"
+
+          VERSION_CODE="$VERSION_CODE" \
+          VERSION_NAME="$VERSION_NAME" \
+          python3 - <<'PY2'
+
+          import os
+          import re
           from pathlib import Path
 
-          p = Path(os.environ['PROJECT_DIR']) / 'app/build.gradle.kts'
-          s = p.read_text()
+          project_dir = Path(os.environ["PROJECT_DIR"])
+
+          p = project_dir / "app/build.gradle.kts"
+
+          if not p.exists():
+              raise SystemExit(
+                  f"FEHLER: {p} nicht gefunden"
+              )
+
+          s = p.read_text(encoding="utf-8")
 
           s, count = re.subn(
               r'versionCode\s*=\s*\d+\s*;\s*versionName\s*=\s*"[^"]+"',
-              f'versionCode = {os.environ["VERSION_CODE"]}; versionName = "{os.environ["VERSION_NAME"]}"',
+              (
+                  f'versionCode = {os.environ["VERSION_CODE"]}; '
+                  f'versionName = "{os.environ["VERSION_NAME"]}"'
+              ),
               s,
               count=1
           )
 
           if count != 1:
-              raise SystemExit('Versionseintrag in app/build.gradle.kts nicht gefunden')
+              raise SystemExit(
+                  "FEHLER: Versionseintrag in "
+                  "app/build.gradle.kts nicht gefunden!"
+              )
 
-          p.write_text(s)
+          p.write_text(s, encoding="utf-8")
+
+          print(
+              "Version erfolgreich gesetzt: "
+              f"{os.environ['VERSION_NAME']}"
+          )
+
           PY2
 
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
 
+
+      # ------------------------------------------------------------
+      # 9. APK bauen
+      # ------------------------------------------------------------
       - name: APK bauen
         run: |
+          echo "=========================================="
+          echo "Saitenwerk Alpha 7 wird gebaut"
+          echo "=========================================="
+
+          echo "Projekt: $PROJECT_DIR"
+          echo "Version: $VERSION_NAME"
+          echo "Version Code: $VERSION_CODE"
+
           cd "$PROJECT_DIR"
+
           gradle --no-daemon assembleDebug --stacktrace
 
+
+      # ------------------------------------------------------------
+      # 10. APK als GitHub Actions Artifact bereitstellen
+      # ------------------------------------------------------------
       - name: Alpha-7-APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
@@ -104,6 +357,10 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+
+      # ------------------------------------------------------------
+      # 11. Vollständiges Quellprojekt bereitstellen
+      # ------------------------------------------------------------
       - name: Alpha-7-Quellprojekt bereitstellen
         uses: actions/upload-artifact@v4
         with:
@@ -113,37 +370,82 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
+      # ------------------------------------------------------------
+      # 12. GitHub Release aktualisieren
+      # ------------------------------------------------------------
       - name: Aktuelles Alpha-Update als GitHub-Release veröffentlichen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" saitenwerk-alpha7.apk
 
-          NOTES="$(printf 'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' "$VERSION_CODE" "$VERSION_NAME")"
+          APK_PATH="$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk"
+
+          if [ ! -f "$APK_PATH" ]; then
+            echo "FEHLER: APK nicht gefunden:"
+            echo "$APK_PATH"
+            exit 1
+          fi
+
+          cp "$APK_PATH" saitenwerk-alpha7.apk
+
+          NOTES="$(
+            printf \
+              'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' \
+              "$VERSION_CODE" \
+              "$VERSION_NAME"
+          )"
+
           RELEASE_API="repos/$GITHUB_REPOSITORY/releases"
 
-          # Vorhandenes Release mit dem festen Tag alpha-latest aktualisieren.
-          if RELEASE_ID=$(gh api "$RELEASE_API/tags/alpha-latest" --jq .id 2>/dev/null); then
+
+          # --------------------------------------------------------
+          # Vorhandenes Release alpha-latest suchen
+          # --------------------------------------------------------
+
+          if RELEASE_ID=$(
+            gh api "$RELEASE_API/tags/alpha-latest" \
+              --jq .id 2>/dev/null
+          ); then
+
             echo "Vorhandenes Alpha-Release $RELEASE_ID wird aktualisiert."
 
-            gh api "$RELEASE_API/$RELEASE_ID" --method PATCH \
+            gh api "$RELEASE_API/$RELEASE_ID" \
+              --method PATCH \
               -f name="Saitenwerk Alpha 7 – aktueller Stand" \
               -f body="$NOTES" \
-              -F prerelease=true >/dev/null
+              -F prerelease=true \
+              >/dev/null
 
           else
+
             echo "Alpha-Release wird mit dem festen Tag alpha-latest angelegt."
 
-            gh api "$RELEASE_API" --method POST \
+            gh api "$RELEASE_API" \
+              --method POST \
               -f tag_name="alpha-latest" \
               -f target_commitish="$GITHUB_SHA" \
               -f name="Saitenwerk Alpha 7 – aktueller Stand" \
               -f body="$NOTES" \
-              -F prerelease=true >/dev/null
+              -F prerelease=true \
+              >/dev/null
+
           fi
 
-          # APK unter dem Dateinamen veröffentlichen, den die App erwartet.
-          gh release upload alpha-latest saitenwerk-alpha7.apk --clobber
 
-          echo "Release-Asset veröffentlicht: saitenwerk-alpha7.apk"
-          
+          # --------------------------------------------------------
+          # APK veröffentlichen
+          # --------------------------------------------------------
+
+          gh release upload \
+            alpha-latest \
+            saitenwerk-alpha7.apk \
+            --clobber
+
+          echo ""
+          echo "=========================================="
+          echo "Release erfolgreich veröffentlicht"
+          echo "=========================================="
+          echo "Datei: saitenwerk-alpha7.apk"
+          echo "Version: $VERSION_NAME"
+          echo "Version Code: $VERSION_CODE"
