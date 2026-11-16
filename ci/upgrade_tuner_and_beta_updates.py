@@ -161,6 +161,91 @@ if "alternativeSpinner = Spinner(a)" in s: raise SystemExit("Old spinner UI rema
 
 if 'AlternativeTuning.values()' in s or 'TuningMode.CELLO' not in s: raise SystemExit("Tuner source validation failed")
 s=s.replace('selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))', 'selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))\n        configureAlternativeTunings()')
+
+# YIN pitch detector: replaces the less reliable simple autocorrelation in the base project.
+import re
+yin = """    private fun estimatePitch(x: ShortArray, n: Int, sr: Int): Double {
+        if (n < 2048) return -1.0
+        var mean = 0.0
+        for (i in 0 until n) mean += x[i].toDouble()
+        mean /= n.toDouble()
+        var energy = 0.0
+        var peak = 0.0
+        for (i in 0 until n) {
+            val v = x[i].toDouble() - mean
+            energy += v * v
+            peak = maxOf(peak, kotlin.math.abs(v))
+        }
+        val rms = kotlin.math.sqrt(energy / n.toDouble())
+        if (rms < 220.0 || peak < 550.0) return -1.0
+
+        val minLag = maxOf(2, sr / 1100)
+        val maxLag = minOf(sr / 32, n / 3)
+        val difference = DoubleArray(maxLag + 1)
+        val usable = n - maxLag
+        for (lag in minLag..maxLag) {
+            var sum = 0.0
+            for (i in 0 until usable step 2) {
+                val a = x[i].toDouble() - mean
+                val b = x[i + lag].toDouble() - mean
+                val d = a - b
+                sum += d * d
+            }
+            difference[lag] = sum
+        }
+
+        // Cumulative Mean Normalized Difference (YIN).
+        var running = 0.0
+        for (lag in minLag..maxLag) {
+            running += difference[lag]
+            difference[lag] = if (running > 0.0) difference[lag] * (lag - minLag + 1) / running else 1.0
+        }
+
+        // Pick the first sufficiently good local minimum to reduce octave errors.
+        var chosen = -1
+        var lag = minLag
+        while (lag < maxLag - 1) {
+            if (difference[lag] < 0.16) {
+                while (lag + 1 <= maxLag && difference[lag + 1] < difference[lag]) lag++
+                chosen = lag
+                break
+            }
+            lag++
+        }
+        if (chosen < 0) {
+            var best = minLag
+            for (candidate in minLag + 1..maxLag) {
+                if (difference[candidate] < difference[best]) best = candidate
+            }
+            if (difference[best] > 0.28) return -1.0
+            chosen = best
+        }
+
+        // Parabolic interpolation gives sub-sample period resolution.
+        val refined = if (chosen > minLag && chosen < maxLag) {
+            val left = difference[chosen - 1]
+            val center = difference[chosen]
+            val right = difference[chosen + 1]
+            val denominator = left - 2.0 * center + right
+            val offset = if (kotlin.math.abs(denominator) > 1e-12)
+                (0.5 * (left - right) / denominator).coerceIn(-0.5, 0.5)
+            else 0.0
+            chosen.toDouble() + offset
+        } else chosen.toDouble()
+
+        val hz = sr.toDouble() / refined
+        return if (hz in 30.0..1100.0) hz else -1.0
+    }
+"""
+s = re.subn(
+    r'    private fun estimatePitch\(x: ShortArray, n: Int, sr: Int\): Double \{.*?(?=\n    private fun resetPitchDisplay\(\))',
+    lambda _: yin,
+    s,
+    count=1,
+    flags=re.S
+)[0]
+if "Cumulative Mean Normalized Difference (YIN)" not in s:
+    raise SystemExit("YIN patch validation failed")
 p.write_text(s,encoding="utf-8")
 p=root/"AppUpdateManager.kt"; u=p.read_text(encoding="utf-8")
 u=u.replace("Alpha channel's GitHub release","current Beta release").replace("fetchAlphaRelease()","fetchBetaRelease()").replace("Kein veröffentlichter Alpha-7-Release gefunden","Kein veröffentlichter Beta-Release gefunden").replace("Neue Alpha-Version wird heruntergeladen","Neue Beta-Version wird heruntergeladen")
