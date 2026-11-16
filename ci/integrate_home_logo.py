@@ -29,6 +29,13 @@ if not has_alpha:
     raise SystemExit("FEHLER: Das PNG besitzt keinen Transparenzkanal. Das alte Bild bleibt unveraendert.")
 target = res / "saitenwerk_original.png"
 target.write_bytes(data)
+main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+source = main.read_text(encoding="utf-8")
+old_background = "            setBackgroundColor(a.getColor(R.color.sw_navy))"
+if old_background not in source:
+    raise SystemExit("FEHLER: Erwartete Logo-Hintergrundzeile in HomeFragment nicht gefunden.")
+source = source.replace(old_background, "            setBackgroundColor(android.graphics.Color.TRANSPARENT)", 1)
+main.write_text(source, encoding="utf-8")
 old = res / "saitenwerk_original.jpg"
 if old.exists():
     old.unlink()
