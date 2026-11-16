@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Harden Songsterr-style playback and auto-scroll after the V4 regression."""
 from pathlib import Path
-import os, re
+import os
+import re
 
 root = Path(os.environ["PROJECT_DIR"])
 path = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
@@ -53,84 +54,92 @@ if anchor in s:
 elif replacement not in s:
     raise SystemExit("ERROR: Guitar event playback anchor not found.")
 
-# 3) Replace broken auto-scroll implementations with a simple timeline-following
-#    implementation. It uses only readerScroll + playerEngine, both already owned
-#    by SongDetailFragment, and avoids recursive Handler callbacks.
-def replace_method(src, name, body):
-    pattern = re.compile(r"(?m)^        (?:private )?fun " + re.escape(name) + r"\([^\n]*\)\s*\{")
-    m = pattern.search(src)
-    if not m:
-        return None
-    i = m.start()
-    brace = src.find("{", m.start())
-    depth = 0
-    j = brace
-    while j < len(src):
-        if src[j] == "{":
-            depth += 1
-        elif src[j] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[:i] + body + src[j+1:]
-        j += 1
-    raise SystemExit(f"ERROR: Could not parse {name}()")
+# 3) Replace auto-scroll methods robustly. The previous implementation assumed
+#    every matching function was a class member; in this generated source one
+#    match can be a local function, which makes "private fun" illegal Kotlin.
+#    Remove every existing definition, then insert exactly one definition at the
+#    same indentation level as stopPlayer().
+def remove_all_methods(src, name):
+    pattern = re.compile(
+        r"(?m)^(?P<indent>[ \t]+)(?:private\s+)?fun "
+        + re.escape(name)
+        + r"\([^\n]*\)\s*\{"
+    )
+    while True:
+        m = pattern.search(src)
+        if not m:
+            return src
+        brace = src.find("{", m.start())
+        depth = 0
+        j = brace
+        while j < len(src):
+            if src[j] == "{":
+                depth += 1
+            elif src[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    src = src[:m.start()] + src[j + 1:]
+                    break
+            j += 1
+        else:
+            raise SystemExit(f"ERROR: Could not parse {name}()")
 
-start_body = """        private fun startAutoScroll() {
-            if (autoScroll) return
-            autoScroll = true
-            resumeAfterTouch = false
-            lastScrollTime = android.os.SystemClock.uptimeMillis()
-            scrollRemainder = 0f
-            scrollRunnable?.let { scrollHandler.removeCallbacks(it) }
+s = remove_all_methods(s, "startAutoScroll")
+s = remove_all_methods(s, "stopAutoScroll")
 
-            val runnable = object : Runnable {
-                override fun run() {
-                    if (!autoScroll || !isAdded || view == null) return
-                    val total = playerEngine.duration().coerceAtLeast(1)
-                    val position = playerEngine.position().coerceIn(0, total)
-                    val maxY = (readerScroll.getChildAt(0)?.height ?: 0) - readerScroll.height
-                    if (maxY > 0) {
-                        val target = (maxY.toDouble() * position.toDouble() / total.toDouble()).toInt()
-                        val delta = target - readerScroll.scrollY
-                        if (kotlin.math.abs(delta) > 1) readerScroll.smoothScrollBy(0, (delta * 0.18f).toInt().coerceAtLeast(1))
-                    }
-                    scrollRunnable = this
-                    scrollHandler.postDelayed(this, 120L)
-                }
-            }
-            scrollRunnable = runnable
-            scrollHandler.post(runnable)
-        }
-"""
-stop_body = """        private fun stopAutoScroll() {
-            autoScroll = false
-            scrollRunnable?.let { scrollHandler.removeCallbacks(it) }
-            scrollRunnable = null
-            lastScrollTime = 0L
-            scrollRemainder = 0f
-            resumeAfterTouch = false
-        }
-"""
-new_s = replace_method(s, "startAutoScroll", start_body)
-if new_s is not None:
-    s = new_s
-else:
-    # Insert before stopPlayer if the old method was missing.
-    marker = "        fun stopPlayer("
-    pos = s.find(marker)
-    if pos < 0:
-        raise SystemExit("ERROR: No insertion point for startAutoScroll().")
-    s = s[:pos] + start_body + "\n" + s[pos:]
+stop_player = re.search(
+    r"(?m)^(?P<indent>[ \t]+)(?:private\s+)?fun stopPlayer\([^\n]*\)\s*\{",
+    s,
+)
+if not stop_player:
+    raise SystemExit("ERROR: No class-level insertion point for auto-scroll methods.")
 
-new_s = replace_method(s, "stopAutoScroll", stop_body)
-if new_s is not None:
-    s = new_s
-else:
-    marker = "        fun stopPlayer("
-    pos = s.find(marker)
-    if pos < 0:
-        raise SystemExit("ERROR: No insertion point for stopAutoScroll().")
-    s = s[:pos] + stop_body + "\n" + s[pos:]
+indent = stop_player.group("indent")
+child = indent + "    "
+
+start_body = (
+    f"{indent}private fun startAutoScroll() {{\n"
+    f"{child}if (autoScroll) return\n"
+    f"{child}autoScroll = true\n"
+    f"{child}resumeAfterTouch = false\n"
+    f"{child}lastScrollTime = android.os.SystemClock.uptimeMillis()\n"
+    f"{child}scrollRemainder = 0f\n"
+    f"{child}scrollRunnable?.let {{ scrollHandler.removeCallbacks(it) }}\n\n"
+    f"{child}val runnable = object : Runnable {{\n"
+    f"{child}    override fun run() {{\n"
+    f"{child}        if (!autoScroll || !isAdded || view == null) return\n"
+    f"{child}        val total = playerEngine.duration().coerceAtLeast(1)\n"
+    f"{child}        val position = playerEngine.position().coerceIn(0, total)\n"
+    f"{child}        val maxY = (readerScroll.getChildAt(0)?.height ?: 0) - readerScroll.height\n"
+    f"{child}        if (maxY > 0) {{\n"
+    f"{child}            val target = (maxY.toDouble() * position.toDouble() / total.toDouble()).toInt()\n"
+    f"{child}            val delta = target - readerScroll.scrollY\n"
+    f"{child}            if (kotlin.math.abs(delta) > 1) {{\n"
+    f"{child}                readerScroll.smoothScrollBy(0, (delta * 0.18f).toInt().coerceAtLeast(1))\n"
+    f"{child}            }}\n"
+    f"{child}        }}\n"
+    f"{child}        scrollRunnable = this\n"
+    f"{child}        scrollHandler.postDelayed(this, 120L)\n"
+    f"{child}    }}\n"
+    f"{child}}}\n"
+    f"{child}scrollRunnable = runnable\n"
+    f"{child}scrollHandler.post(runnable)\n"
+    f"{indent}}}\n"
+)
+
+stop_body = (
+    f"{indent}private fun stopAutoScroll() {{\n"
+    f"{child}autoScroll = false\n"
+    f"{child}scrollRunnable?.let {{ scrollHandler.removeCallbacks(it) }}\n"
+    f"{child}scrollRunnable = null\n"
+    f"{child}lastScrollTime = 0L\n"
+    f"{child}scrollRemainder = 0f\n"
+    f"{child}resumeAfterTouch = false\n"
+    f"{indent}}}\n"
+)
+
+pos = stop_player.start()
+s = s[:pos] + start_body + "\n" + stop_body + "\n" + s[pos:]
 
 required = [
     "track.setVolume(1.0f)",
@@ -141,10 +150,12 @@ required = [
 ]
 missing = [x for x in required if x not in s]
 if missing:
-    raise SystemExit("ERROR: Audio/autoscroll hardening validation failed: " + ", ".join(missing))
+    raise SystemExit(
+        "ERROR: Audio/autoscroll hardening validation failed: " + ", ".join(missing)
+    )
 
 path.write_text(s, encoding="utf-8")
-print("AUDIO + AUTOSCROLL HARDENING: PASS")
+print("AUDIO + AUTOSCROLL HARDENING V5.1: PASS")
 print("AudioTrack initialization/volume is verified.")
 print("Empty timelines receive a restrained audible guitar fallback.")
-print("Auto-scroll follows actual player position and uses one cancellable Runnable.")
+print("Auto-scroll methods are inserted at the same class level as stopPlayer().")
