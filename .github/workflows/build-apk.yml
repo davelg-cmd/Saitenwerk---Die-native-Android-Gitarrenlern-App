@@ -121,13 +121,50 @@ jobs:
           python3 - "$MANIFEST" <<'PY'
           from pathlib import Path
           import re, sys
+
           p = Path(sys.argv[1])
           s = p.read_text(encoding="utf-8")
-          s2 = re.sub(r'android:icon="@[^"]+"', 'android:icon="@drawable/saitenwerk_launcher"', s, count=1)
-          s2 = re.sub(r'android:roundIcon="@[^"]+"', 'android:roundIcon="@drawable/saitenwerk_launcher"', s2, count=1)
-          if s2 == s:
-              raise SystemExit("FEHLER: Kein android:icon-Eintrag im Manifest gefunden.")
-          p.write_text(s2, encoding="utf-8")
+          icon = "@drawable/saitenwerk_launcher"
+
+          # android:icon ersetzen oder neu in <application> einfügen.
+          if re.search(r'android:icon\\s*=\\s*"[^"]+"', s):
+              s = re.sub(
+                  r'android:icon\\s*=\\s*"[^"]+"',
+                  f'android:icon="{icon}"',
+                  s,
+                  count=1
+              )
+              print("APP-LOGO: vorhandenes android:icon aktualisiert")
+          else:
+              match = re.search(r'<application\\b[^>]*>', s)
+              if not match:
+                  raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
+
+              application = match.group(0)
+              replacement = application[:-1] + f' android:icon="{icon}">'
+              s = s[:match.start()] + replacement + s[match.end():]
+              print("APP-LOGO: android:icon neu eingefügt")
+
+          # android:roundIcon ersetzen oder neu in <application> einfügen.
+          if re.search(r'android:roundIcon\\s*=\\s*"[^"]+"', s):
+              s = re.sub(
+                  r'android:roundIcon\\s*=\\s*"[^"]+"',
+                  f'android:roundIcon="{icon}"',
+                  s,
+                  count=1
+              )
+              print("APP-LOGO: vorhandenes android:roundIcon aktualisiert")
+          else:
+              match = re.search(r'<application\\b[^>]*>', s)
+              if not match:
+                  raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
+
+              application = match.group(0)
+              replacement = application[:-1] + f' android:roundIcon="{icon}">'
+              s = s[:match.start()] + replacement + s[match.end():]
+              print("APP-LOGO: android:roundIcon neu eingefügt")
+
+          p.write_text(s, encoding="utf-8")
           print("APP-LOGO: neues Saitenwerk-Gitarrenmotiv gesetzt")
           PY
           echo "App-Logo erfolgreich integriert."
