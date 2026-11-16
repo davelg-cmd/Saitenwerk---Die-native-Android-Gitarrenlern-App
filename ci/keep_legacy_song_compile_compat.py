@@ -39,13 +39,17 @@ fields = '''private var autoScroll: Boolean = false
 fields = fields.replace("private var ", "var ").replace("private val ", "val ")
 
 if "var autoScroll: Boolean = false" not in s:
-    anchor = "val readerScroll = ScrollView(a)"
+    # Insert BEFORE the complete ScrollView expression. Matching only the
+    # constructor prefix would place declarations inside its .apply receiver
+    # and detach setFillViewport/background from ScrollView.
+    anchor = "        val readerScroll = ScrollView(a).apply {"
     if s.count(anchor) != 1:
         raise SystemExit(
-            f"FEHLER: readerScroll-Anker für Legacy-Songstatus nicht eindeutig "
+            f"FEHLER: vollständiger readerScroll-Anker nicht eindeutig "
             f"(Treffer: {s.count(anchor)})."
         )
-    s = s.replace(anchor, anchor + "\n        " + fields.rstrip().replace("\n", "\n        "), 1)
+    declarations = "\\n".join("        " + line.strip() for line in fields.rstrip().splitlines())
+    s = s.replace(anchor, declarations + "\\n" + anchor, 1)
 
 checks = [
     "fun openSong(song: Song)",
