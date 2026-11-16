@@ -8,9 +8,15 @@ s = path.read_text(encoding="utf-8")
 # The old song implementation is still present in the source archive for now.
 # Keep it compilable while it is unreachable from the active UI.
 if "fun openSong(song: Song)" not in s:
-    anchor = 'fun openSection(section: Int)'
-    if anchor not in s:
-        raise SystemExit("FEHLER: openSection()-Anker für legacy openSong nicht gefunden.")
+    # MainActivity is a class. Insert the compatibility entry point immediately
+    # before onCreate so it is always at class scope, independent of navigation
+    # helper names in the archived source.
+    anchor = 'override fun onCreate'
+    if s.count(anchor) != 1:
+        raise SystemExit(
+            f"FEHLER: onCreate()-Anker für legacy openSong nicht eindeutig "
+            f"(Treffer: {s.count(anchor)})."
+        )
     s = s.replace(
         anchor,
         '''fun openSong(song: Song) {
