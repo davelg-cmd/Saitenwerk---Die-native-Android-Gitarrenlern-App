@@ -48,8 +48,8 @@ if "var autoScroll: Boolean = false" not in s:
             f"FEHLER: vollständiger readerScroll-Anker nicht eindeutig "
             f"(Treffer: {s.count(anchor)})."
         )
-    declarations = "\\n".join("        " + line.strip() for line in fields.rstrip().splitlines())
-    s = s.replace(anchor, declarations + "\\n" + anchor, 1)
+    declarations = "\n".join("        " + line.strip() for line in fields.rstrip().splitlines())
+    s = s.replace(anchor, declarations + "\n" + anchor, 1)
 
 checks = [
     "fun openSong(song: Song)",
