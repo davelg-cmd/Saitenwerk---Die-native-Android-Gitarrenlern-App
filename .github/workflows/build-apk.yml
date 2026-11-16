@@ -231,6 +231,18 @@ jobs:
 
           PY
 
+      # ------------------------------------------------------------
+      # Legacy-Songcode nur noch kompilierbar halten
+      # Die Lieder-UI und Songdaten sind bereits entfernt. Der alte Code
+      # bleibt vorerst im Archiv, bis wir später eine komplett neue Lösung bauen.
+      # ------------------------------------------------------------
+      - name: Legacy-Songcode Compile-Kompatibilität
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/keep_legacy_song_compile_compat.py
+
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
