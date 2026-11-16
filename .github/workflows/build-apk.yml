@@ -1,4 +1,4 @@
-name: Saitenwerk Alpha 7 - APK Build
+name: Saitenwerk Beta - APK Build
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
 
 # Serialize builds so backup commits and release uploads cannot race each other.
 concurrency:
-  group: saitenwerk-alpha7-build
+  group: saitenwerk-beta-build
   cancel-in-progress: false
 
 jobs:
@@ -60,9 +60,9 @@ jobs:
 
 
       # ------------------------------------------------------------
-      # 5. Alpha-7-Projekt finden und entpacken
+      # 5. Beta-Projekt finden und entpacken
       # ------------------------------------------------------------
-      - name: Alpha-7-Projekt finden und entpacken
+      - name: Beta-Projekt finden und entpacken
         shell: bash
         run: |
           set -e
@@ -102,6 +102,16 @@ jobs:
           echo "Projektverzeichnis: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+
+      # ------------------------------------------------------------
+      # 5a. Einstellungen nach unten verschieben und Über-Seite aktualisieren
+      # ------------------------------------------------------------
+      - name: Startseite und Über-Bereich aktualisieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/update_about_beta_ui.py
 
       # ------------------------------------------------------------
       # 5a. Transparentes Startseiten-Logo integrieren
@@ -289,14 +299,14 @@ jobs:
 
 
       # ------------------------------------------------------------
-      # 8. Alpha-Version automatisch nummerieren
+      # 8. Beta-Version automatisch nummerieren
       # ------------------------------------------------------------
-      - name: Alpha-Version automatisch nummerieren
+      - name: Beta-Version automatisch nummerieren
         env:
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           VERSION_CODE=$((1000 + RUN_NUMBER))
-          VERSION_NAME="3.1.0-alpha7.${RUN_NUMBER}"
+          VERSION_NAME="3.1.0-beta.${RUN_NUMBER}"
 
           echo "Version Code: $VERSION_CODE"
           echo "Version Name: $VERSION_NAME"
@@ -359,7 +369,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "=========================================="
-          echo "Saitenwerk Alpha 7 wird gebaut"
+          echo "Saitenwerk Beta wird gebaut"
           echo "=========================================="
 
           echo "Projekt: $PROJECT_DIR"
@@ -380,7 +390,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          BACKUP_DIR="build-backups/alpha7/build-${GITHUB_RUN_NUMBER}"
+          BACKUP_DIR="build-backups/beta/build-${GITHUB_RUN_NUMBER}"
           mkdir -p "$BACKUP_DIR"
 
           # Exakt den tatsächlich gebauten Quellstand sichern:
@@ -394,7 +404,7 @@ jobs:
 
           cat > "$BACKUP_DIR/build-info.txt" <<EOF
           Product: Saitenwerk
-          Track: Alpha 7
+          Track: Beta
           Build number: $GITHUB_RUN_NUMBER
           Version name: $VERSION_NAME
           Version code: $VERSION_CODE
@@ -408,16 +418,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add -f "$BACKUP_DIR"
-          git commit -m "backup: Saitenwerk Alpha 7 build $GITHUB_RUN_NUMBER [skip ci]"
+          git commit -m "backup: Saitenwerk Beta build $GITHUB_RUN_NUMBER [skip ci]"
           git push
 
       # ------------------------------------------------------------
       # 11. APK als GitHub Actions Artifact bereitstellen
       # ------------------------------------------------------------
-      - name: Alpha-7-APK bereitstellen
+      - name: Beta-APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Saitenwerk-Alpha-7-APK
+          name: Saitenwerk-Beta-APK
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 90
@@ -426,10 +436,10 @@ jobs:
       # ------------------------------------------------------------
       # 11. Vollständiges Quellprojekt bereitstellen
       # ------------------------------------------------------------
-      - name: Alpha-7-Quellprojekt bereitstellen
+      - name: Beta-Quellprojekt bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Saitenwerk-Alpha-7-Quellprojekt
+          name: Saitenwerk-Beta-Quellprojekt
           path: ${{ env.PROJECT_DIR }}/
           include-hidden-files: true
           if-no-files-found: error
@@ -439,7 +449,7 @@ jobs:
       # ------------------------------------------------------------
       # 12. GitHub Release aktualisieren
       # ------------------------------------------------------------
-      - name: Aktuelles Alpha-Update als GitHub-Release veröffentlichen
+      - name: Aktuelles Beta-Update als GitHub-Release veröffentlichen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -452,11 +462,11 @@ jobs:
             exit 1
           fi
 
-          cp "$APK_PATH" saitenwerk-alpha7.apk
+          cp "$APK_PATH" saitenwerk-beta.apk
 
           NOTES="$(
             printf \
-              'Automatisches Saitenwerk Alpha 7 Update\nversionCode=%s\nversionName=%s' \
+              'Automatisches Saitenwerk Beta Update\nversionCode=%s\nversionName=%s' \
               "$VERSION_CODE" \
               "$VERSION_NAME"
           )"
@@ -465,11 +475,11 @@ jobs:
 
 
           # --------------------------------------------------------
-          # Vorhandenes Release alpha-latest suchen
+          # Vorhandenes Release beta-latest suchen
           # --------------------------------------------------------
 
           if RELEASE_ID=$(
-            gh api "$RELEASE_API/tags/alpha-latest" \
+            gh api "$RELEASE_API/tags/beta-latest" \
               --jq .id 2>/dev/null
           ); then
 
@@ -477,20 +487,20 @@ jobs:
 
             gh api "$RELEASE_API/$RELEASE_ID" \
               --method PATCH \
-              -f name="Saitenwerk Alpha 7 – aktueller Stand" \
+              -f name="Saitenwerk Beta – aktueller Stand" \
               -f body="$NOTES" \
               -F prerelease=true \
               >/dev/null
 
           else
 
-            echo "Alpha-Release wird mit dem festen Tag alpha-latest angelegt."
+            echo "Alpha-Release wird mit dem festen Tag beta-latest angelegt."
 
             gh api "$RELEASE_API" \
               --method POST \
-              -f tag_name="alpha-latest" \
+              -f tag_name="beta-latest" \
               -f target_commitish="$GITHUB_SHA" \
-              -f name="Saitenwerk Alpha 7 – aktueller Stand" \
+              -f name="Saitenwerk Beta – aktueller Stand" \
               -f body="$NOTES" \
               -F prerelease=true \
               >/dev/null
@@ -503,14 +513,14 @@ jobs:
           # --------------------------------------------------------
 
           gh release upload \
-            alpha-latest \
-            saitenwerk-alpha7.apk \
+            beta-latest \
+            saitenwerk-beta.apk \
             --clobber
 
           echo ""
           echo "=========================================="
           echo "Release erfolgreich veröffentlicht"
           echo "=========================================="
-          echo "Datei: saitenwerk-alpha7.apk"
+          echo "Datei: saitenwerk-beta.apk"
           echo "Version: $VERSION_NAME"
           echo "Version Code: $VERSION_CODE"
