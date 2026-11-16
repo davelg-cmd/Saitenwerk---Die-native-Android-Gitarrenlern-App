@@ -101,6 +101,37 @@ jobs:
           echo "Projektverzeichnis: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+
+      # ------------------------------------------------------------
+      # 5b. Saitenwerk App-Logo setzen
+      # ------------------------------------------------------------
+      - name: Saitenwerk App-Logo integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          RES_DIR="$PROJECT_DIR/app/src/main/res"
+          mkdir -p "$RES_DIR/drawable"
+          cp "$GITHUB_WORKSPACE/assets/saitenwerk_launcher.xml" "$RES_DIR/drawable/saitenwerk_launcher.xml"
+          MANIFEST="$PROJECT_DIR/app/src/main/AndroidManifest.xml"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "FEHLER: AndroidManifest.xml nicht gefunden: $MANIFEST"
+            exit 1
+          fi
+          python3 - "$MANIFEST" <<'PY'
+          from pathlib import Path
+          import re, sys
+          p = Path(sys.argv[1])
+          s = p.read_text(encoding="utf-8")
+          s2 = re.sub(r'android:icon="@[^"]+"', 'android:icon="@drawable/saitenwerk_launcher"', s, count=1)
+          s2 = re.sub(r'android:roundIcon="@[^"]+"', 'android:roundIcon="@drawable/saitenwerk_launcher"', s2, count=1)
+          if s2 == s:
+              raise SystemExit("FEHLER: Kein android:icon-Eintrag im Manifest gefunden.")
+          p.write_text(s2, encoding="utf-8")
+          print("APP-LOGO: neues Saitenwerk-Gitarrenmotiv gesetzt")
+          PY
+          echo "App-Logo erfolgreich integriert."
+
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
