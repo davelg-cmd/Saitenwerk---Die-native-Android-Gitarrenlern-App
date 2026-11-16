@@ -8,15 +8,13 @@ s = path.read_text(encoding="utf-8")
 # The old song implementation is still present in the source archive for now.
 # Keep it compilable while it is unreachable from the active UI.
 if "fun openSong(song: Song)" not in s:
-    # MainActivity is a class. Insert the compatibility entry point immediately
-    # before onCreate so it is always at class scope, independent of navigation
-    # helper names in the archived source.
-    anchor = 'override fun onCreate'
-    if s.count(anchor) != 1:
-        raise SystemExit(
-            f"FEHLER: onCreate()-Anker für legacy openSong nicht eindeutig "
-            f"(Treffer: {s.count(anchor)})."
-        )
+    # Insert directly inside MainActivity's class body. Lifecycle methods
+    # may occur in nested classes, so they are not safe insertion anchors.
+    import re
+    match = re.search(r'class MainActivity\\b[^\\{]*\\{', s)
+    if not match:
+        raise SystemExit("FEHLER: MainActivity-Klassenkopf nicht gefunden.")
+    anchor = match.group(0)
     s = s.replace(
         anchor,
         '''fun openSong(song: Song) {
@@ -40,8 +38,11 @@ fields = fields.replace("private var ", "var ").replace("private val ", "val ")
 
 if "var autoScroll: Boolean = false" not in s:
     anchor = "val readerScroll = ScrollView(a)"
-    if anchor not in s:
-        raise SystemExit("FEHLER: readerScroll-Anker für Legacy-Songstatus nicht gefunden.")
+    if s.count(anchor) != 1:
+        raise SystemExit(
+            f"FEHLER: readerScroll-Anker für Legacy-Songstatus nicht eindeutig "
+            f"(Treffer: {s.count(anchor)})."
+        )
     s = s.replace(anchor, anchor + "\n        " + fields.rstrip().replace("\n", "\n        "), 1)
 
 checks = [
