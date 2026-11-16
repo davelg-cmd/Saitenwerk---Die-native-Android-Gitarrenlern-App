@@ -288,6 +288,16 @@ jobs:
           python3 ci/fix_update_install_loop.py
 
 
+      # Alternative Stimmungen für alle Instrumente + Beta-Update-Erkennung
+      # ------------------------------------------------------------
+      - name: Instrument-Stimmungen und Beta-Update-Funktion aktualisieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_tuner_and_beta_updates.py
+
+
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
