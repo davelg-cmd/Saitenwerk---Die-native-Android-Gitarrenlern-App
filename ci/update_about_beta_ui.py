@@ -59,6 +59,29 @@ if "moveSettingsControlToBottom" not in s:
             }
             return null
         }
+        val aboutText = "Saitenwerk ist mehr als nur eine Gitarren-App – es ist ein Experiment.\\n\\n" +
+            "Die Idee hinter diesem Projekt war von Anfang an eine ganz bestimmte: Ich wollte zeigen, dass man keine Programmierkenntnisse oder jahrelange Erfahrung in der Softwareentwicklung benötigt, um eine eigene App auf die Beine zu stellen.\\n\\n" +
+            "Mit Neugier, Ausdauer und der Unterstützung künstlicher Intelligenz ist Saitenwerk entstanden – von der ersten Idee bis hin zu einer eigenständigen Android-App.\\n\\n" +
+            "Mir ging es dabei vor allem darum, zu zeigen, was heute möglich ist, wenn man bereit ist, neue Wege auszuprobieren und KI als Werkzeug zu nutzen. Nicht darum, zu beweisen, dass ich ein professioneller Entwickler bin, sondern dass die Einstiegshürden in die App-Entwicklung längst nicht mehr so hoch sind, wie viele vielleicht denken.\\n\\n" +
+            "Saitenwerk ist deshalb auch ein Beispiel dafür, wie aus einer Idee mithilfe von KI Schritt für Schritt etwas Greifbares werden kann.\\n\\n" +
+            "Man muss nicht alles können, um etwas Eigenes zu erschaffen. Man muss nur anfangen."
+        fun findAbout(view: android.view.View): android.widget.TextView? {
+            if (view is android.widget.TextView && view.text.toString().trim().equals("Über", ignoreCase = true)) return view
+            if (view is android.view.ViewGroup) {
+                for (index in 0 until view.childCount) {
+                    findAbout(view.getChildAt(index))?.let { return it }
+                }
+            }
+            return null
+        }
+        findAbout(root)?.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                .setTitle("Über Saitenwerk")
+                .setMessage(aboutText)
+                .setPositiveButton("Schließen", null)
+                .show()
+        }
+
         val target = findSettings(root) ?: return
         val originalParent = target.parent as? android.view.ViewGroup ?: return
         var container: android.widget.LinearLayout? = null
