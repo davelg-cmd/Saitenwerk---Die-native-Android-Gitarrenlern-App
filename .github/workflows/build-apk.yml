@@ -495,6 +495,17 @@ jobs:
 
 
       # ------------------------------------------------------------
+      # 6d. Gitarrenengine V2: echte Saitenvoicings + Down/Up-Strumming
+      # ------------------------------------------------------------
+      - name: Realistische Gitarrenengine V2 integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_guitar_engine_v2.py
+
+
+      # ------------------------------------------------------------
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
