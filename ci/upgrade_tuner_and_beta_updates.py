@@ -75,11 +75,9 @@ helper='''    private fun configureAlternativeTunings() {
 '''
 s=s.replace(marker,helper+marker)
 start=s.index('    private fun targetHint(): String = when (selectedMode)'); end=s.index('\n    private fun noteFrequency',start)
-s=s[:start]+'''    private fun targetHint(): String = if (selectedMode == TuningMode.CHROMATIC) {
-        "Chromatisch: jeder Ton wird erkannt"
-    } else {
-        "Zielsaiten: \${targets().joinToString(" · ") { it.name }}"
-    }
+s=s[:start]+'''    private fun targetHint(): String =
+        if (selectedMode == TuningMode.CHROMATIC) "Chromatisch: jeder Ton wird erkannt"
+        else "Zielsaiten: " + targets().joinToString(" · ") { it.name }
 '''+s[end:]
 start=s.index('    private fun targets(): List<Target> {'); end=s.index('\n    private fun rebuildStringButtons()',start)
 s=s[:start]+'''    private fun targets(): List<Target> {
@@ -110,7 +108,8 @@ fetch='''    private fun fetchBetaRelease(): JSONObject? {
             val code = connection.responseCode
             if (code !in 200..299) {
                 val detail = connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
-                throw IllegalStateException("GitHub antwortet mit HTTP $code\${if (detail.isNotBlank()) ": $detail" else ""}")
+                val suffix = if (detail.isNotBlank()) ": $detail" else ""
+                throw IllegalStateException("GitHub antwortet mit HTTP $code$suffix")
             }
             val release = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
             if (release.optString("tag_name") != RELEASE_TAG || release.optBoolean("draft", false)) null else release
