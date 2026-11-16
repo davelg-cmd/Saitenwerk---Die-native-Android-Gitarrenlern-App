@@ -8,22 +8,24 @@ s = path.read_text(encoding="utf-8")
 # The old song implementation is still present in the source archive for now.
 # Keep it compilable while it is unreachable from the active UI.
 if "fun openSong(song: Song)" not in s:
-    # Insert directly inside MainActivity's class body. Lifecycle methods
-    # may occur in nested classes, so they are not safe insertion anchors.
-    import re
-    match = re.search(r'class MainActivity\\b[^\\{]*\\{', s)
-    if not match:
-        raise SystemExit("FEHLER: MainActivity-Klassenkopf nicht gefunden.")
-    anchor = match.group(0)
-    s = s.replace(
-        anchor,
-        '''fun openSong(song: Song) {
-            show(SongDetailFragment.newInstance(song))
-        }
-
-        ''' + anchor,
-        1
-    )
+    # Insert directly inside MainActivity's class body. Find the class opening
+    # brace explicitly; lifecycle method names can repeat in nested classes.
+    class_anchor = "class MainActivity"
+    if s.count(class_anchor) != 1:
+        raise SystemExit(
+            f"FEHLER: MainActivity-Klassenname nicht eindeutig "
+            f"(Treffer: {s.count(class_anchor)})."
+        )
+    class_start = s.index(class_anchor)
+    class_brace = s.find("{", class_start)
+    if class_brace < 0:
+        raise SystemExit("FEHLER: Öffnende Klammer der MainActivity nicht gefunden.")
+    insertion = '''
+    fun openSong(song: Song) {
+        show(SongDetailFragment.newInstance(song))
+    }
+'''
+    s = s[:class_brace + 1] + insertion + s[class_brace + 1:]
 
 fields = '''private var autoScroll: Boolean = false
         private var scrollRunnable: Runnable? = null
