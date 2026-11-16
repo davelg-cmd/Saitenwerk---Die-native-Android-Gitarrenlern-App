@@ -298,6 +298,14 @@ jobs:
           python3 ci/upgrade_tuner_and_beta_updates.py
 
 
+      # Premium UI/UX Redesign für Startseite, Navigation und Einstellungen
+      - name: Premium UI/UX Redesign integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/premium_ui_redesign.py
+
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
