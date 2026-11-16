@@ -8,6 +8,7 @@ s=s.replace('''        VIOLIN("Violine · Standard · G–D–A–E")
         CELLO("Cello · Standard · C–G–D–A")
     }''')
 s=s.replace('    private var selectedAlternative = AlternativeTuning.STANDARD','    private var selectedAlternative = AlternativeTuning("Standard E", listOf("E2", "A2", "D3", "G3", "B3", "E4"))')
+s=s.replace('    private var selectedAlternative = AlternativeTuning("Standard E", listOf("E2", "A2", "D3", "G3", "B3", "E4"))\n', '    private var selectedAlternative = AlternativeTuning("Standard E", listOf("E2", "A2", "D3", "G3", "B3", "E4"))\n    private var availableTunings = listOf(selectedAlternative)\n')
 start=s.index('    private enum class AlternativeTuning('); end=s.index('\n    override fun onCreateView',start)
 new='''    private data class AlternativeTuning(val label: String, val notes: List<String>)
     private fun tuningsFor(mode: TuningMode): List<AlternativeTuning> = when (mode) {
@@ -61,19 +62,33 @@ s=s.replace('val labels = AlternativeTuning.values().map { it.label }','val labe
 s=s.replace('''            setSelection(AlternativeTuning.values().indexOf(selectedAlternative))
             isEnabled = selectedMode == TuningMode.GUITAR''','''            setSelection(0)
             isEnabled = tuningsFor(selectedMode).isNotEmpty()''')
-s=s.replace('selectedAlternative = AlternativeTuning.values()[position]','selectedAlternative = tuningsFor(selectedMode).getOrNull(position) ?: selectedAlternative')
+s=s.replace('selectedAlternative = AlternativeTuning.values()[position]','selectedAlternative = availableTunings.getOrNull(position) ?: selectedAlternative')
 marker='    private fun targetHint(): String = when (selectedMode)'
 helper='''    private fun configureAlternativeTunings() {
         val options = tuningsFor(selectedMode)
+        availableTunings = options
         selectedAlternative = options.firstOrNull() ?: AlternativeTuning("Chromatisch", emptyList())
-        alternativeSpinner?.adapter = ArrayAdapter<String>(requireContext(), android.R.layout.simple_spinner_item, options.map { it.label }).also {
+        val spinner = alternativeSpinner ?: return
+        spinner.onItemSelectedListener = null
+        spinner.adapter = ArrayAdapter<String>(requireContext(), android.R.layout.simple_spinner_item, options.map { it.label }).also {
             it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
-        alternativeSpinner?.isEnabled = options.isNotEmpty()
+        spinner.isEnabled = options.isNotEmpty()
+        if (options.isNotEmpty()) spinner.setSelection(0, false)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val chosen = availableTunings.getOrNull(position) ?: return
+                selectedAlternative = chosen
+                targetView?.text = targetHint()
+                rebuildStringButtons()
+            }
+        }
     }
 
 '''
 s=s.replace(marker,helper+marker)
+
 start=s.index('    private fun targetHint(): String = when (selectedMode)'); end=s.index('\n    private fun noteFrequency',start)
 s=s[:start]+'''    private fun targetHint(): String =
         if (selectedMode == TuningMode.CHROMATIC) "Chromatisch: jeder Ton wird erkannt"
@@ -89,6 +104,7 @@ s=s[:start]+'''    private fun targets(): List<Target> {
 '''+s[end:]
 s=s.replace('Wähle oben zuerst dein Instrument und – bei der Gitarre – bei Bedarf eine alternative Stimmung.','Wähle oben dein Instrument und die passende Stimmung.')
 if 'AlternativeTuning.values()' in s or 'TuningMode.CELLO' not in s: raise SystemExit("Tuner source validation failed")
+s=s.replace('selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))', 'selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))\\n        configureAlternativeTunings()')
 p.write_text(s,encoding="utf-8")
 p=root/"AppUpdateManager.kt"; u=p.read_text(encoding="utf-8")
 u=u.replace("Alpha channel's GitHub release","current Beta release").replace("fetchAlphaRelease()","fetchBetaRelease()").replace("Kein veröffentlichter Alpha-7-Release gefunden","Kein veröffentlichter Beta-Release gefunden").replace("Neue Alpha-Version wird heruntergeladen","Neue Beta-Version wird heruntergeladen")
