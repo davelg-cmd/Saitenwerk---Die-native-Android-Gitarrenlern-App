@@ -25,7 +25,7 @@ home=r'''class HomeFragment : Fragment() {
         page.addView(top)
         val hero=a.card().apply { radius=a.dp(24).toFloat(); strokeColor=a.getColor(R.color.sw_outline); strokeWidth=a.dp(1); elevation=a.dp(3).toFloat() }
         val box=LinearLayout(a).apply { orientation=LinearLayout.VERTICAL; setPadding(a.dp(20),a.dp(18),a.dp(20),a.dp(18)) }
-        box.addView(ImageView(a).apply { setImageResource(R.drawable.saitenwerk_original); contentDescription="Saitenwerk – Dein persönlicher Gitarrenbegleiter"; scaleType=ImageView.ScaleType.FIT_CENTER; adjustViewBounds=true },LinearLayout.LayoutParams(-1,a.dp(116)).apply { bottomMargin=a.dp(10) })
+        box.addView(ImageView(a).apply { setImageResource(R.drawable.saitenwerk_original); contentDescription="Saitenwerk – Dein persönlicher Gitarrenbegleiter"; scaleType=ImageView.ScaleType.FIT_CENTER; adjustViewBounds=true },LinearLayout.LayoutParams(-1,a.dp(180)).apply { bottomMargin=a.dp(12) })
         box.addView(TextView(a).apply { text="DEIN MUSIKALISCHER BEGLEITER"; textSize=10f; letterSpacing=0.16f; setTypeface(typeface,1); setTextColor(a.getColor(R.color.sw_copper)) })
         box.addView(TextView(a).apply { text="Spiel. Lerne. Kling besser."; textSize=25f; setTypeface(typeface,1); setTextColor(a.getColor(R.color.sw_text)); setPadding(0,a.dp(7),0,a.dp(5)) })
         box.addView(TextView(a).apply { text="Alles, was du zum Stimmen, Üben und Weiterkommen brauchst – an einem Ort."; textSize=14f; setLineSpacing(a.dp(2).toFloat(),1f); setTextColor(a.getColor(R.color.sw_muted)) })
