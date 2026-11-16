@@ -505,6 +505,18 @@ jobs:
           python3 ci/upgrade_guitar_engine_v2.py
 
 
+
+      # ------------------------------------------------------------
+      # 6e. Gitarrenengine V3: ereignisbasierte sechs-Saiten-Performance
+      # ------------------------------------------------------------
+      - name: Realistische Gitarrenengine V3 integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_guitar_engine_v3.py
+
+
       # ------------------------------------------------------------
       # 7. Gradle einrichten
       # ------------------------------------------------------------
