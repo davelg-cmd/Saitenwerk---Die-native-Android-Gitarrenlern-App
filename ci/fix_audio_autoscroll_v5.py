@@ -98,7 +98,7 @@ indent = stop_player.group("indent")
 child = indent + "    "
 
 start_body = (
-    f"{indent}private fun startAutoScroll() {{\n"
+    f"{indent}fun startAutoScroll() {{\n"
     f"{child}if (autoScroll) return\n"
     f"{child}autoScroll = true\n"
     f"{child}resumeAfterTouch = false\n"
@@ -128,7 +128,7 @@ start_body = (
 )
 
 stop_body = (
-    f"{indent}private fun stopAutoScroll() {{\n"
+    f"{indent}fun stopAutoScroll() {{\n"
     f"{child}autoScroll = false\n"
     f"{child}scrollRunnable?.let {{ scrollHandler.removeCallbacks(it) }}\n"
     f"{child}scrollRunnable = null\n"
@@ -144,8 +144,8 @@ s = s[:pos] + start_body + "\n" + stop_body + "\n" + s[pos:]
 required = [
     "track.setVolume(1.0f)",
     "if (events.isEmpty())",
-    "private fun startAutoScroll()",
-    "private fun stopAutoScroll()",
+    "fun startAutoScroll()",
+    "fun stopAutoScroll()",
     "scrollHandler.postDelayed(this, 120L)",
 ]
 missing = [x for x in required if x not in s]
