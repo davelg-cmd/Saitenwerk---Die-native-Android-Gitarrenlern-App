@@ -16,6 +16,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
 
     steps:
 
@@ -283,6 +284,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+          # Cache bleibt erhalten; spart den zusätzlichen Gradle-Cleanup-Lauf am Job-Ende.
+          cache-cleanup: never
 
 
       # ------------------------------------------------------------
@@ -366,7 +369,8 @@ jobs:
           cd "$PROJECT_DIR"
           trap 'rm -f saitenwerk-upload.jks' EXIT
 
-          gradle --no-daemon assembleDebug --stacktrace
+          # Den Gradle-Daemon wiederverwenden und Task-Cache/Parallelisierung aktivieren.
+          gradle assembleDebug --build-cache --parallel --stacktrace
 
 
       # ------------------------------------------------------------
