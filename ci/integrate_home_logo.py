@@ -17,7 +17,7 @@ except Exception as exc:
     raise SystemExit(f"FEHLER: Startseiten-Logo konnte nicht geladen werden: {exc}")
 if len(data) > 12 * 1024 * 1024:
     raise SystemExit("FEHLER: Startseiten-Logo ist groesser als 12 MiB.")
-if len(data) < 33 or data[:8] != b"\\x89PNG\\r\\n\\x1a\\n":
+if len(data) < 33 or data[:8] != bytes.fromhex("89504e470d0a1a0a"):
     raise SystemExit("FEHLER: Der Bildlink liefert keine gueltige PNG-Datei.")
 width, height = struct.unpack(">II", data[16:24])
 color_type = data[25]
