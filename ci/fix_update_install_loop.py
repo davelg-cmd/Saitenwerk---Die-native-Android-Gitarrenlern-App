@@ -61,9 +61,9 @@ if old_clear in text:
 source.write_text(text, encoding="utf-8")
 check = source.read_text(encoding="utf-8")
 launch_pos = check.find("Atomar verbrauchen, bevor Android den Installationsdialog übernimmt.")
+consume_pos = check.find("val consumed = prefs.edit().remove(KEY_PENDING_APK).commit()", launch_pos)
 start_pos = check.find("activity.startActivity(install)", launch_pos)
-clear_pos = check.find("prefs.edit().remove(KEY_PENDING_APK).commit()", launch_pos)
-if launch_pos < 0 or start_pos < 0 or (clear_pos >= 0 and clear_pos < start_pos):
+if launch_pos < 0 or consume_pos < 0 or start_pos < 0 or consume_pos > start_pos:
     raise SystemExit("FEHLER: Pending-APK wird nicht vor dem Installer-Start verbraucht.")
 if "remove(KEY_DOWNLOAD_ID)" not in check or "remove(KEY_DOWNLOAD_FILE)" not in check:
     raise SystemExit("FEHLER: DownloadManager-Status wird nicht vollständig bereinigt.")
