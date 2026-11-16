@@ -103,6 +103,17 @@ jobs:
 
 
       # ------------------------------------------------------------
+      # 5a. Transparentes Startseiten-Logo integrieren
+      # ------------------------------------------------------------
+      - name: Transparentes Startseiten-Logo integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/integrate_home_logo.py
+
+
+      # ------------------------------------------------------------
       # 5b. Saitenwerk App-Logo setzen
       # ------------------------------------------------------------
       - name: Saitenwerk App-Logo integrieren
