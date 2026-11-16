@@ -122,8 +122,10 @@ jobs:
         run: |
           set -euo pipefail
           RES_DIR="$PROJECT_DIR/app/src/main/res"
-          mkdir -p "$RES_DIR/drawable"
-          cp "$GITHUB_WORKSPACE/assets/saitenwerk_launcher.xml" "$RES_DIR/drawable/saitenwerk_launcher.xml"
+          mkdir -p "$RES_DIR/drawable-nodpi"
+          cp "$GITHUB_WORKSPACE/assets/saitenwerk_launcher.png" "$RES_DIR/drawable-nodpi/saitenwerk_launcher.png"
+          # Das alte Vektor-Icon darf nicht parallel denselben Ressourcennamen belegen.
+          rm -f "$RES_DIR/drawable/saitenwerk_launcher.xml"
           MANIFEST="$PROJECT_DIR/app/src/main/AndroidManifest.xml"
           if [ ! -f "$MANIFEST" ]; then
             echo "FEHLER: AndroidManifest.xml nicht gefunden: $MANIFEST"
