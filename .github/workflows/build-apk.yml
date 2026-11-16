@@ -244,6 +244,16 @@ jobs:
           python3 ci/keep_legacy_song_compile_compat.py
 
       # ------------------------------------------------------------
+      # Frei konfigurierbare Akkordauswahl im Wechseltraining
+      # ------------------------------------------------------------
+      - name: Akkordwechsel-Training um Akkordauswahl erweitern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/add_chord_training_selection.py
+
+      # ------------------------------------------------------------
       # Update-Installationsschleife dauerhaft verhindern
       # ------------------------------------------------------------
       - name: Android-Update-Loop-Fix anwenden und validieren
