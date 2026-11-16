@@ -103,6 +103,62 @@ s=s[:start]+'''    private fun targets(): List<Target> {
     }
 '''+s[end:]
 s=s.replace('Wähle oben zuerst dein Instrument und – bei der Gitarre – bei Bedarf eine alternative Stimmung.','Wähle oben dein Instrument und die passende Stimmung.')
+
+# Replace the Android Spinner with an explicit, reliable choice dialog.
+s=s.replace("private var alternativeSpinner: Spinner? = null", "private var alternativeSpinner: TextView? = null")
+block_start=s.index("        alternativeSpinner = Spinner(a).apply {")
+block_end=s.index("        selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))", block_start)
+block_end += len("        selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))")
+replacement="""        alternativeSpinner = TextView(a).apply {
+            textSize = 15f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(a.getColor(R.color.sw_text))
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(a.dp(14), a.dp(10), a.dp(42), a.dp(10))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(a.getColor(R.color.sw_surface2))
+                cornerRadius = a.dp(12).toFloat()
+                setStroke(a.dp(1), a.getColor(R.color.sw_copper))
+            }
+            minHeight = a.dp(52)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                val options = availableTunings
+                if (options.isEmpty()) return@setOnClickListener
+                androidx.appcompat.app.AlertDialog.Builder(a)
+                    .setTitle("Alternative Stimmung wählen")
+                    .setItems(options.map { it.label }.toTypedArray()) { _, which ->
+                        val chosen = options.getOrNull(which) ?: return@setItems
+                        selectedAlternative = chosen
+                        text = chosen.label
+                        targetView?.text = targetHint()
+                        rebuildStringButtons()
+                    }
+                    .setNegativeButton("Abbrechen", null)
+                    .show()
+            }
+        }
+        selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))"""
+s=s[:block_start]+replacement+s[block_end:]
+fn_start=s.index("    private fun configureAlternativeTunings() {")
+fn_end=s.index("    private fun targetHint():",fn_start)
+new_fn="""    private fun configureAlternativeTunings() {
+        val options = tuningsFor(selectedMode)
+        availableTunings = options
+        val chosen = options.firstOrNull()
+        selectedAlternative = chosen ?: AlternativeTuning("Chromatisch", emptyList())
+        val selector = alternativeSpinner ?: return
+        selector.text = chosen?.label ?: "Keine alternative Stimmung"
+        selector.isEnabled = options.isNotEmpty()
+        selector.alpha = if (options.isNotEmpty()) 1f else 0.5f
+    }
+
+"""
+s=s[:fn_start]+new_fn+s[fn_end:]
+if "alternativeSpinner: Spinner?" in s: raise SystemExit("Spinner declaration was not replaced")
+if "alternativeSpinner = Spinner(a)" in s: raise SystemExit("Old spinner UI remains")
+
 if 'AlternativeTuning.values()' in s or 'TuningMode.CELLO' not in s: raise SystemExit("Tuner source validation failed")
 s=s.replace('selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))', 'selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))\n        configureAlternativeTunings()')
 p.write_text(s,encoding="utf-8")
