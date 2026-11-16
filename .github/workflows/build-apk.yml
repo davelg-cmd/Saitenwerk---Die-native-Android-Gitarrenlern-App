@@ -243,6 +243,17 @@ jobs:
           set -euo pipefail
           python3 ci/keep_legacy_song_compile_compat.py
 
+      # ------------------------------------------------------------
+      # Update-Installationsschleife dauerhaft verhindern
+      # ------------------------------------------------------------
+      - name: Android-Update-Loop-Fix anwenden und validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_update_install_loop.py
+
+
       # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
