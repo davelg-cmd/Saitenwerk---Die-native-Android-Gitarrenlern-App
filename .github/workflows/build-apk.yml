@@ -495,15 +495,14 @@ jobs:
 
 
       # ------------------------------------------------------------
+      # 6d. Gitarrenengine V4: Songsterr-inspirierte Performance
       # ------------------------------------------------------------
-      # 6d. Gitarrenengine V3: ereignisbasierte sechs-Saiten-Performance
-      # ------------------------------------------------------------
-      - name: Realistische Gitarrenengine V3 integrieren
+      - name: Realistische Gitarrenengine V4 integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/upgrade_guitar_engine_v3.py
+          python3 ci/upgrade_guitar_engine_v4.py
 
 
       # 7. Gradle einrichten
