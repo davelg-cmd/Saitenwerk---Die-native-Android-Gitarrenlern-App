@@ -2,6 +2,7 @@
 """Prevent an APK installer from being relaunched after the app has been updated."""
 from pathlib import Path
 import os
+import re
 
 root = Path(os.environ["PROJECT_DIR"])
 source = root / "app/src/main/java/de/saitenwerk/app/AppUpdateManager.kt"
@@ -10,57 +11,64 @@ if not source.is_file():
 
 text = source.read_text(encoding="utf-8")
 
-# Consume the pending APK synchronously BEFORE handing control to Android's
-# package installer. Doing it afterwards leaves a lifecycle/process-death race:
-# onResume() can see the stale path and open the same installer a second time.
-old_launch = """            activity.startActivity(install)
-            prefs.edit().remove(KEY_PENDING_APK).commit()
-"""
-new_launch = """            // Atomar verbrauchen, bevor Android den Installationsdialog übernimmt.
-            // So kann onResume() denselben APK-Pfad nach dem App-Neustart nicht erneut öffnen.
-            val consumed = prefs.edit().remove(KEY_PENDING_APK).commit()
-            if (!consumed) throw IllegalStateException("Installationsstatus konnte nicht zurückgesetzt werden.")
-            try {
-                activity.startActivity(install)
-            } catch (e: Exception) {
-                // Nur bei einem fehlgeschlagenen Start den Installationsversuch wieder freigeben.
-                prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).commit()
-                throw e
-            }
-"""
-if old_launch in text:
-    text = text.replace(old_launch, new_launch, 1)
-elif "Atomar verbrauchen, bevor Android den Installationsdialog übernimmt." in text:
-    print("UPDATE INSTALL LOOP FIX: Installer-Status wird bereits vor dem Start verbraucht")
+# A completed DownloadManager request must be one-shot.
+if "Consume the completed DownloadManager ID BEFORE opening Android's installer." in text:
+    if "remove(KEY_DOWNLOAD_ID)" not in text or "remove(KEY_DOWNLOAD_FILE)" not in text:
+        raise SystemExit("FEHLER: DownloadManager-Status wird nicht vollständig bereinigt.")
+    print("UPDATE: DownloadManager-ID wird bereits einmalig verbraucht.")
 else:
-    raise SystemExit("FEHLER: Erwartete Installer-Startsequenz nicht gefunden; Datei unverändert.")
-
-# Keep DownloadManager state one-shot as well.
-old_download = """            prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).apply()
+    old_download = """            prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).apply()
             installIfAllowed()
 """
-new_download = """            val consumed = prefs.edit()
+    new_download = """            val consumed = prefs.edit()
                 .putString(KEY_PENDING_APK, file.absolutePath)
                 .remove(KEY_DOWNLOAD_ID)
                 .remove(KEY_DOWNLOAD_FILE)
                 .commit()
             if (consumed) installIfAllowed()
 """
-if old_download in text:
+    if old_download not in text:
+        raise SystemExit("FEHLER: DownloadManager-Abschlusssequenz nicht gefunden.")
     text = text.replace(old_download, new_download, 1)
-elif "Consume the completed DownloadManager ID BEFORE opening Android's installer." in text:
-    print("UPDATE INSTALL LOOP FIX: DownloadManager-ID wird bereits vor dem Installer verbraucht")
-else:
-    raise SystemExit("FEHLER: DownloadManager-Abschlusssequenz nicht gefunden.")
+    print("UPDATE: DownloadManager-ID wird vor dem Installer verbraucht.")
 
-old_clear = '            prefs.edit().remove(KEY_PENDING_APK).apply()'
-new_clear = '            prefs.edit().remove(KEY_PENDING_APK).commit()'
-if old_clear in text:
-    text = text.replace(old_clear, new_clear, 1)
+# Crucial lifecycle fix: clear the pending path BEFORE launching the package
+# installer, not after startActivity() returns.
+marker = "Pending-APK vor dem Installer-Start atomar verbrauchen."
+if marker not in text:
+    match = re.search(r"(?m)^(\s*)activity\.startActivity\(install\)\s*$", text)
+    if not match:
+        raise SystemExit("FEHLER: activity.startActivity(install) wurde nicht gefunden.")
+    indent = match.group(1)
+    replacement = (
+        f"{indent}// {marker}\n"
+        f"{indent}val consumed = prefs.edit().remove(KEY_PENDING_APK).commit()\n"
+        f'{indent}if (!consumed) throw IllegalStateException("Installationsstatus konnte nicht zurückgesetzt werden.")\n'
+        f"{indent}try {{\n"
+        f"{indent}    activity.startActivity(install)\n"
+        f"{indent}}} catch (e: Exception) {{\n"
+        f"{indent}    prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).commit()\n"
+        f"{indent}    throw e\n"
+        f"{indent}}}"
+    )
+    text = text[:match.start()] + replacement + text[match.end():]
+    # Remove the old post-launch cleanup if it immediately follows the launch block.
+    tail_start = match.start() + len(replacement)
+    tail = text[tail_start:]
+    tail = re.sub(
+        r"^(\s*)prefs\.edit\(\)\.remove\(KEY_PENDING_APK\)\.(?:apply|commit)\(\)\s*\n",
+        "",
+        tail,
+        count=1,
+    )
+    text = text[:tail_start] + tail
+    print("UPDATE: Pending-APK wird vor startActivity() synchron gelöscht.")
+else:
+    print("UPDATE: Pending-APK wird bereits vor startActivity() gelöscht.")
 
 source.write_text(text, encoding="utf-8")
 check = source.read_text(encoding="utf-8")
-launch_pos = check.find("Atomar verbrauchen, bevor Android den Installationsdialog übernimmt.")
+launch_pos = check.find(marker)
 consume_pos = check.find("val consumed = prefs.edit().remove(KEY_PENDING_APK).commit()", launch_pos)
 start_pos = check.find("activity.startActivity(install)", launch_pos)
 if launch_pos < 0 or consume_pos < 0 or start_pos < 0 or consume_pos > start_pos:
@@ -69,4 +77,3 @@ if "remove(KEY_DOWNLOAD_ID)" not in check or "remove(KEY_DOWNLOAD_FILE)" not in 
     raise SystemExit("FEHLER: DownloadManager-Status wird nicht vollständig bereinigt.")
 
 print("UPDATE INSTALL LOOP FIX: PASS")
-print("Pending-APK wird vor dem Installer-Start synchron verbraucht; DownloadManager-ID bleibt einmalig.")
