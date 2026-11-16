@@ -83,7 +83,7 @@ start=s.index('    private fun targets(): List<Target> {'); end=s.index('\n    p
 s=s[:start]+'''    private fun targets(): List<Target> {
         if (selectedMode == TuningMode.CHROMATIC) return emptyList()
         return selectedAlternative.notes.mapIndexed { index, note ->
-            Target("\${selectedAlternative.notes.size - index}\${note.replace(Regex("[0-9]"), "")}", noteFrequency(note))
+            Target((selectedAlternative.notes.size - index).toString() + note.replace(Regex("[0-9]"), ""), noteFrequency(note))
         }
     }
 '''+s[end:]
