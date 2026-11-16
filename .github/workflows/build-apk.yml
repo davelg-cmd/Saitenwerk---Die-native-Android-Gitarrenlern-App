@@ -231,6 +231,17 @@ jobs:
           PY
 
       # ------------------------------------------------------------
+      # 5c. Android-Update-Installationsschleife verhindern
+      # ------------------------------------------------------------
+      - name: Update-Installationsschleife verhindern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_update_install_loop.py
+
+
+      # ------------------------------------------------------------
       # 6. V3 Kotlin Build-Fix
       #
       # Behebt die beim V3-Build fehlenden Variablen:
