@@ -104,7 +104,7 @@ s=s[:start]+'''    private fun targets(): List<Target> {
 '''+s[end:]
 s=s.replace('Wähle oben zuerst dein Instrument und – bei der Gitarre – bei Bedarf eine alternative Stimmung.','Wähle oben dein Instrument und die passende Stimmung.')
 if 'AlternativeTuning.values()' in s or 'TuningMode.CELLO' not in s: raise SystemExit("Tuner source validation failed")
-s=s.replace('selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))', 'selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))\\n        configureAlternativeTunings()')
+s=s.replace('selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))', 'selector.addView(alternativeSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))\n        configureAlternativeTunings()')
 p.write_text(s,encoding="utf-8")
 p=root/"AppUpdateManager.kt"; u=p.read_text(encoding="utf-8")
 u=u.replace("Alpha channel's GitHub release","current Beta release").replace("fetchAlphaRelease()","fetchBetaRelease()").replace("Kein veröffentlichter Alpha-7-Release gefunden","Kein veröffentlichter Beta-Release gefunden").replace("Neue Alpha-Version wird heruntergeladen","Neue Beta-Version wird heruntergeladen")
