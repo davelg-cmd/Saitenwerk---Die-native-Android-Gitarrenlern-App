@@ -127,16 +127,16 @@ jobs:
           icon = "@drawable/saitenwerk_launcher"
 
           # android:icon ersetzen oder neu in <application> einfügen.
-          if re.search(r'android:icon\\s*=\\s*"[^"]+"', s):
+          if re.search(r'android:icon\s*=\s*"[^"]+"', s):
               s = re.sub(
-                  r'android:icon\\s*=\\s*"[^"]+"',
+                  r'android:icon\s*=\s*"[^"]+"',
                   f'android:icon="{icon}"',
                   s,
                   count=1
               )
               print("APP-LOGO: vorhandenes android:icon aktualisiert")
           else:
-              match = re.search(r'<application\\b[^>]*>', s)
+              match = re.search(r'<application\b[^>]*>', s)
               if not match:
                   raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
 
@@ -146,16 +146,16 @@ jobs:
               print("APP-LOGO: android:icon neu eingefügt")
 
           # android:roundIcon ersetzen oder neu in <application> einfügen.
-          if re.search(r'android:roundIcon\\s*=\\s*"[^"]+"', s):
+          if re.search(r'android:roundIcon\s*=\s*"[^"]+"', s):
               s = re.sub(
-                  r'android:roundIcon\\s*=\\s*"[^"]+"',
+                  r'android:roundIcon\s*=\s*"[^"]+"',
                   f'android:roundIcon="{icon}"',
                   s,
                   count=1
               )
               print("APP-LOGO: vorhandenes android:roundIcon aktualisiert")
           else:
-              match = re.search(r'<application\\b[^>]*>', s)
+              match = re.search(r'<application\b[^>]*>', s)
               if not match:
                   raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
 
