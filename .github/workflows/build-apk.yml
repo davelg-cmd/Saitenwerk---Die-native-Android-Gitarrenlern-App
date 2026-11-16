@@ -504,6 +504,14 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_guitar_engine_v4.py
 
+      - name: Audio und AutoScroll V5 absichern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_audio_autoscroll_v5.py
+
+
 
       # 7. Gradle einrichten
       # ------------------------------------------------------------
