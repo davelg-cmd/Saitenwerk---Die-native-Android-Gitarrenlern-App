@@ -86,7 +86,7 @@ about_block = r'''        val appInfo = a.packageManager.getPackageInfo(a.packag
                     "Version: $appVersionName\n" +
                     "Build: $appVersionCode\n" +
                     "Release-Kanal: Beta\n" +
-                    "Paket-ID: \${a.packageName}\n" +
+                    "Paket-ID: " + a.packageName + "\\n" +
                     "Mindestversion: Android 8.0 (API 26)\n" +
                     "Plattform: Android\n\n" +
                     "Über das Projekt\n$about"
