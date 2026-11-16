@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prevent the updater from reopening an already-consumed Android APK installer."""
+"""Prevent an APK installer from being relaunched after the app has been updated."""
 from pathlib import Path
 import os
 
@@ -10,72 +10,63 @@ if not source.is_file():
 
 text = source.read_text(encoding="utf-8")
 
-old = """    private fun completeDownloadIfReady(id: Long) {
-        if (id != prefs.getLong(KEY_DOWNLOAD_ID, -2L)) return
-        val fileName = prefs.getString(KEY_DOWNLOAD_FILE, APK_NAME) ?: APK_NAME
-        val file = File(activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
-        if (file.exists() && file.length() > 0L) {
-            prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).apply()
-            installIfAllowed()
-        }
-    }
+# Consume the pending APK synchronously BEFORE handing control to Android's
+# package installer. Doing it afterwards leaves a lifecycle/process-death race:
+# onResume() can see the stale path and open the same installer a second time.
+old_launch = """            activity.startActivity(install)
+            prefs.edit().remove(KEY_PENDING_APK).commit()
 """
+new_launch = """            // Atomar verbrauchen, bevor Android den Installationsdialog übernimmt.
+            // So kann onResume() denselben APK-Pfad nach dem App-Neustart nicht erneut öffnen.
+            val consumed = prefs.edit().remove(KEY_PENDING_APK).commit()
+            if (!consumed) throw IllegalStateException("Installationsstatus konnte nicht zurückgesetzt werden.")
+            try {
+                activity.startActivity(install)
+            } catch (e: Exception) {
+                // Nur bei einem fehlgeschlagenen Start den Installationsversuch wieder freigeben.
+                prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).commit()
+                throw e
+            }
+"""
+if old_launch in text:
+    text = text.replace(old_launch, new_launch, 1)
+elif "Atomar verbrauchen, bevor Android den Installationsdialog übernimmt." in text:
+    print("UPDATE INSTALL LOOP FIX: Installer-Status wird bereits vor dem Start verbraucht")
+else:
+    raise SystemExit("FEHLER: Erwartete Installer-Startsequenz nicht gefunden; Datei unverändert.")
 
-new = """    private fun completeDownloadIfReady(id: Long) {
-        if (id != prefs.getLong(KEY_DOWNLOAD_ID, -2L)) return
-        val fileName = prefs.getString(KEY_DOWNLOAD_FILE, APK_NAME) ?: APK_NAME
-        val file = File(activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
-        if (file.exists() && file.length() > 0L) {
-            // Consume the completed DownloadManager ID BEFORE opening Android's installer.
-            // Otherwise onResume() sees the same successful download after the app update
-            // and launches the exact same installer again, creating an update loop.
-            val consumed = prefs.edit()
+# Keep DownloadManager state one-shot as well.
+old_download = """            prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).apply()
+            installIfAllowed()
+"""
+new_download = """            val consumed = prefs.edit()
                 .putString(KEY_PENDING_APK, file.absolutePath)
                 .remove(KEY_DOWNLOAD_ID)
                 .remove(KEY_DOWNLOAD_FILE)
                 .commit()
             if (consumed) installIfAllowed()
-        } else {
-            // Do not keep a stale completed download that can be replayed on every resume.
-            prefs.edit()
-                .remove(KEY_DOWNLOAD_ID)
-                .remove(KEY_DOWNLOAD_FILE)
-                .commit()
-        }
-    }
 """
-
-if old not in text:
-    if "Consume the completed DownloadManager ID BEFORE opening Android's installer." in text:
-        print("UPDATE INSTALL LOOP FIX: bereits vorhanden")
-    else:
-        raise SystemExit("FEHLER: Erwartete completeDownloadIfReady()-Implementierung nicht gefunden; Datei unverändert.")
+if old_download in text:
+    text = text.replace(old_download, new_download, 1)
+elif "Consume the completed DownloadManager ID BEFORE opening Android's installer." in text:
+    print("UPDATE INSTALL LOOP FIX: DownloadManager-ID wird bereits vor dem Installer verbraucht")
 else:
-    text = text.replace(old, new, 1)
-    print("OK: abgeschlossene DownloadManager-ID wird vor der Installation verbraucht")
+    raise SystemExit("FEHLER: DownloadManager-Abschlusssequenz nicht gefunden.")
 
 old_clear = '            prefs.edit().remove(KEY_PENDING_APK).apply()'
 new_clear = '            prefs.edit().remove(KEY_PENDING_APK).commit()'
 if old_clear in text:
     text = text.replace(old_clear, new_clear, 1)
-    print("OK: Pending-Installationsstatus wird synchron gelöscht")
-elif new_clear in text:
-    print("OK: Pending-Installationsstatus wird bereits synchron gelöscht")
-else:
-    raise SystemExit("FEHLER: Erfolgreicher Installer-Start konnte nicht abgesichert werden.")
 
 source.write_text(text, encoding="utf-8")
-
 check = source.read_text(encoding="utf-8")
-required = [
-    "remove(KEY_DOWNLOAD_ID)",
-    "remove(KEY_DOWNLOAD_FILE)",
-    ".commit()",
-    "Consume the completed DownloadManager ID",
-]
-missing = [item for item in required if item not in check]
-if missing:
-    raise SystemExit("FEHLER: Update-Loop-Fix unvollständig: " + ", ".join(missing))
+launch_pos = check.find("Atomar verbrauchen, bevor Android den Installationsdialog übernimmt.")
+start_pos = check.find("activity.startActivity(install)", launch_pos)
+clear_pos = check.find("prefs.edit().remove(KEY_PENDING_APK).commit()", launch_pos)
+if launch_pos < 0 or start_pos < 0 or (clear_pos >= 0 and clear_pos < start_pos):
+    raise SystemExit("FEHLER: Pending-APK wird nicht vor dem Installer-Start verbraucht.")
+if "remove(KEY_DOWNLOAD_ID)" not in check or "remove(KEY_DOWNLOAD_FILE)" not in check:
+    raise SystemExit("FEHLER: DownloadManager-Status wird nicht vollständig bereinigt.")
 
 print("UPDATE INSTALL LOOP FIX: PASS")
-print("Ein abgeschlossener Download kann nach dem App-Neustart nicht erneut installiert werden.")
+print("Pending-APK wird vor dem Installer-Start synchron verbraucht; DownloadManager-ID bleibt einmalig.")
