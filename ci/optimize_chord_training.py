@@ -19,6 +19,9 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
     private val availableChords = ChordLibrary.all.map { it.name }.distinct().sorted()
     private var sequence = loadSequence()
     private var bpm = prefs.getInt("chord_training_bpm", 72).coerceIn(50, 160)
+    private val meters = listOf("2/4", "3/4", "4/4", "6/8")
+    private var meter = prefs.getString("chord_training_meter", "4/4")?.takeIf { it in meters } ?: "4/4"
+    private val beatsPerBar: Int get() = meter.substringBefore("/").toInt()
     private var beat = 0
     private var changes = 0
     private var bars = 0
@@ -32,6 +35,7 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
     private val status = TextView(host)
     private val sequenceLabel = TextView(host)
     private val chooseChords = host.button("Akkorde auswählen")
+    private val meterButton = host.button("Taktart · 4/4")
     private val randomize = host.button("↻ Reihenfolge mischen")
     private val start = host.button("Training starten")
     private val tempo = SeekBar(host)
@@ -56,26 +60,67 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
     }
 
     private fun openChordPicker() {
-        if (running) return
-        val names = availableChords
-        val checked = names.map { it in sequence }.toBooleanArray()
-        androidx.appcompat.app.AlertDialog.Builder(host)
-            .setTitle("Trainingsakkorde auswählen")
-            .setMessage("Wähle mindestens zwei Akkorde. Die Auswahl wird für dein nächstes Training gespeichert.")
-            .setMultiChoiceItems(names.toTypedArray(), checked) { _, which, isChecked ->
-                checked[which] = isChecked
+        if (running) {
+            Toast.makeText(host, "Bitte stoppe das Training zuerst, um die Akkorde zu ändern.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Eigene scrollbare Checkbox-Liste: Auswahl wird explizit übernommen.
+        val scroll = android.widget.ScrollView(host).apply {
+            isFillViewport = true
+            setPadding(host.dp(20), host.dp(4), host.dp(20), host.dp(4))
+        }
+        val list = LinearLayout(host).apply { orientation = VERTICAL }
+        val checks = linkedMapOf<String, android.widget.CheckBox>()
+        availableChords.forEach { chordName ->
+            val check = android.widget.CheckBox(host).apply {
+                text = chordName
+                textSize = 16f
+                setTextColor(host.getColor(R.color.sw_text))
+                isChecked = chordName in sequence
+                minHeight = host.dp(44)
+                setPadding(host.dp(4), host.dp(4), host.dp(4), host.dp(4))
             }
-            .setPositiveButton("Übernehmen") { _, _ ->
-                val selected = names.filterIndexed { index, _ -> checked[index] }
+            checks[chordName] = check
+            list.addView(check, LayoutParams(-1, -2))
+        }
+        scroll.addView(list)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(host)
+            .setTitle("Trainingsakkorde auswählen")
+            .setMessage("Markiere mindestens zwei Akkorde und tippe anschließend auf Übernehmen.")
+            .setView(scroll)
+            .setPositiveButton("Übernehmen", null)
+            .setNegativeButton("Abbrechen", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val selected = checks.filterValues { it.isChecked }.keys.toList()
                 if (selected.size < 2) {
                     Toast.makeText(host, "Wähle mindestens zwei Akkorde aus.", Toast.LENGTH_LONG).show()
-                    return@setPositiveButton
+                    return@setOnClickListener
                 }
                 sequence = selected
                 prefs.edit().putStringSet("chord_training_selected_chords", selected.toSet()).apply()
                 resetSession()
                 refreshSequenceLabel()
                 status.text = selected.size.toString() + " Akkorde gespeichert. Bereit zum Start."
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun openMeterPicker() {
+        if (running) return
+        val selectedIndex = meters.indexOf(meter).coerceAtLeast(0)
+        androidx.appcompat.app.AlertDialog.Builder(host)
+            .setTitle("Taktart auswählen")
+            .setSingleChoiceItems(meters.toTypedArray(), selectedIndex) { dialog, which ->
+                meter = meters[which]
+                prefs.edit().putString("chord_training_meter", meter).apply()
+                meterButton.text = "Taktart · " + meter
+                resetSession()
+                status.text = "Taktart " + meter + " gewählt · " + beatsPerBar + " Schläge pro Takt."
+                dialog.dismiss()
             }
             .setNegativeButton("Abbrechen", null)
             .show()
@@ -104,7 +149,7 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
-            val beatInBar = beat % 4
+            val beatInBar = beat % beatsPerBar
             val isBarStart = beatInBar == 0
             try {
                 tone.startTone(
@@ -232,6 +277,10 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             setTextColor(host.getColor(R.color.sw_text))
             setPadding(0, host.dp(8), 0, 0)
         }
+        meterButton.text = "Taktart · " + meter
+        meterButton.setOnClickListener { openMeterPicker() }
+        addView(meterButton, LayoutParams(-1, host.dp(42)).apply { bottomMargin = host.dp(4) })
+
         addView(tempoLabel)
 
         tempo.max = 110
@@ -279,7 +328,7 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
         refreshSequenceLabel()
         tempoLabel.text = "Tempo · " + bpm + " BPM"
         stats.text = "0 Wechsel · 0 Takte · Beste Serie " + bestStreak
-        status.text = "Bereit · 4 Schläge pro Akkord"
+        status.text = "Bereit · " + beatsPerBar + " Schläge pro Takt"
         sessionTimer.text = "00:00"
     }
 
@@ -299,7 +348,7 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
         start.text = "Training stoppen"
         chooseChords.isEnabled = false
         randomize.isEnabled = false
-        status.text = "Läuft · jeder Akkord bleibt einen Takt"
+        status.text = "Läuft · jeder Akkord bleibt einen Takt (" + meter + ")"
         progress.progress = 0
 
         handler.removeCallbacks(tick)
