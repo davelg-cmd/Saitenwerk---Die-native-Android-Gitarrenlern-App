@@ -306,14 +306,6 @@ jobs:
           python3 ci/upgrade_tuner_and_beta_updates.py
 
 
-      # Lernfortschritt sicher aus den Einstellungen zurücksetzen können
-      - name: Lernfortschritt-Reset in Einstellungen integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/add_learning_progress_reset.py
-
       # Premium UI/UX Redesign für Startseite, Navigation und Einstellungen
       - name: Premium UI/UX Redesign integrieren
         env:
@@ -321,6 +313,15 @@ jobs:
         run: |
           set -euo pipefail
           python3 ci/premium_ui_redesign.py
+
+      # 7. Gradle einrichten
+      # Lernfortschritt sicher aus den Einstellungen zurücksetzen können
+      - name: Lernfortschritt-Reset in Einstellungen integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/add_learning_progress_reset.py
 
       # Lernfortschritt-Reset nach allen UI-Patches verifizieren
       - name: Lernfortschritt-Reset validieren
@@ -361,7 +362,6 @@ jobs:
 
           PY
 
-      # 7. Gradle einrichten
       # ------------------------------------------------------------
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
