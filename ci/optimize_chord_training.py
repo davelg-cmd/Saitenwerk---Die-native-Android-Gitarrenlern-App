@@ -295,7 +295,10 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
         tempoLabel.apply {
             textSize = 13f
             setTextColor(host.getColor(R.color.sw_text))
-            setPadding(0, host.dp(8), 0, 0)
+            includeFontPadding = true
+            isSingleLine = true
+            gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            setPadding(0, 0, 0, 0)
         }
         meterButton.text = "Takt · " + meter
         // Text im orangefarbenen Auswahlrahmen vertikal etwas nach oben setzen.
@@ -327,15 +330,17 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             gravity = Gravity.CENTER_VERTICAL
             setPadding(host.dp(8), 0, 0, 0)
         }
-        tempoColumn.addView(tempoLabel, LayoutParams(-1, host.dp(22)))
-        tempoColumn.addView(tempo, LayoutParams(-1, host.dp(36)))
+        // Genug Höhe für die vollständige Schriftzeile samt Font-Padding reservieren.
+        tempoColumn.addView(tempoLabel, LayoutParams(-1, host.dp(28)))
+        tempoColumn.addView(tempo, LayoutParams(-1, host.dp(40)))
         val meterTempoRow = LinearLayout(host).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(48), 0.9f))
-        meterTempoRow.addView(tempoColumn, LayoutParams(0, host.dp(56), 1.1f))
-        addView(meterTempoRow, LayoutParams(-1, host.dp(58)).apply {
+        // Tempo erhält mehr Breite und Höhe; die Beschriftung darf nicht am Zeilenrand clippen.
+        meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(52), 0.82f))
+        meterTempoRow.addView(tempoColumn, LayoutParams(0, host.dp(68), 1.18f))
+        addView(meterTempoRow, LayoutParams(-1, host.dp(72)).apply {
             bottomMargin = host.dp(4)
         })
 
