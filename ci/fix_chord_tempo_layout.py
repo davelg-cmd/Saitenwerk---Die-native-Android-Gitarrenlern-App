@@ -23,7 +23,7 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
         tempoLabel.isSingleLine = true
         tempoLabel.includeFontPadding = false
         tempoLabel.textSize = 18f
-        tempoLabel.setTextColor(Color.WHITE)
+        tempoLabel.setTextColor(android.graphics.Color.WHITE)
         tempoLabel.setPadding(host.dp(12), 0, host.dp(12), 0)
         tempoLabel.contentDescription = "BPM-Regler: " + bpm + ". Horizontal ziehen zum Ändern."
         tempoLabel.setOnTouchListener { view, event ->
