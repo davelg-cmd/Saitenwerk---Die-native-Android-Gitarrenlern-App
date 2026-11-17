@@ -62,136 +62,34 @@ jobs:
       # ------------------------------------------------------------
       # 5. Beta-Projekt finden und entpacken
       # ------------------------------------------------------------
-      - name: Beta-Projekt finden und entpacken
+      - name: Letzten geprüften Projektstand entpacken
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          mkdir -p extracted
-
-          # Verbindliche Quelle: exakt das geprüfte Songplayer-V3-Archiv.
-          ZIP_FILE="./Saitenwerk_ALPHA_7_Songplayer_V3_Start_Originaltempo_Realistic.zip"
-
-          if [ ! -f "$ZIP_FILE" ]; then
-            echo "FEHLER: Verbindliches Songplayer-V3-Archiv fehlt: $ZIP_FILE"
+          BACKUP_ROOT="$GITHUB_WORKSPACE/build-backups/beta"
+          if [ ! -d "$BACKUP_ROOT" ]; then
+            echo "FEHLER: Kein Build-Backup-Verzeichnis vorhanden: $BACKUP_ROOT"
             exit 1
           fi
 
-          echo "Projektarchiv: $ZIP_FILE"
-
-          unzip -q "$ZIP_FILE" -d extracted
-
-          PROJECT_FILE=""
-
-          while IFS= read -r file; do
-            case "$file" in
-              */settings.gradle.kts|*/settings.gradle)
-                PROJECT_FILE="$file"
-                break
-                ;;
-            esac
-          done < <(find extracted -type f)
-
-          if [ -z "$PROJECT_FILE" ]; then
-            echo "FEHLER: Keine Gradle-Projektdatei gefunden!"
+          LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f -name source-project.tar.gz -printf '%h\n' | sort -V | tail -n 1)"
+          if [ -z "$LATEST_ARCHIVE" ]; then
+            echo "FEHLER: Kein vollständiges Projekt-Backup gefunden."
             exit 1
           fi
 
-          PROJECT_DIR=$(dirname "$PROJECT_FILE")
+          PROJECT_DIR="$GITHUB_WORKSPACE/extracted-project"
+          mkdir -p "$PROJECT_DIR"
+          tar -xzf "$LATEST_ARCHIVE/source-project.tar.gz" -C "$PROJECT_DIR"
 
-          echo "Projektverzeichnis: $PROJECT_DIR"
+          if [ ! -f "$PROJECT_DIR/settings.gradle.kts" ] && [ ! -f "$PROJECT_DIR/settings.gradle" ]; then
+            echo "FEHLER: Das entpackte Backup enthält kein Gradle-Projekt."
+            exit 1
+          fi
+
+          echo "Verwendeter Projektstand: $LATEST_ARCHIVE"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
-
-      # ------------------------------------------------------------
-      # 5a. Einstellungen nach unten verschieben und Über-Seite aktualisieren
-      # ------------------------------------------------------------
-      - name: Startseite und Über-Bereich aktualisieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/update_about_beta_ui.py
-
-      # ------------------------------------------------------------
-      # 5a. Transparentes Startseiten-Logo integrieren
-      # ------------------------------------------------------------
-      - name: Transparentes Startseiten-Logo integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/integrate_home_logo.py
-
-
-      # ------------------------------------------------------------
-      # 5b. Saitenwerk App-Logo setzen
-      # ------------------------------------------------------------
-      - name: Saitenwerk App-Logo integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          RES_DIR="$PROJECT_DIR/app/src/main/res"
-          mkdir -p "$RES_DIR/drawable-nodpi"
-          cp "$GITHUB_WORKSPACE/assets/saitenwerk_launcher.png" "$RES_DIR/drawable-nodpi/saitenwerk_launcher.png"
-          # Das alte Vektor-Icon darf nicht parallel denselben Ressourcennamen belegen.
-          rm -f "$RES_DIR/drawable/saitenwerk_launcher.xml"
-          MANIFEST="$PROJECT_DIR/app/src/main/AndroidManifest.xml"
-          if [ ! -f "$MANIFEST" ]; then
-            echo "FEHLER: AndroidManifest.xml nicht gefunden: $MANIFEST"
-            exit 1
-          fi
-          python3 - "$MANIFEST" <<'PY'
-          from pathlib import Path
-          import re, sys
-
-          p = Path(sys.argv[1])
-          s = p.read_text(encoding="utf-8")
-          icon = "@drawable/saitenwerk_launcher"
-
-          # android:icon ersetzen oder neu in <application> einfügen.
-          if re.search(r'android:icon\s*=\s*"[^"]+"', s):
-              s = re.sub(
-                  r'android:icon\s*=\s*"[^"]+"',
-                  f'android:icon="{icon}"',
-                  s,
-                  count=1
-              )
-              print("APP-LOGO: vorhandenes android:icon aktualisiert")
-          else:
-              match = re.search(r'<application\b[^>]*>', s)
-              if not match:
-                  raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
-
-              application = match.group(0)
-              replacement = application[:-1] + f' android:icon="{icon}">'
-              s = s[:match.start()] + replacement + s[match.end():]
-              print("APP-LOGO: android:icon neu eingefügt")
-
-          # android:roundIcon ersetzen oder neu in <application> einfügen.
-          if re.search(r'android:roundIcon\s*=\s*"[^"]+"', s):
-              s = re.sub(
-                  r'android:roundIcon\s*=\s*"[^"]+"',
-                  f'android:roundIcon="{icon}"',
-                  s,
-                  count=1
-              )
-              print("APP-LOGO: vorhandenes android:roundIcon aktualisiert")
-          else:
-              match = re.search(r'<application\b[^>]*>', s)
-              if not match:
-                  raise SystemExit("FEHLER: Kein <application>-Element im Manifest gefunden.")
-
-              application = match.group(0)
-              replacement = application[:-1] + f' android:roundIcon="{icon}">'
-              s = s[:match.start()] + replacement + s[match.end():]
-              print("APP-LOGO: android:roundIcon neu eingefügt")
-
-          p.write_text(s, encoding="utf-8")
-          print("APP-LOGO: neues Saitenwerk-Gitarrenmotiv gesetzt")
-          PY
-          echo "App-Logo erfolgreich integriert."
 
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
@@ -206,16 +104,6 @@ jobs:
 
       # ------------------------------------------------------------
       # 5a. Liederbuch bewusst aus der aktuellen Alpha entfernen
-      # ------------------------------------------------------------
-      - name: Liederbuch aus der App entfernen
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/remove_songbook.py
-
-      # ------------------------------------------------------------
-      # 5b. Entfernten Funktionsbereich verifizieren
       # ------------------------------------------------------------
       - name: Liederbuch-Entfernung validieren
         env:
@@ -260,33 +148,6 @@ jobs:
       # Die Lieder-UI und Songdaten sind bereits entfernt. Der alte Code
       # bleibt vorerst im Archiv, bis wir später eine komplett neue Lösung bauen.
       # ------------------------------------------------------------
-      - name: Legacy-Songcode Compile-Kompatibilität
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/keep_legacy_song_compile_compat.py
-
-      # ------------------------------------------------------------
-      # Frei konfigurierbare Akkordauswahl im Wechseltraining
-      # ------------------------------------------------------------
-      - name: Akkordwechsel-Training um Akkordauswahl erweitern
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/add_chord_training_selection.py
-
-      # ------------------------------------------------------------
-      # Akkordwechsel-Training professionell optimieren
-      # ------------------------------------------------------------
-      - name: Akkordwechsel-Training optimieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/optimize_chord_training.py
-
       - name: Akkordwechsel-Training validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
@@ -320,50 +181,6 @@ jobs:
       # ------------------------------------------------------------
       # Update-Installationsschleife dauerhaft verhindern
       # ------------------------------------------------------------
-      - name: Android-Update-Loop-Fix anwenden und validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/fix_update_install_loop.py
-
-      # Zusätzliche Sicherheitsprüfung gegen erneutes Installieren derselben APK
-      - name: Update-Loop-Härtung v2 anwenden und validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/fix_update_install_loop_v2.py
-
-
-      # Alternative Stimmungen für alle Instrumente + Beta-Update-Erkennung
-      # ------------------------------------------------------------
-      - name: Instrument-Stimmungen und Beta-Update-Funktion aktualisieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/upgrade_tuner_and_beta_updates.py
-
-
-      # Premium UI/UX Redesign für Startseite, Navigation und Einstellungen
-      - name: Premium UI/UX Redesign integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/premium_ui_redesign.py
-
-      # 7. Gradle einrichten
-      # Lernfortschritt sicher aus den Einstellungen zurücksetzen können
-      - name: Lernfortschritt-Reset in Einstellungen integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/add_learning_progress_reset.py
-
-      # Lernfortschritt-Reset nach allen UI-Patches verifizieren
       - name: Lernfortschritt-Reset validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
