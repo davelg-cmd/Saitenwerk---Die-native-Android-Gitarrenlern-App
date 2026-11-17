@@ -308,20 +308,8 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             host.dp(5)
         )
         meterButton.setOnClickListener { openMeterPicker() }
-        tempoLabel.gravity = Gravity.CENTER_VERTICAL or Gravity.END
+        tempoLabel.gravity = Gravity.CENTER_VERTICAL or Gravity.START
         tempoLabel.text = "Tempo · " + bpm + " BPM"
-        val meterTempoRow = LinearLayout(host).apply {
-            orientation = HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(42), 1f))
-        meterTempoRow.addView(tempoLabel, LayoutParams(0, host.dp(42), 1f).apply {
-            leftMargin = host.dp(10)
-        })
-        addView(meterTempoRow, LayoutParams(-1, host.dp(42)).apply {
-            bottomMargin = host.dp(4)
-        })
-
         tempo.max = 110
         tempo.progress = bpm - 50
         tempo.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -333,7 +321,23 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             override fun onStartTrackingTouch(v: SeekBar?) {}
             override fun onStopTrackingTouch(v: SeekBar?) {}
         })
-        addView(tempo, LayoutParams(-1, host.dp(42)))
+
+        val tempoColumn = LinearLayout(host).apply {
+            orientation = VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(host.dp(8), 0, 0, 0)
+        }
+        tempoColumn.addView(tempoLabel, LayoutParams(-1, host.dp(22)))
+        tempoColumn.addView(tempo, LayoutParams(-1, host.dp(36)))
+        val meterTempoRow = LinearLayout(host).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(48), 0.9f))
+        meterTempoRow.addView(tempoColumn, LayoutParams(0, host.dp(56), 1.1f))
+        addView(meterTempoRow, LayoutParams(-1, host.dp(58)).apply {
+            bottomMargin = host.dp(4)
+        })
 
         progress.max = 100
         progress.progress = 0
