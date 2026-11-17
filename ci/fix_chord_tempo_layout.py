@@ -8,32 +8,15 @@ p = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = p.read_text(encoding="utf-8")
 
 pattern = re.compile(
-    r'''        tempoLabel\.gravity = Gravity\.CENTER_VERTICAL or Gravity\.START\n'''
-    r'''        tempoLabel\.text = "Tempo · " \+ bpm \+ " BPM"\n'''
-    r'''        tempo\.max = 110\n'''
-    r'''        tempo\.progress = bpm - 50\n'''
-    r'''        tempo\.setOnSeekBarChangeListener\(object : SeekBar\.OnSeekBarChangeListener \{.*?'''
-    r'''        val tempoColumn = LinearLayout\(host\)\.apply \{.*?'''
-    r'''        addView\(meterTempoRow, LayoutParams\(-1, host\.dp\(72\)\)\.apply \{\n'''
+    r'''        tempoLabel\.gravity = .*?'''
+    r'''        addView\(meterTempoRow, LayoutParams\(-1, host\.dp\(58\)\)\.apply \{\n'''
     r'''            bottomMargin = host\.dp\(4\)\n'''
     r'''        \}\)''',
     re.S
 )
 m = pattern.search(s)
 if not m:
-    if 'BPM_LABEL_NEXT_TO_SLIDER' in s:
-        print("BPM-SLIDER-LAYOUT: bereits aktuell")
-        raise SystemExit(0)
-    print("DIAGNOSE: BPM-/Tempo-Zeilen im gespeicherten Projekt:")
-    lines = s.splitlines()
-    hits = [i for i, line in enumerate(lines) if any(k in line.lower() for k in ("tempolabel", "meterTempoRow".lower(), "chord_training_bpm", "seekbar"))]
-    shown = set()
-    for i in hits:
-        for n in range(max(0, i - 3), min(len(lines), i + 5)):
-            if n not in shown:
-                print(f"MainActivity.kt:{n + 1}: {lines[n]}")
-                shown.add(n)
-    raise SystemExit("FEHLER: Tempo-/Taktauswahl-Layout nicht gefunden; Diagnose oben.")
+    raise SystemExit("FEHLER: Tempo-/Taktauswahl-Block nicht gefunden.")
 
 replacement = '''        tempoLabel.gravity = Gravity.CENTER
         tempoLabel.text = "BPM " + bpm
@@ -41,7 +24,7 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
         tempoLabel.includeFontPadding = false
         tempoLabel.textSize = 18f
         tempoLabel.setTextColor(Color.WHITE)
-        tempoLabel.setBackgroundResource(R.drawable.bg_bpm_slider)
+        tempoLabel.setPadding(host.dp(12), 0, host.dp(12), 0)
         tempoLabel.contentDescription = "BPM-Regler: " + bpm + ". Horizontal ziehen zum Ändern."
         tempoLabel.setOnTouchListener { view, event ->
             when (event.action) {
@@ -55,10 +38,7 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
                     prefs.edit().putInt("chord_training_bpm", bpm).apply()
                     true
                 }
-                android.view.MotionEvent.ACTION_UP -> {
-                    view.performClick()
-                    true
-                }
+                android.view.MotionEvent.ACTION_UP -> { view.performClick(); true }
                 android.view.MotionEvent.ACTION_CANCEL -> true
                 else -> false
             }
@@ -77,7 +57,7 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
             clipChildren = false
             clipToPadding = false
         }
-        // Der BPM-Schriftzug ist selbst der Regler: kein separater SeekBar.
+        // Der BPM-Schriftzug ist selbst der Regler; kein separater SeekBar.
         meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(52), 0.68f))
         meterTempoRow.addView(tempoColumn, LayoutParams(0, host.dp(56), 1.32f))
         addView(meterTempoRow, LayoutParams(-1, host.dp(60)).apply {
