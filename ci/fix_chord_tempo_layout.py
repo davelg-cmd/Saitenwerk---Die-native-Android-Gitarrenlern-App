@@ -9,8 +9,7 @@ s = p.read_text(encoding="utf-8")
 
 pattern = re.compile(
     r'''        tempoLabel\.gravity = .*?'''
-    r'''        addView\(meterTempoRow, LayoutParams\(-1, host\.dp\(58\)\)\.apply \{\n'''
-    r'''            bottomMargin = host\.dp\(4\)\n'''
+    r'''        addView\(meterTempoRow, LayoutParams\(-1, host\.dp\(\d+\)\).*?\n'''
     r'''        \}\)''',
     re.S
 )
