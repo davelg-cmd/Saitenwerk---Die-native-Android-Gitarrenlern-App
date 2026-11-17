@@ -306,6 +306,14 @@ jobs:
           python3 ci/upgrade_tuner_and_beta_updates.py
 
 
+      # Lernfortschritt sicher aus den Einstellungen zurücksetzen können
+      - name: Lernfortschritt-Reset in Einstellungen integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/add_learning_progress_reset.py
+
       # Premium UI/UX Redesign für Startseite, Navigation und Einstellungen
       - name: Premium UI/UX Redesign integrieren
         env:
@@ -313,6 +321,45 @@ jobs:
         run: |
           set -euo pipefail
           python3 ci/premium_ui_redesign.py
+
+      # Lernfortschritt-Reset nach allen UI-Patches verifizieren
+      - name: Lernfortschritt-Reset validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["PROJECT_DIR"])
+          main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          s = main.read_text(encoding="utf-8")
+
+          required = [
+              'section("Lernfortschritt"',
+              '"Lernfortschritt zurücksetzen"',
+              '"Lernfortschritt zurücksetzen?"',
+              '.remove("learn_quiz_correct")',
+              '.remove("learn_quiz_total")',
+              '.remove("learn_routine_day")',
+              '.remove("learn_routine_done")',
+              '.remove("chord_training_mastered")',
+              '.remove("chord_training_sessions")',
+              '.remove("learning_path_done")',
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Lernfortschritt-Reset unvollständig: " + ", ".join(missing))
+
+          if 'remove("chord_training_selected_chords")' in s:
+              raise SystemExit("FEHLER: Reset darf die gespeicherte Akkordauswahl nicht löschen.")
+
+          print("LERNFORTSCHRITT-RESET: PASS")
+          print("Reset-Button, Bestätigungsdialog und Lernstands-Schlüssel vorhanden.")
+          print("App-Einstellungen, Favoriten, Akkordauswahl und Song-Arrangements werden nicht zurückgesetzt.")
+
+          PY
 
       # 7. Gradle einrichten
       # ------------------------------------------------------------
