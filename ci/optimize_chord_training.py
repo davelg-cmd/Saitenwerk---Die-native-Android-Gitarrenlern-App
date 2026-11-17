@@ -82,24 +82,26 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             }
             val label = TextView(host).apply {
                 text = chordName
-                textSize = 16f
-                setTextColor(host.getColor(R.color.sw_text))
+                textSize = 18f
+                setTextColor(host.getColor(R.color.sw_copper))
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(host.dp(8), 0, host.dp(8), 0)
+                includeFontPadding = true
+                setPadding(host.dp(10), 0, host.dp(8), 0)
                 isClickable = false
             }
             val row = LinearLayout(host).apply {
                 orientation = HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                minimumHeight = host.dp(48)
-                setPadding(host.dp(4), 0, host.dp(4), 0)
+                minimumHeight = host.dp(54)
+                setPadding(host.dp(4), host.dp(2), host.dp(4), host.dp(2))
                 isClickable = true
                 setOnClickListener { check.isChecked = !check.isChecked }
             }
-            row.addView(check, LayoutParams(host.dp(48), host.dp(48)))
+            row.addView(check, LayoutParams(host.dp(48), host.dp(54)))
             row.addView(label, LayoutParams(0, -1, 1f))
             checks[chordName] = check
-            list.addView(row, LayoutParams(-1, host.dp(48)))
+            list.addView(row, LayoutParams(-1, host.dp(54)))
         }
         scroll.addView(list)
         val dialog = androidx.appcompat.app.AlertDialog.Builder(host)
