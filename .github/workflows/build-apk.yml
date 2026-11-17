@@ -303,6 +303,8 @@ jobs:
               'chord_training_bpm',
               'chord_training_meter',
               'Taktart auswählen',
+              'meterTempoRow',
+              'contentDescription = chordName',
               'chord_training_best_streak',
               'Reihenfolge mischen',
               'Als Nächstes',
