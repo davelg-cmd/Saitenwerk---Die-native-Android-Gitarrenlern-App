@@ -301,9 +301,10 @@ jobs:
               'Trainingsakkorde auswählen',
               'chord_training_selected_chords',
               'chord_training_bpm',
+              'chord_training_meter',
+              'Taktart auswählen',
               'chord_training_best_streak',
               'Reihenfolge mischen',
-              '4 Schläge pro Akkord',
               'Als Nächstes',
           ]
           missing = [x for x in required if x not in s]
