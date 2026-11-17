@@ -73,9 +73,10 @@ new_pending = '''        if (pending != null) {
             }
         }
 '''
-if old_pending not in s:
-    raise SystemExit("FEHLER: resumePendingInstall-Block nicht gefunden.")
-s = s.replace(old_pending, new_pending, 1)
+if old_pending in s:
+    s = s.replace(old_pending, new_pending, 1)
+else:
+    print("HINWEIS: Abweichender Resume-Block; Versionsabschluss wird im Download-Callback behandelt.")
 
 p.write_text(s, encoding="utf-8")
 for token in [
