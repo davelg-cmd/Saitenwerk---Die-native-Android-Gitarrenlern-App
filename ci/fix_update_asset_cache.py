@@ -61,7 +61,8 @@ end = s.index('\n    private fun completeDownloadIfReady', start)
 s = s[:start] + '''    private fun isNewerApk(file: File): Boolean {
         val archive = readApkInfo(file) ?: return false
         val remoteCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
-        return remoteCode > installedVersionCode() && archive.packageName == activity.packageName
+        val currentCode = installedVersionCode()
+        return remoteCode > currentCode && archive.packageName == activity.packageName
     }
 ''' + s[end:]
 
