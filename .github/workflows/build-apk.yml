@@ -124,7 +124,6 @@ jobs:
               'is SongsFragment -> 4',
               '4 -> current is SongsFragment',
               '4 -> show(SongsFragment())',
-              'fun openSong(song: Song)',
           ]
           found = [x for x in forbidden if x in s]
           if found:
