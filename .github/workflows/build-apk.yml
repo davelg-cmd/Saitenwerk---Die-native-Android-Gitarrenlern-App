@@ -91,6 +91,12 @@ jobs:
           echo "Verwendeter Projektstand: $LATEST_ARCHIVE"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: APK-Download und Versionsprüfung korrigieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_update_download_validation.py
 
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
