@@ -103,7 +103,7 @@ jobs:
 
 
       # ------------------------------------------------------------
-      # 5a. Liederbuch bewusst aus der aktuellen Alpha entfernen
+      # Vorhandene Funktionen des gespeicherten Projektstands prüfen
       # ------------------------------------------------------------
       - name: Liederbuch-Entfernung validieren
         env:
@@ -143,11 +143,59 @@ jobs:
 
           PY
 
-      # ------------------------------------------------------------
-      # Legacy-Songcode nur noch kompilierbar halten
-      # Die Lieder-UI und Songdaten sind bereits entfernt. Der alte Code
-      # bleibt vorerst im Archiv, bis wir später eine komplett neue Lösung bauen.
-      # ------------------------------------------------------------
+      - name: Update, Stimmungen und Premium-Oberfläche validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["PROJECT_DIR"])
+          update = (root / "app/src/main/java/de/saitenwerk/app/AppUpdateManager.kt").read_text(encoding="utf-8")
+          main = (root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+
+          required_update = [
+              "fun isNewerApk(file: File)",
+              "remoteCode > currentCode",
+              "archive.packageName == activity.packageName",
+              "activity.startActivity(install)",
+              "remove(KEY_PENDING_APK).commit()",
+          ]
+          missing = [x for x in required_update if x not in update]
+          if missing:
+              raise SystemExit("FEHLER: Update-Funktion unvollständig: " + ", ".join(missing))
+
+          launch = update.find("activity.startActivity(install)")
+          next_catch = update.find("} catch (_: Exception)", launch)
+          install_block = update[launch:next_catch if next_catch >= 0 else len(update)]
+          if "file.delete()" in install_block:
+              raise SystemExit("FEHLER: APK-Datei wird während des Installer-Starts gelöscht.")
+
+          required_app = [
+              "private fun configureAlternativeTunings()",
+              "TuningMode.CELLO",
+              "Cumulative Mean Normalized Difference (YIN)",
+              "class HomeFragment : Fragment()",
+              "class SettingsFragment : Fragment()",
+              "Stimmgerät öffnen",
+              "Lernfortschritt zurücksetzen",
+              "meterTempoRow",
+          ]
+          missing = [x for x in required_app if x not in main]
+          if missing:
+              raise SystemExit("FEHLER: App-Funktionen fehlen: " + ", ".join(missing))
+
+          manifest = (root / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+          if 'android:icon="@drawable/saitenwerk_launcher"' not in manifest:
+              raise SystemExit("FEHLER: Saitenwerk-App-Symbol ist nicht im Manifest gesetzt.")
+          if not (root / "app/src/main/res/drawable-nodpi/saitenwerk_launcher.png").is_file():
+              raise SystemExit("FEHLER: Launcher-Logo fehlt.")
+
+          print("UPDATE, STIMMUNGEN, YIN, PREMIUM-UI UND APP-LOGO: PASS")
+          PY
+
       - name: Akkordwechsel-Training validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
@@ -179,7 +227,7 @@ jobs:
           PY
 
       # ------------------------------------------------------------
-      # Update-Installationsschleife dauerhaft verhindern
+      # Lernfortschritt-Reset und Akkordauswahl gegen Regressionen absichern
       # ------------------------------------------------------------
       - name: Lernfortschritt-Reset validieren
         env:
@@ -324,7 +372,7 @@ jobs:
           mkdir -p "$BACKUP_DIR"
 
           # Exakt den tatsächlich gebauten Quellstand sichern:
-          # inklusive CI-Fixes und automatisch gesetzter Versionsnummer.
+          # inklusive dauerhaft integriertem Projektstand und Versionsnummer.
           tar -czf "$BACKUP_DIR/source-project.tar.gz" \
             --exclude='saitenwerk-upload.jks' \
             --exclude='.gradle' \
