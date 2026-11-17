@@ -24,7 +24,16 @@ if not m:
     if 'BPM_LABEL_NEXT_TO_SLIDER' in s:
         print("BPM-SLIDER-LAYOUT: bereits aktuell")
         raise SystemExit(0)
-    raise SystemExit("FEHLER: Tempo-/Taktauswahl-Layout nicht gefunden.")
+    print("DIAGNOSE: BPM-/Tempo-Zeilen im gespeicherten Projekt:")
+    lines = s.splitlines()
+    hits = [i for i, line in enumerate(lines) if any(k in line.lower() for k in ("tempolabel", "meterTempoRow".lower(), "chord_training_bpm", "seekbar"))]
+    shown = set()
+    for i in hits:
+        for n in range(max(0, i - 3), min(len(lines), i + 5)):
+            if n not in shown:
+                print(f"MainActivity.kt:{n + 1}: {lines[n]}")
+                shown.add(n)
+    raise SystemExit("FEHLER: Tempo-/Taktauswahl-Layout nicht gefunden; Diagnose oben.")
 
 replacement = '''        tempoLabel.gravity = Gravity.CENTER
         tempoLabel.text = "BPM " + bpm
