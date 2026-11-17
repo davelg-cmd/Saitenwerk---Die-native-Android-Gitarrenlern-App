@@ -278,6 +278,43 @@ jobs:
           python3 ci/add_chord_training_selection.py
 
       # ------------------------------------------------------------
+      # Akkordwechsel-Training professionell optimieren
+      # ------------------------------------------------------------
+      - name: Akkordwechsel-Training optimieren
+        env:
+          PROJECT_DIR: \${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/optimize_chord_training.py
+
+      - name: Akkordwechsel-Training validieren
+        env:
+          PROJECT_DIR: \${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          required = [
+              'Akkordwechsel-Training',
+              'Trainingsakkorde auswählen',
+              'chord_training_selected_chords',
+              'chord_training_bpm',
+              'chord_training_best_streak',
+              'Reihenfolge mischen',
+              '4 Schläge pro Akkord',
+              'Als Nächstes',
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Akkordwechsel-Training unvollständig: " + ", ".join(missing))
+          if 'remove("chord_training_selected_chords")' in s:
+              raise SystemExit("FEHLER: Trainingsakkord-Auswahl darf nicht gelöscht werden.")
+          print("AKKORDWECHSEL-TRAINING: PASS")
+          PY
+
+      # ------------------------------------------------------------
       # Update-Installationsschleife dauerhaft verhindern
       # ------------------------------------------------------------
       - name: Android-Update-Loop-Fix anwenden und validieren
