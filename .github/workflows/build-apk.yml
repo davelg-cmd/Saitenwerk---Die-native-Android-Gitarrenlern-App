@@ -404,6 +404,7 @@ jobs:
 
           git add -f "$BACKUP_DIR"
           git commit -m "backup: Saitenwerk Beta build $GITHUB_RUN_NUMBER [skip ci]"
+          git pull --rebase origin "$GITHUB_REF_NAME"
           git push
 
       # ------------------------------------------------------------
