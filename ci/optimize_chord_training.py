@@ -16,7 +16,7 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
     private val tone = ToneGenerator(AudioManager.STREAM_MUSIC, 62)
     private val prefs = host.getSharedPreferences("saitenwerk", 0)
     private val defaultSequence = listOf("C", "G", "Am", "F")
-    private val availableChords = ChordLibrary.all.map { it.name }.distinct().sorted()
+    private val availableChords = ChordLibrary.all.map { it.name.trim() }.filter { it.isNotEmpty() }.distinct().sorted().ifEmpty { defaultSequence }
     private var sequence = loadSequence()
     private var bpm = prefs.getInt("chord_training_bpm", 72).coerceIn(50, 160)
     private val meters = listOf("2/4", "3/4", "4/4", "6/8")
@@ -73,15 +73,33 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
         val checks = linkedMapOf<String, android.widget.CheckBox>()
         availableChords.forEach { chordName ->
             val check = android.widget.CheckBox(host).apply {
+                text = ""
+                contentDescription = chordName
+                isChecked = chordName in sequence
+                minWidth = host.dp(44)
+                minHeight = host.dp(44)
+                buttonTintList = android.content.res.ColorStateList.valueOf(host.getColor(R.color.sw_copper))
+            }
+            val label = TextView(host).apply {
                 text = chordName
                 textSize = 16f
                 setTextColor(host.getColor(R.color.sw_text))
-                isChecked = chordName in sequence
-                minHeight = host.dp(44)
-                setPadding(host.dp(4), host.dp(4), host.dp(4), host.dp(4))
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(host.dp(8), 0, host.dp(8), 0)
+                isClickable = false
             }
+            val row = LinearLayout(host).apply {
+                orientation = HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = host.dp(48)
+                setPadding(host.dp(4), 0, host.dp(4), 0)
+                isClickable = true
+                setOnClickListener { check.isChecked = !check.isChecked }
+            }
+            row.addView(check, LayoutParams(host.dp(48), host.dp(48)))
+            row.addView(label, LayoutParams(0, -1, 1f))
             checks[chordName] = check
-            list.addView(check, LayoutParams(-1, -2))
+            list.addView(row, LayoutParams(-1, host.dp(48)))
         }
         scroll.addView(list)
         val dialog = androidx.appcompat.app.AlertDialog.Builder(host)
@@ -277,11 +295,21 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             setTextColor(host.getColor(R.color.sw_text))
             setPadding(0, host.dp(8), 0, 0)
         }
-        meterButton.text = "Taktart · " + meter
+        meterButton.text = "Takt · " + meter
         meterButton.setOnClickListener { openMeterPicker() }
-        addView(meterButton, LayoutParams(-1, host.dp(42)).apply { bottomMargin = host.dp(4) })
-
-        addView(tempoLabel)
+        tempoLabel.gravity = Gravity.CENTER_VERTICAL or Gravity.END
+        tempoLabel.text = "Tempo · " + bpm + " BPM"
+        val meterTempoRow = LinearLayout(host).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        meterTempoRow.addView(meterButton, LayoutParams(0, host.dp(42), 1f))
+        meterTempoRow.addView(tempoLabel, LayoutParams(0, host.dp(42), 1f).apply {
+            leftMargin = host.dp(10)
+        })
+        addView(meterTempoRow, LayoutParams(-1, host.dp(42)).apply {
+            bottomMargin = host.dp(4)
+        })
 
         tempo.max = 110
         tempo.progress = bpm - 50
