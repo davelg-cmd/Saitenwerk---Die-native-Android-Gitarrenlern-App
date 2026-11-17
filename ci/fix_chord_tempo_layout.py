@@ -23,7 +23,42 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
         tempoLabel.includeFontPadding = false
         tempoLabel.textSize = 18f
         tempoLabel.setTextColor(android.graphics.Color.WHITE)
-        tempoLabel.setPadding(host.dp(12), 0, host.dp(12), 0)
+        tempoLabel.setPadding(host.dp(12), 0, host.dp(12), host.dp(8))
+        tempoLabel.background = null
+        // Sichtbare Sliderbahn mit Fortschrittslinie und beweglichem Reglerknopf.
+        val bpmSliderTrack = object : View(host) {
+            private val rail = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.rgb(83, 94, 111)
+                strokeWidth = host.dp(4).toFloat()
+                strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            private val progress = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.rgb(77, 166, 255)
+                strokeWidth = host.dp(4).toFloat()
+                strokeCap = android.graphics.Paint.Cap.ROUND
+            }
+            private val knob = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.rgb(77, 166, 255)
+                style = android.graphics.Paint.Style.FILL
+            }
+            private val knobOutline = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.WHITE
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = host.dp(2).toFloat()
+            }
+            override fun onDraw(canvas: android.graphics.Canvas) {
+                super.onDraw(canvas)
+                val left = host.dp(14).toFloat()
+                val right = (width - host.dp(14)).toFloat()
+                val y = (height - host.dp(9)).toFloat()
+                val fraction = ((bpm - 50).toFloat() / 110f).coerceIn(0f, 1f)
+                val x = left + (right - left) * fraction
+                canvas.drawLine(left, y, right, y, rail)
+                canvas.drawLine(left, y, x, y, progress)
+                canvas.drawCircle(x, y, host.dp(7).toFloat(), knob)
+                canvas.drawCircle(x, y, host.dp(7).toFloat(), knobOutline)
+            }
+        }
         tempoLabel.contentDescription = "BPM-Regler: " + bpm + ". Horizontal ziehen zum Ändern."
         // Relative Bewegung statt absoluter Fingerposition: feinere, kontrollierbare Schritte.
         var bpmDragStartX = 0f
@@ -53,6 +88,7 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
                 tempoLabel.text = "BPM " + bpm
                 tempoLabel.contentDescription = "BPM-Regler: " + bpm
                 bpmBubbleText.text = "BPM " + bpm
+                bpmSliderTrack.invalidate()
                 prefs.edit().putInt("chord_training_bpm", bpm).apply()
             }
             val x = (event.rawX - host.dp(34)).toInt().coerceAtLeast(0)
@@ -89,12 +125,13 @@ replacement = '''        tempoLabel.gravity = Gravity.CENTER
         }
         tempoLabel.setOnClickListener { }
 
-        val tempoColumn = LinearLayout(host).apply {
-            orientation = HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+        val tempoColumn = android.widget.FrameLayout(host).apply {
             setPadding(host.dp(8), 0, 0, 0)
+            clipChildren = false
+            clipToPadding = false
         }
-        tempoColumn.addView(tempoLabel, LayoutParams(-1, host.dp(48)))
+        tempoColumn.addView(bpmSliderTrack, android.widget.FrameLayout.LayoutParams(-1, host.dp(56)))
+        tempoColumn.addView(tempoLabel, android.widget.FrameLayout.LayoutParams(-1, host.dp(56)))
         val meterTempoRow = LinearLayout(host).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
