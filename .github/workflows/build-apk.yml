@@ -98,6 +98,13 @@ jobs:
           set -euo pipefail
           python3 ci/fix_update_download_validation.py
 
+      - name: Bereits installierte APK als abgeschlossen erkennen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_update_already_installed.py
+
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
