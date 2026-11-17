@@ -118,9 +118,7 @@ new_launch = '''            try {
                 prefs.edit().putString(KEY_PENDING_APK, file.absolutePath).commit()
                 throw e
             }
-            // Der Installer besitzt den Installationsvorgang; diese APK darf
-            // beim nächsten onResume nicht erneut gestartet werden.
-            file.delete()
+            // Die APK-Datei muss bestehen bleiben, bis Android sie installiert hat.
         } catch (_: Exception) {'''
 if old_launch not in s:
     raise SystemExit("FEHLER: Installer-Startsequenz nicht gefunden.")
@@ -140,4 +138,13 @@ check = manager.read_text(encoding="utf-8")
 for token in ["fun isNewerApk(file: File)", "remoteCode > currentCode", "archive.packageName == activity.packageName"]:
     if token not in check:
         raise SystemExit("FEHLER: Update-Härtung fehlt: " + token)
+
+launch = check.find("activity.startActivity(install)")
+if launch < 0:
+    raise SystemExit("FEHLER: Android-Installer wird nicht gestartet.")
+install_block = check[launch:check.find("} catch (_: Exception)", launch)]
+if "file.delete()" in install_block:
+    raise SystemExit("FEHLER: APK-Datei wird direkt nach dem Installer-Start gelöscht.")
+if "remove(KEY_PENDING_APK).commit()" not in check[:launch]:
+    raise SystemExit("FEHLER: Pending-Status wird nicht vor dem Installer-Start verbraucht.")
 print("UPDATE LOOP HARDENING: PASS")
