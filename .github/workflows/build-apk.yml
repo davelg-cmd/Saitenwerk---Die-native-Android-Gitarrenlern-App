@@ -282,14 +282,14 @@ jobs:
       # ------------------------------------------------------------
       - name: Akkordwechsel-Training optimieren
         env:
-          PROJECT_DIR: \${{ env.PROJECT_DIR }}
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 ci/optimize_chord_training.py
 
       - name: Akkordwechsel-Training validieren
         env:
-          PROJECT_DIR: \${{ env.PROJECT_DIR }}
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
