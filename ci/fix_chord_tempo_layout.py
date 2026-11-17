@@ -8,10 +8,10 @@ p = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = p.read_text(encoding="utf-8")
 
 pattern = re.compile(
-    r'''        tempoLabel\\.gravity = .*?'''
-    r'''        addView\\(meterTempoRow, LayoutParams\\(-1, host\\.dp\\(58\\)\\)\\.apply \\{\\n'''
-    r'''            bottomMargin = host\\.dp\\(4\\)\\n'''
-    r'''        \\}\\)''',
+    r'''        tempoLabel\.gravity = .*?'''
+    r'''        addView\(meterTempoRow, LayoutParams\(-1, host\.dp\(58\)\)\.apply \{\n'''
+    r'''            bottomMargin = host\.dp\(4\)\n'''
+    r'''        \}\)''',
     re.S
 )
 m = pattern.search(s)
