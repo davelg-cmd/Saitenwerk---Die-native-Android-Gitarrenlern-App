@@ -296,6 +296,15 @@ replacement = r'''class ChordTrainingPanel(private val host: MainActivity) : Lin
             setPadding(0, host.dp(8), 0, 0)
         }
         meterButton.text = "Takt · " + meter
+        // Text im orangefarbenen Auswahlrahmen vertikal etwas nach oben setzen.
+        meterButton.gravity = Gravity.CENTER
+        meterButton.includeFontPadding = false
+        meterButton.setPadding(
+            meterButton.paddingLeft,
+            host.dp(0),
+            meterButton.paddingRight,
+            host.dp(5)
+        )
         meterButton.setOnClickListener { openMeterPicker() }
         tempoLabel.gravity = Gravity.CENTER_VERTICAL or Gravity.END
         tempoLabel.text = "Tempo · " + bpm + " BPM"
