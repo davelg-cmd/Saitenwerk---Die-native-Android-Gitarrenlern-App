@@ -142,7 +142,7 @@ jobs:
               'onSessionElapsed = { seconds -> recordSession(seconds) }',
               'private var rhythmStartedAt = 0L',
               'private var quizStartedAt = 0L',
-              'SystemClock.elapsedRealtime()',
+              'android.os.SystemClock.elapsedRealtime()',
               'learn_daily_seconds',
               'if (started > 0L) onSessionElapsed?.invoke',
               'if (checked && previous == 0) recordPracticeDay()',
