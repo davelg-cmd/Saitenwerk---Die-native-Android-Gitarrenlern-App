@@ -112,12 +112,12 @@ jobs:
           set -euo pipefail
           python3 ci/fix_chord_tempo_layout.py
 
-      - name: Lernstudio-Struktur analysieren
+      - name: Lernstudio optimieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/inspect_learning_studio.py
+          python3 ci/upgrade_learning_studio.py
 
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
