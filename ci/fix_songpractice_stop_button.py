@@ -11,7 +11,10 @@ s = path.read_text(encoding="utf-8")
 needle = "Wiedergabe stoppen"
 positions = [m.start() for m in re.finditer(re.escape(needle), s)]
 if not positions:
-    raise SystemExit("FEHLER: Beschriftung 'Wiedergabe stoppen' nicht gefunden.")
+    # The dedicated stop button was intentionally removed from the current
+    # Song-Praxis layout; the play button itself now toggles to stop.
+    print("SONGPRAXIS: Kein separater Stoppbutton vorhanden; Zentrierung des Start/Stopp-Buttons erfolgt im Toggle-Patch.")
+    raise SystemExit(0)
 
 # Locate the button declaration associated with the visible stop label.
 target = None
