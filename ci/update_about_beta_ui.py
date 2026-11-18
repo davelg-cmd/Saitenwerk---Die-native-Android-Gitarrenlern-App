@@ -13,6 +13,13 @@ s = main.read_text(encoding="utf-8")
 credits_start = s.find("        val credits = a.card()")
 return_start = s.find("        return ScrollView(a).apply { addView(content) }", credits_start)
 if credits_start < 0 or return_start < 0:
+    settings_pos = s.find("class SettingsFragment")
+    settings_end = s.find("\\nclass ", settings_pos + 10)
+    settings_context = s[settings_pos:settings_end if settings_end >= 0 else len(s)]
+    print("SETTINGS_SOURCE_DIAGNOSTIC:")
+    for line_no, line in enumerate(settings_context.splitlines(), 1):
+        if any(term in line for term in ("Über", "credits", "card()", "ScrollView", "addView(content)", "return ")):
+            print(f"{line_no}: {line[:240]}")
     raise SystemExit("FEHLER: Über-Karte oder Rückgabe des Einstellungsbildschirms nicht gefunden.")
 
 replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packageName, 0)
