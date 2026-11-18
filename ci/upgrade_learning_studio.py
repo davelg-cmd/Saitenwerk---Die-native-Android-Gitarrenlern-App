@@ -417,6 +417,44 @@ replacement = r'''class LearnFragment : Fragment() {
             content.addView(card)
         }
 
+        fun showSongPractice() {
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming()
+            content.removeAllViews()
+            val (card, box) = panel("Song-Praxis", "Übe typische Song-Akkordfolgen im eigenen Tempo. Wähle eine Folge und trainiere anschließend Wechsel, Rhythmus und Anschlag.")
+            val selected = TextView(a).apply {
+                text = "Aktuelle Folge: " + (prefs.getString("learn_song_progression", "G – D – Em – C") ?: "G – D – Em – C")
+                textSize = 16f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_copper))
+                setPadding(0, a.dp(10), 0, a.dp(8))
+            }
+            box.addView(selected)
+            val progressions = listOf("G – D – Em – C", "C – Am – F – G", "Am – F – C – G", "Em – C – G – D")
+            progressions.forEach { progression ->
+                box.addView(a.button(progression).apply {
+                    isAllCaps = false
+                    setOnClickListener {
+                        prefs.edit().putString("learn_song_progression", progression).apply()
+                        selected.text = "Aktuelle Folge: $progression"
+                    }
+                }, LinearLayout.LayoutParams(-1, a.dp(44)).apply { topMargin = a.dp(5) })
+            }
+            box.addView(a.body("Tipp: Spiele jeden Akkord zunächst vier gleichmäßige Schläge. Wenn der Wechsel sicher sitzt, erhöhe das Tempo schrittweise.", 12f).apply {
+                setPadding(0, a.dp(10), 0, a.dp(8))
+            })
+            content.addView(card)
+            val actions = roundedCard()
+            val actionBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(14), a.dp(12), a.dp(14), a.dp(12)) }
+            actionBox.addView(a.button("↔ Akkordwechsel trainieren").apply { setOnClickListener { showChanges() } },
+                LinearLayout.LayoutParams(-1, a.dp(46)).apply { bottomMargin = a.dp(8) })
+            actionBox.addView(a.button("↘ Schlagmuster trainieren").apply { setOnClickListener { showStrumming() } },
+                LinearLayout.LayoutParams(-1, a.dp(46)).apply { bottomMargin = a.dp(8) })
+            actionBox.addView(a.button("♩ Rhythmus und Tempo üben").apply { setOnClickListener { showRhythm() } },
+                LinearLayout.LayoutParams(-1, a.dp(46)))
+            actionBox.addView(a.button("Zur Lernstudio-Übersicht").apply { setOnClickListener { overviewAction?.invoke() } },
+                LinearLayout.LayoutParams(-1, a.dp(44)).apply { topMargin = a.dp(12) })
+            actions.addView(actionBox)
+            content.addView(actions)
+        }
+
         fun showGuidedSession() {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming(); content.removeAllViews()
             val (card, box) = panel("🎯 Geführte 10-Minuten-Session", "Eine kompakte, adaptive Trainingseinheit. Die Reihenfolge passt sich deinem bisherigen Lernstand an.")
@@ -634,7 +672,7 @@ replacement = r'''class LearnFragment : Fragment() {
             row2.addView(quickButton("✓ Tagesroutine") { showRoutine() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
             val row3 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
             row3.addView(quickButton("↘ Schlagmuster") { showStrumming() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { rightMargin = a.dp(5); topMargin = a.dp(8) })
-            row3.addView(quickButton("♬ Song-Praxis") { a.openSection(4) }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
+            row3.addView(quickButton("♬ Song-Praxis") { showSongPractice() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
             val row4 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
             row4.addView(quickButton("🎯 10-Min-Session") { showGuidedSession() }, LinearLayout.LayoutParams(-1, a.dp(48)).apply { topMargin = a.dp(8) })
             quickBox.addView(row1); quickBox.addView(row2); quickBox.addView(row3); quick.addView(quickBox); content.addView(quick); addGap(10)
