@@ -52,7 +52,7 @@ else:
         decl_line_end = len(s)
     decl_line = s[decl_line_start:decl_line_end]
     if button_name + ".gravity = Gravity.CENTER" not in s:
-        indent = re.match(r"\\s*", decl_line).group(0)
+        indent = re.match(r"\s*", decl_line).group(0)
         insertion = f"\n{indent}{button_name}.gravity = Gravity.CENTER"
         s = s[:decl_line_end] + insertion + s[decl_line_end:]
 
