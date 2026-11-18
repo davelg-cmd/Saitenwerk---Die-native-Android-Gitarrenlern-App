@@ -77,6 +77,39 @@ if tuner_hint in t:
 if tuner_hint in t:
     raise SystemExit("TUNER UI: explanatory paragraph was not removed")
 
+# Remove the repeated reference-tone helper wherever it is created in the tuner
+# view tree. The old implementation added one identical TextView per string.
+# Runtime tree cleanup also catches nested and loop-created views.
+cleanup = '''
+    private fun removeReferenceToneHints(view: android.view.ViewGroup) {
+        for (index in view.childCount - 1 downTo 0) {
+            val child = view.getChildAt(index)
+            if (child is android.widget.TextView) {
+                val normalized = child.text?.toString()?.replace(Regex("\\\\s+"), " ")?.trim()
+                if (normalized == "Referenztöne Saite antippen zum Anhören") {
+                    view.removeViewAt(index)
+                    continue
+                }
+            }
+            if (child is android.view.ViewGroup) removeReferenceToneHints(child)
+        }
+    }
+'''
+if "private fun removeReferenceToneHints(view: android.view.ViewGroup)" not in t:
+    marker = "    override fun onCreateView"
+    if t.count(marker) != 1:
+        raise SystemExit("TUNER UI: onCreateView insertion point not unique")
+    t = t.replace(marker, cleanup + "\\n" + marker, 1)
+
+if "removeReferenceToneHints(root)" not in t:
+    marker = "\\n        return root"
+    if t.count(marker) != 1:
+        raise SystemExit("TUNER UI: root return insertion point not unique")
+    t = t.replace(marker, "\\n        removeReferenceToneHints(root)" + marker, 1)
+
+if t.count("removeReferenceToneHints(root)") != 1:
+    raise SystemExit("TUNER UI: cleanup call must occur exactly once")
+
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)']
 missing = [x for x in required if x not in t]
 if missing: raise SystemExit("Tuner UI validation failed: " + ", ".join(missing))
