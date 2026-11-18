@@ -6,7 +6,7 @@ root = Path(os.environ["PROJECT_DIR"])
 main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = main.read_text(encoding="utf-8")
 
-# Route every AppCompat dialog through one Saitenwerk theme overlay.
+# One consistent dark, rounded Saitenwerk surface for all native dialogs.
 s = s.replace(
     "androidx.appcompat.app.AlertDialog.Builder(a)",
     "androidx.appcompat.app.AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)"
@@ -15,43 +15,16 @@ s = s.replace(
     "androidx.appcompat.app.AlertDialog.Builder(host)",
     "androidx.appcompat.app.AlertDialog.Builder(host, R.style.ThemeOverlay_Saitenwerk_Dialog)"
 )
-
-# Give all native Spinner instances the same compact, readable selected field
-# and rounded dark popup. Existing app-specific adapters retain their content.
-old = """v.setBackgroundColor(getColor(R.color.sw_surface))
-            return v"""
-new = """v.background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = dp(10).toFloat()
-                setColor(getColor(R.color.sw_surface2))
-            }
-            v.minHeight = dp(44)
-            return v"""
-s = s.replace(old, new)
-
-# Ensure every spinner's drop-down list uses the app's shared popup surface.
-s = s.replace(
-    "android.R.layout.simple_spinner_item, values",
-    "R.layout.sw_spinner_item, values"
-)
-s = s.replace(
-    "android.R.layout.simple_spinner_item, labels",
-    "R.layout.sw_spinner_item, labels"
-)
-# The app's common adapter and the instrument adapter need a themed dropdown row.
-s = s.replace(
-    "override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {",
-    "override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {"
-)
-
+s = s.replace("android.R.layout.simple_spinner_item, values", "R.layout.sw_spinner_item, values")
+s = s.replace("android.R.layout.simple_spinner_item, labels", "R.layout.sw_spinner_item, labels")
+s = s.replace("android.R.layout.simple_spinner_dropdown_item", "R.layout.sw_spinner_item")
 main.write_text(s, encoding="utf-8")
 
 values = root / "app/src/main/res/values"
 styles = values / "styles.xml"
 st = styles.read_text(encoding="utf-8")
 if "ThemeOverlay.Saitenwerk.Dialog" not in st:
-    st = st.replace(
-        "</resources>",
-        """    <style name="ThemeOverlay.Saitenwerk.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    st = st.replace("</resources>", """    <style name="ThemeOverlay.Saitenwerk.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/sw_surface</item>
         <item name="colorOnSurface">@color/sw_text</item>
         <item name="colorPrimary">@color/sw_copper</item>
@@ -60,20 +33,11 @@ if "ThemeOverlay.Saitenwerk.Dialog" not in st:
         <item name="android:windowMinWidthMajor">88%</item>
         <item name="android:windowMinWidthMinor">88%</item>
         <item name="android:windowIsFloating">true</item>
-        <item name="android:windowDimAmount">0.62</item>
-        <item name="android:windowBackgroundDimEnabled">true</item>
     </style>
     <style name="Widget.Saitenwerk.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/sw_popup_background</item>
     </style>
-</resources>"""
-    )
-# Keep dropdown popups consistent for framework Spinner and PopupMenu.
-if 'name="popupMenuStyle"' not in st:
-    st = st.replace(
-        '<style name="ThemeOverlay.Saitenwerk.Dialog"',
-        '<style name="Theme.Saitenwerk.Popup" parent="ThemeOverlay.Material3.Material3"/>\n    <style name="ThemeOverlay.Saitenwerk.Dialog"'
-    )
+</resources>""")
 styles.write_text(st, encoding="utf-8")
 
 themes = values / "themes.xml"
@@ -81,7 +45,7 @@ th = themes.read_text(encoding="utf-8")
 if 'name="popupMenuStyle"' not in th:
     th = th.replace(
         '<item name="colorSecondary">@color/sw_blue</item>',
-        '<item name="colorSecondary">@color/sw_blue</item>\n    <item name="popupMenuStyle">@style/Widget.Saitenwerk.PopupMenu</item>\n    <item name="android:popupBackground">@drawable/sw_popup_background</item>\n    <item name="android:dropDownListViewStyle">@style/Widget.Material3.ListPopupWindow</item>'
+        '<item name="colorSecondary">@color/sw_blue</item>\\n    <item name="popupMenuStyle">@style/Widget.Saitenwerk.PopupMenu</item>\\n    <item name="android:popupBackground">@drawable/sw_popup_background</item>'
     )
 themes.write_text(th, encoding="utf-8")
 
@@ -127,15 +91,6 @@ drawable.mkdir(parents=True, exist_ok=True)
 </selector>
 """, encoding="utf-8")
 
-# Ensure app-owned Spinner adapters explicitly use the custom dropdown row.
-s = main.read_text(encoding="utf-8")
-s = s.replace(
-    "android.R.layout.simple_spinner_dropdown_item",
-    "R.layout.sw_spinner_item"
-)
-main.write_text(s, encoding="utf-8")
-
-# Static validation: every AlertDialog call must use the shared overlay.
 check = main.read_text(encoding="utf-8")
 for token in [
     "AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)",
@@ -147,11 +102,6 @@ for token in [
         raise SystemExit("UI-MENÜ-VALIDIERUNG FEHLGESCHLAGEN: " + token)
 if "androidx.appcompat.app.AlertDialog.Builder(a)" in check or "androidx.appcompat.app.AlertDialog.Builder(host)" in check:
     raise SystemExit("Nicht gestalteter AlertDialog-Aufruf verblieben.")
-for rel in [
-    "app/src/main/res/drawable/sw_dialog_background.xml",
-    "app/src/main/res/drawable/sw_popup_background.xml",
-    "app/src/main/res/layout/sw_spinner_item.xml",
-]:
-    if not (root / rel).is_file():
-        raise SystemExit("UI-Ressource fehlt: " + rel)
+if "Widget.Material3.ListPopupWindow" in th or "dropDownListViewStyle" in th:
+    raise SystemExit("Nicht unterstützter Popup-Style verblieben.")
 print("SAITENWERK MENÜ-, DROPDOWN- UND DIALOG-DESIGN: PASS")
