@@ -107,7 +107,7 @@ s = s[:about_start] + replacement + s[settings_return:]
 
 # Lernstudio: Schnellstart muss direkt nach Titel und Einleitung stehen.
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
 if learn_start < 0 or learn_end < 0:
     raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
 learn = s[learn_start:learn_end]
@@ -122,12 +122,12 @@ quick_block = learn[quick_start:quick_end]
 learn = learn[:quick_start] + learn[quick_end:]
 intro_pos = learn.find(intro_anchor, overview_start)
 insert_at = intro_pos + len(intro_anchor)
-learn = learn[:insert_at] + "\\n\\n" + quick_block.rstrip() + learn[insert_at:]
+learn = learn[:insert_at] + "\n\n" + quick_block.rstrip() + learn[insert_at:]
 s = s[:learn_start] + learn + s[learn_end:]
 
 # Strenge Positionsprüfung: Schnellstart muss unmittelbar nach der Einleitung und vor Level/Statistik stehen.
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
 learn = s[learn_start:learn_end]
 overview_start = learn.find("        overviewAction = {")
 intro_pos = learn.find("Dein persönlicher Trainingsbereich für Akkorde, Rhythmus, Timing, Schlagmuster und Songs.", overview_start)
