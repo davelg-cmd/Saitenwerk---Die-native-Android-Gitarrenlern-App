@@ -668,5 +668,138 @@ if letter_render_anchor in s and 'val letterScroll = HorizontalScrollView(a)' no
 elif 'val letterScroll = HorizontalScrollView(a)' not in s:
     raise SystemExit("FEHLER: Akkorddatenbank-Renderanker für Buchstaben-Dropdowns fehlt.")
 
+
+# Kompakte 4x2-Grundtonauswahl statt Such-/Filterleisten und Akkordraster.
+chords_start = s.find("class ChordsFragment : Fragment() {")
+chords_end = s.find("\n\nclass GuitarFretboardView", chords_start)
+if chords_start < 0 or chords_end < 0:
+    raise SystemExit("FEHLER: ChordsFragment nicht gefunden.")
+chords_replacement = r'''class ChordsFragment : Fragment() {
+    private var training: ChordTrainingPanel? = null
+
+    override fun onDestroyView() {
+        training?.stop()
+        training = null
+        super.onDestroyView()
+    }
+
+    override fun onCreateView(i: android.view.LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        val a = requireActivity() as MainActivity
+        val root = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(a.title("Akkorde"))
+        root.addView(a.body("Griffbilder · Akkordwissen · Wechseltraining"))
+        val scroll = ScrollView(a).apply { clipToPadding = false }
+        val content = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(24))
+        }
+        val chooserCard = a.card()
+        val chooser = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(a.dp(14), a.dp(14), a.dp(14), a.dp(14))
+        }
+        chooser.addView(TextView(a).apply {
+            text = "Akkord auswählen"
+            textSize = 18f
+            setTypeface(typeface, 1)
+            setTextColor(a.getColor(R.color.sw_text))
+        })
+        chooser.addView(a.body("Wähle einen Buchstaben und anschließend den gewünschten Akkord."))
+        val letterGrid = GridLayout(a).apply {
+            columnCount = 4
+            useDefaultMargins = false
+            setPadding(0, a.dp(10), 0, 0)
+        }
+        listOf("A", "B", "C", "D", "E", "F", "G", "H").forEach { letter ->
+            val chords = ChordLibrary.all
+                .filter { it.name.startsWith(letter, ignoreCase = true) }
+                .sortedBy { it.name }
+            val button = a.button("$letter  ▾").apply {
+                textSize = 14f
+                isEnabled = chords.isNotEmpty()
+                alpha = if (chords.isNotEmpty()) 1f else .4f
+            }
+            button.setOnClickListener { anchor ->
+                val popup = android.widget.PopupMenu(a, anchor)
+                chords.forEachIndexed { index, chord ->
+                    popup.menu.add(android.view.Menu.NONE, index, index, chord.name)
+                }
+                popup.setOnMenuItemClickListener { item ->
+                    chords.getOrNull(item.itemId)?.let { showChord(it) }
+                    true
+                }
+                popup.show()
+            }
+            letterGrid.addView(button, GridLayout.LayoutParams().apply {
+                width = 0
+                height = a.dp(46)
+                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                setMargins(a.dp(3), a.dp(3), a.dp(3), a.dp(3))
+            })
+        }
+        chooser.addView(letterGrid)
+        chooserCard.addView(chooser)
+        content.addView(chooserCard)
+
+        val detailCard = a.card().apply { visibility = View.GONE }
+        val detail = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(a.dp(16), a.dp(14), a.dp(16), a.dp(16))
+        }
+        detailCard.addView(detail)
+
+        fun showChord(ch: ChordShape) {
+            detail.removeAllViews()
+            detail.addView(TextView(a).apply {
+                text = ch.name
+                textSize = 29f
+                setTextColor(a.getColor(R.color.sw_copper))
+                setTypeface(typeface, 1)
+            })
+            detail.addView(TextView(a).apply {
+                text = ch.quality + " · " + ch.note
+                setTextColor(a.getColor(R.color.sw_muted))
+            })
+            detail.addView(ChordDiagramView(a, ch), LinearLayout.LayoutParams(-1, a.dp(270)))
+            detail.addView(TextView(a).apply {
+                text = "× = nicht anschlagen · ○ = leere Saite"
+                setTextColor(a.getColor(R.color.sw_muted))
+                textSize = 13f
+            })
+            val preview = a.button("▶ Akkord anhören")
+            preview.setOnClickListener { ChordPreviewPlayer.play(ch) }
+            detail.addView(preview, LinearLayout.LayoutParams(-1, a.dp(48)).apply {
+                topMargin = a.dp(8)
+            })
+            val prefs = a.getSharedPreferences("saitenwerk", 0)
+            val key = "fav_chords"
+            val saved = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+            val favorite = a.button(if (ch.name in saved) "★ Favorit entfernen" else "☆ Als Favorit speichern")
+            favorite.setOnClickListener {
+                val now = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+                if (!now.add(ch.name)) now.remove(ch.name)
+                prefs.edit().putStringSet(key, now).apply()
+                favorite.text = if (ch.name in now) "★ Favorit entfernen" else "☆ Als Favorit speichern"
+            }
+            detail.addView(favorite, LinearLayout.LayoutParams(-1, a.dp(46)).apply {
+                topMargin = a.dp(8)
+            })
+            detailCard.visibility = View.VISIBLE
+        }
+
+        content.addView(detailCard, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = a.dp(12)
+        })
+        training = ChordTrainingPanel(a)
+        content.addView(training, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = a.dp(14)
+        })
+        scroll.addView(content)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        return root
+    }
+}'''
+s = s[:chords_start] + chords_replacement + s[chords_end:]
+
 p.write_text(s, encoding="utf-8")
 print("LERNSTUDIO-OPTIMIERUNG: PASS")
