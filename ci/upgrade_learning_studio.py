@@ -89,6 +89,8 @@ replacement = r'''class LearnFragment : Fragment() {
             updatePracticeStats()
         }
 
+        var overviewAction: (() -> Unit)? = null
+
         fun panel(heading: String, description: String): Pair<MaterialCardView, LinearLayout> {
             val card = roundedCard()
             val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(16), a.dp(15), a.dp(16), a.dp(16)) }
@@ -150,7 +152,7 @@ replacement = r'''class LearnFragment : Fragment() {
                 updateHeader()
             }
             next.setOnClickListener { if (answered > 0) recordSession(2); newQuestion() }
-            finish.setOnClickListener { if (answered > 0) recordSession(2); showOverview() }
+            finish.setOnClickListener { if (answered > 0) recordSession(2); overviewAction?.invoke() }
             newQuestion(); content.addView(card)
         }
 
@@ -232,7 +234,7 @@ replacement = r'''class LearnFragment : Fragment() {
             content.addView(card)
         }
 
-        fun showOverview() {
+        overviewAction = {
             chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             content.addView(a.title("Lernstudio"))
             content.addView(a.body("Dein Übungsbereich für Akkorde, Rhythmus, Timing und tägliche Routinen. Wähle eine Übung und leg direkt los."))
@@ -270,7 +272,7 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        showOverview()
+        overviewAction?.invoke()
         return root
     }
 
