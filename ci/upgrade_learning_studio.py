@@ -402,7 +402,7 @@ class GuitarFretboardView(context: android.content.Context) : View(context) {
 
     fun setChord(value: ChordShape?) {
         chord = value
-        contentDescription = value?.let { "Gitarrengriffbrett für Akkord \${it.name}" } ?: "Gitarrengriffbrett"
+        contentDescription = value?.let { "Gitarrengriffbrett für Akkord ${it.name}" } ?: "Gitarrengriffbrett"
         invalidate()
     }
 
@@ -431,7 +431,7 @@ class GuitarFretboardView(context: android.content.Context) : View(context) {
         }
 
         if (shape.baseFret > 1) {
-            canvas.drawText("\${shape.baseFret}. Bund", left + dp(34f), dp(12f), labels)
+            canvas.drawText("${shape.baseFret}. Bund", left + dp(34f), dp(12f), labels)
         } else {
             canvas.drawText("Sattel", left + dp(18f), dp(12f), labels)
         }
