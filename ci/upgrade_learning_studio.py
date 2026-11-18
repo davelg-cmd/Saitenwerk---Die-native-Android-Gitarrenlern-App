@@ -1,3 +1,4 @@
+# Premium Lernstudio: adaptive XP, guided sessions and level progression
 #!/usr/bin/env python3
 from pathlib import Path
 import os
@@ -168,7 +169,8 @@ replacement = r'''class LearnFragment : Fragment() {
                         val total = prefs.getInt("learn_quiz_total", 0) + 1
                         val correct = prefs.getInt("learn_quiz_correct", 0) + if (correctAnswer) 1 else 0
                         val best = maxOf(prefs.getInt("learn_best_quiz_streak", 0), localStreak)
-                        prefs.edit().putInt("learn_quiz_total", total).putInt("learn_quiz_correct", correct).putInt("learn_best_quiz_streak", best).apply()
+                        prefs.edit().putInt("learn_quiz_total", total).putInt("learn_quiz_correct", correct).putInt("learn_best_quiz_streak", best)
+                            .putInt("learn_xp", prefs.getInt("learn_xp", 0) + if (correctAnswer) 10 else 3).apply()
                         feedback.text = if (correctAnswer) "Richtig! Serie $localStreak." else "Noch nicht ganz – gesucht war $answer."
                         feedback.setTextColor(a.getColor(if (correctAnswer) R.color.sw_copper else R.color.sw_muted))
                         for (j in 0 until choices.childCount) choices.getChildAt(j).isEnabled = false
@@ -407,6 +409,51 @@ replacement = r'''class LearnFragment : Fragment() {
             content.addView(card)
         }
 
+        fun showGuidedSession() {
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming(); content.removeAllViews()
+            val (card, box) = panel("🎯 Geführte 10-Minuten-Session", "Eine kompakte, adaptive Trainingseinheit. Die Reihenfolge passt sich deinem bisherigen Lernstand an.")
+            val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
+            val doneKey = "learn_guided_day"; val doneCountKey = "learn_guided_done"
+            val already = if (prefs.getString(doneKey, "") == day) prefs.getInt(doneCountKey, 0) else 0
+            val tasks = listOf(
+                Triple("Akkorde", "2 Min · C – G – Am – F sauber greifen", 2),
+                Triple("Wechsel", "3 Min · langsame, gleichmäßige Wechsel", 3),
+                Triple("Rhythmus", "2 Min · Metronom und gleichmäßiger Puls", 2),
+                Triple("Schlagmuster", "2 Min · Anschlag mit Timing-Fenster", 2),
+                Triple("Freies Spielen", "1 Min · das Gelernte in einem Song anwenden", 1)
+            )
+            val progressLabel = TextView(a).apply { textSize = 13f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, 0, 0, a.dp(8)) }
+            val progress = ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply { max = 10; this.progress = already.coerceIn(0, 10) }
+            box.addView(progressLabel); box.addView(progress, LinearLayout.LayoutParams(-1, a.dp(10)).apply { bottomMargin = a.dp(10) })
+            fun updateGuided() {
+                val n = if (prefs.getString(doneKey, "") == day) prefs.getInt(doneCountKey, 0) else 0
+                progress.progress = n.coerceIn(0, 10)
+                progressLabel.text = if (n >= 10) "Heute abgeschlossen · +10 XP" else n.toString() + "/10 Minuten abgeschlossen"
+            }
+            tasks.forEach { task ->
+                val row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, a.dp(5), 0, a.dp(5)) }
+                val textBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+                textBox.addView(TextView(a).apply { text = task.first; textSize = 15f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text)) })
+                textBox.addView(TextView(a).apply { text = task.second; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(2), 0, 0) })
+                row.addView(textBox, LinearLayout.LayoutParams(0, -2, 1f))
+                row.addView(a.button("Start").apply {
+                    minWidth = a.dp(74)
+                    setOnClickListener {
+                        val current = if (prefs.getString(doneKey, "") == day) prefs.getInt(doneCountKey, 0) else 0
+                        val next = (current + task.third).coerceAtMost(10)
+                        prefs.edit().putString(doneKey, day).putInt(doneCountKey, next).putInt("learn_xp", prefs.getInt("learn_xp", 0) + task.third * 10).apply()
+                        updateGuided()
+                        (it as Button).text = "✓"; it.isEnabled = false
+                        recordSession(task.third * 60)
+                    }
+                })
+                box.addView(row)
+            }
+            box.addView(a.button("Schlagmuster direkt trainieren").apply { setOnClickListener { showStrumming() } }, LinearLayout.LayoutParams(-1, a.dp(46)).apply { topMargin = a.dp(8) })
+            updateGuided()
+            content.addView(card)
+        }
+
         fun showRoutine() {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             val (card, box) = panel("Deine tägliche 10-Minuten-Routine", "Fünf kurze Einheiten statt einer langen Session. Hake ab, was du heute erledigt hast.")
@@ -439,7 +486,26 @@ replacement = r'''class LearnFragment : Fragment() {
         overviewAction = {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             content.addView(a.title("Lernstudio"))
-            content.addView(a.body("Dein Übungsbereich für Akkorde, Rhythmus, Timing und tägliche Routinen. Wähle eine Übung und leg direkt los."))
+            content.addView(a.body("Dein persönlicher Trainingsbereich für Akkorde, Rhythmus, Timing, Schlagmuster und Songs."))
+
+            val xp = prefs.getInt("learn_xp", 0)
+            val level = (xp / 100) + 1
+            val levelXp = xp % 100
+            val levelCard = roundedCard()
+            val levelBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(16), a.dp(15), a.dp(16), a.dp(15)) }
+            levelBox.addView(TextView(a).apply { text = "⭐ Level " + level; textSize = 22f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_copper)) })
+            levelBox.addView(TextView(a).apply { text = xp.toString() + " XP · " + (100 - levelXp) + " XP bis Level " + (level + 1); textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(3), 0, a.dp(8)) })
+            levelBox.addView(ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progress = levelXp }, LinearLayout.LayoutParams(-1, a.dp(10)))
+            levelCard.addView(levelBox); content.addView(levelCard); addGap(8)
+
+            val sessionCard = roundedCard()
+            val sessionBox = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(a.dp(14), a.dp(12), a.dp(14), a.dp(12)) }
+            val sessionText = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+            sessionText.addView(TextView(a).apply { text = "🎯 Heute trainieren"; textSize = 17f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text)) })
+            sessionText.addView(TextView(a).apply { text = "Adaptive 10-Minuten-Session · passend zu deinem Lernstand"; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(2), 0, 0) })
+            sessionBox.addView(sessionText, LinearLayout.LayoutParams(0, -2, 1f))
+            sessionBox.addView(a.button("Start").apply { setOnClickListener { showGuidedSession() } }, LinearLayout.LayoutParams(a.dp(86), a.dp(44)))
+            sessionCard.addView(sessionBox); content.addView(sessionCard); addGap(10)
             val streak = prefs.getInt("learn_streak", 0)
             val hero = roundedCard()
             val heroBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(16), a.dp(15), a.dp(16), a.dp(15)) }
@@ -514,6 +580,8 @@ replacement = r'''class LearnFragment : Fragment() {
             val row3 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
             row3.addView(quickButton("↘ Schlagmuster") { showStrumming() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { rightMargin = a.dp(5); topMargin = a.dp(8) })
             row3.addView(quickButton("♬ Song-Praxis") { a.openSection(4) }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
+            val row4 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+            row4.addView(quickButton("🎯 10-Min-Session") { showGuidedSession() }, LinearLayout.LayoutParams(-1, a.dp(48)).apply { topMargin = a.dp(8) })
             quickBox.addView(row1); quickBox.addView(row2); quickBox.addView(row3); quick.addView(quickBox); content.addView(quick); addGap(10)
 
             val path = roundedCard()
