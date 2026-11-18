@@ -25,7 +25,7 @@ old = """            val playProgression = a.button("▶ Akkordfolge anhören")
             }
 """
 new = """            val playProgression = a.button("▶ Akkordfolge anhören").apply {
-                gravity = Gravity.CENTER
+                (this as TextView).gravity = Gravity.CENTER
                 textAlignment = View.TEXT_ALIGNMENT_CENTER
                 includeFontPadding = true
                 minLines = 1
