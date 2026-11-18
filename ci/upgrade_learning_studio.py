@@ -373,15 +373,6 @@ s = s[:start] + replacement + s[end:]
 
 # Griffbrett im Akkordwechseltrainer ergänzen: horizontale Gitarrenansicht mit
 # sechs Saiten, Bundlinien und den gegriffenen Positionen des aktiven Akkords.
-fretboard_class = r'''
-class GuitarFretboardView(context: android.content.Context) : ChordDiagramView(context)
-'''
-if "class GuitarFretboardView(context:" not in s:
-    class_anchor = "class ChordTrainingPanel(private val host: MainActivity) : LinearLayout(host) {"
-    if class_anchor not in s:
-        raise SystemExit("FEHLER: ChordTrainingPanel-Anker nicht gefunden.")
-    s = s.replace(class_anchor, fretboard_class + "\n" + class_anchor, 1)
-
 replacements = [
     ("    private val next = TextView(host)\n", "    private val next = TextView(host)\n    private val fretboard = GuitarFretboardView(host)\n"),
     ("        else \"\"\n    }\n\n    private fun openChordPicker()", "        else \"\"\n        fretboard.setChord(ChordLibrary.all.firstOrNull { it.name == current.text.toString() })\n    }\n\n    private fun openChordPicker()"),
@@ -389,9 +380,11 @@ replacements = [
     ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
 ]
 for old, new in replacements:
-    if old not in s:
+    if old in s:
+        s = s.replace(old, new, 1)
+    elif new not in s:
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
-    s=s.replace(old,new,1)
+s = s.replace("private val fretboard = GuitarFretboardView(host)", "private val fretboard = ChordDiagramView(host)")
 
 
 
@@ -420,9 +413,10 @@ finger_data = [
 ('ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0))','ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0), fingers=intArrayOf(0,0,1,2,3,0))')
 ]
 for old, new in finger_data:
-    if old not in s:
+    if old in s:
+        s = s.replace(old, new, 1)
+    elif new not in s:
         raise SystemExit("FEHLER: Fingersatz-Anker fehlt: " + old[:70])
-    s = s.replace(old, new, 1)
 
 shared_diagram_class = r'''
 open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null) : View(context) {
@@ -542,7 +536,7 @@ shared_diagram_class = shared_diagram_class.replace(r"\$", "$")
 import re
 diagram_pattern = r'class ChordDiagramView\(context: android\.content\.Context, private val shape: ChordShape\) : View\(context\) \{.*?(?=\n/\*\* Spielt den ausgewählten Griff)'
 s, diagram_count = re.subn(diagram_pattern, lambda _: shared_diagram_class.rstrip(), s, count=1, flags=re.S)
-if diagram_count != 1:
+if diagram_count != 1 and "open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)" not in s:
     raise SystemExit("FEHLER: Gemeinsame Akkorddiagramm-Ansicht konnte nicht ersetzt werden.")
 
 # Neue Sekunden-Erfassung muss beim Zurücksetzen des Lernstands ebenfalls gelöscht werden.
