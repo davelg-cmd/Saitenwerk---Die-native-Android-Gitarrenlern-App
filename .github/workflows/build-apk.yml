@@ -241,6 +241,13 @@ jobs:
           set -euo pipefail
           python3 ci/use_original_guitar_samples.py
 
+      - name: Einheitliche Premium-Gitarren-Soundengine integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_premium_guitar_audio.py
+
       - name: Display während Stimmgerät und Übungen eingeschaltet lassen
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
