@@ -74,15 +74,19 @@ replacement = r'''class LearnFragment : Fragment() {
             content.findViewWithTag<ProgressBar>("learnTodayProgress")?.apply { max = routineTotal; progress = routineDone }
         }
 
-        fun recordSession(minutes: Int) {
+        fun recordPracticeDay() {
             val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
             val last = prefs.getString("learn_last_session_day", "")
-            var streak = prefs.getInt("learn_streak", 0)
+            val streak = prefs.getInt("learn_streak", 0)
             val yesterday = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date(System.currentTimeMillis() - 86400000L))
             if (last != day) {
-                streak = if (last == yesterday) streak + 1 else 1
-                prefs.edit().putString("learn_last_session_day", day).putInt("learn_streak", streak).apply()
+                prefs.edit().putString("learn_last_session_day", day).putInt("learn_streak", if (last == yesterday) streak + 1 else 1).apply()
             }
+        }
+
+        fun recordSession(minutes: Int) {
+            val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
+            recordPracticeDay()
             val oldMinutes = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_minutes", 0) else 0
             prefs.edit().putString("learn_daily_day", day).putInt("learn_daily_minutes", oldMinutes + minutes)
                 .putInt("learn_sessions", prefs.getInt("learn_sessions", 0) + 1).apply()
@@ -226,7 +230,10 @@ replacement = r'''class LearnFragment : Fragment() {
             tasks.forEachIndexed { index, task ->
                 val cb = CheckBox(a).apply { text = task; textSize = 14f; setTextColor(a.getColor(R.color.sw_text)); isChecked = (prefs.getInt("learn_routine_done", 0) and (1 shl index)) != 0 }
                 cb.setOnCheckedChangeListener { _, checked ->
-                    var mask = prefs.getInt("learn_routine_done", 0); mask = if (checked) mask or (1 shl index) else mask and (1 shl index).inv(); update(mask)
+                    val previous = prefs.getInt("learn_routine_done", 0)
+                    var mask = previous; mask = if (checked) mask or (1 shl index) else mask and (1 shl index).inv()
+                    if (checked && previous == 0) recordPracticeDay()
+                    update(mask)
                 }
                 box.addView(cb)
             }
