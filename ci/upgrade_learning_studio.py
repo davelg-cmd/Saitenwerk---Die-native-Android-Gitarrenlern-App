@@ -630,7 +630,7 @@ replacement = r'''class LearnFragment : Fragment() {
                     orientation = LinearLayout.VERTICAL
                     setPadding(a.dp(8), a.dp(8), a.dp(6), a.dp(8))
                     background = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(a.getColor(if (achievement.second) R.color.sw_surface else R.color.sw_surface_alt))
+                        setColor(a.getColor(if (achievement.second) R.color.sw_surface else R.color.sw_surface))
                         cornerRadius = a.dp(10).toFloat()
                     }
                 }
