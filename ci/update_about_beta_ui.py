@@ -11,7 +11,7 @@ if "App-Informationen" not in s or "Changelog" not in s:
     raise SystemExit("FEHLER: App-Informationen oder Changelog fehlen.")
 
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
 if learn_start < 0 or learn_end < 0:
     raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
 learn = s[learn_start:learn_end]
@@ -23,20 +23,19 @@ quick_end = learn.find("            val path = roundedCard()", quick_start)
 if min(overview_start, intro_pos, quick_start, quick_end) < 0:
     raise SystemExit("FEHLER: Schnellstart oder Einleitung nicht gefunden.")
 
-# Schnellstart-Card aus dem bisherigen Bereich ausschneiden und direkt hinter die Einleitung setzen.
+# Schnellstart-Card direkt hinter die Einleitung setzen.
 quick_block = learn[quick_start:quick_end].rstrip()
 learn = learn[:quick_start] + learn[quick_end:]
 intro_pos = learn.find(intro_anchor, overview_start)
 insert_at = intro_pos + len(intro_anchor)
-learn = learn[:insert_at] + "\\n\\n" + quick_block + "\\n\\n" + learn[insert_at:]
+learn = learn[:insert_at] + "\n\n" + quick_block + "\n\n" + learn[insert_at:]
 
-# Wochenziel-Werte werden von Schnellstart und späteren Karten gemeinsam genutzt.
-# Daher einmalig vor Schnellstart initialisieren und im Wochenziel-Panel nicht erneut deklarieren.
+# Gemeinsame Wochenziel-Werte vor Schnellstart initialisieren.
 week_pattern = (
-    r'            val cal = java\\.util\\.Calendar\\.getInstance\\(\\)\\n'
-    r'            val weekKey = [^\\n]*\\n'
-    r'            val weekSeconds = [^\\n]*\\n'
-    r'            val weekGoal = [^\\n]*\\n'
+    r'            val cal = java\.util\.Calendar\.getInstance\(\)\n'
+    r'            val weekKey = [^\n]*\n'
+    r'            val weekSeconds = [^\n]*\n'
+    r'            val weekGoal = [^\n]*\n'
 )
 week_decl = re.search(week_pattern, learn[overview_start:], re.MULTILINE)
 if not week_decl:
@@ -51,17 +50,18 @@ if quick_pos < 0:
 learn = learn[:quick_pos] + week_values + learn[quick_pos:]
 
 s = s[:learn_start] + learn + s[learn_end:]
-# Harte Prüfung der realen Aufbau-Reihenfolge und genau einer Wochenziel-Deklaration.
+
+# Reihenfolge und eindeutige Deklaration strikt prüfen.
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
 learn = s[learn_start:learn_end]
 overview_start = learn.find("        overviewAction = {")
 intro_pos = learn.find("Dein persönlicher Trainingsbereich für Akkorde, Rhythmus, Timing, Schlagmuster und Songs.", overview_start)
+week_pos = learn.find("val weekSeconds", overview_start)
 quick_pos = learn.find("val quick = roundedCard()", overview_start)
 quick_add_pos = learn.find("content.addView(quick)", quick_pos)
 xp_pos = learn.find("val xp = prefs.getInt", overview_start)
-week_pos = learn.find("val weekSeconds", overview_start)
-if min(overview_start, intro_pos, quick_pos, quick_add_pos, xp_pos, week_pos) < 0:
+if min(overview_start, intro_pos, week_pos, quick_pos, quick_add_pos, xp_pos) < 0:
     raise SystemExit("FEHLER: Schnellstart, Level oder Wochenziel fehlt.")
 if not (intro_pos < week_pos < quick_pos < quick_add_pos < xp_pos):
     raise SystemExit("FEHLER: Wochenziel oder Schnellstart steht nicht an der erwarteten Position.")
