@@ -662,7 +662,7 @@ letter_dropdown_code = """        val letterScroll = HorizontalScrollView(a).app
         }
         root.addView(letterScroll, LinearLayout.LayoutParams(-1, a.dp(52)))
 """
-letter_render_anchor = '        fun render() {\\n            grid.removeAllViews(); val q = search.text.toString().trim().lowercase()'
+letter_render_anchor = '        fun render() {\n            grid.removeAllViews(); val q = search.text.toString().trim().lowercase()'
 if letter_render_anchor in s and 'val letterScroll = HorizontalScrollView(a)' not in s:
     s = s.replace(letter_render_anchor, letter_dropdown_code + "\\n" + letter_render_anchor, 1)
 elif 'val letterScroll = HorizontalScrollView(a)' not in s:
