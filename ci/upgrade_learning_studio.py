@@ -589,5 +589,48 @@ elif "open class ChordDiagramView(context: android.content.Context, initialShape
 reset_anchor = '.remove("learn_quiz_correct")'
 if reset_anchor in s and '.remove("learn_daily_seconds")' not in s:
     s = s.replace(reset_anchor, reset_anchor + '.remove("learn_daily_seconds")', 1)
+
+# Erweiterte Akkordauswahl mit praxisnahen Dur-, Moll-, Sept-, Add- und Power-Voicings.
+library_anchor = '        ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0), fingers=intArrayOf(0,0,1,2,3,0))'
+library_additions = [
+'        ChordShape("B", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="Barré-Durgriff", fingers=intArrayOf(0,1,3,3,3,1)),',
+'        ChordShape("Bb", "Dur", intArrayOf(-1,1,3,3,3,1), note="Barré-Durgriff", fingers=intArrayOf(0,1,3,3,3,1)),',
+'        ChordShape("F#m", "Moll", intArrayOf(2,4,4,2,2,2), 2, note="Barré-Mollgriff", fingers=intArrayOf(1,3,4,1,1,1)),',
+'        ChordShape("C#m", "Moll", intArrayOf(-1,4,6,6,5,4), 4, note="Barré-Mollgriff", fingers=intArrayOf(0,1,3,4,2,1)),',
+'        ChordShape("B7", "Septakkord", intArrayOf(-1,2,1,2,0,2), note="Dominantischer Septakkord", fingers=intArrayOf(0,2,1,3,0,4)),',
+'        ChordShape("A7", "Septakkord", intArrayOf(-1,0,2,0,2,0), note="Offener Septakkord", fingers=intArrayOf(0,0,1,0,2,0)),',
+'        ChordShape("Dmaj7", "Septakkord", intArrayOf(-1,-1,0,2,2,2), note="Dur-Septakkord", fingers=intArrayOf(0,0,0,1,2,3)),',
+'        ChordShape("Cmaj7", "Septakkord", intArrayOf(-1,3,2,0,0,0), note="Offener Dur-Septakkord", fingers=intArrayOf(0,3,2,0,0,0)),',
+'        ChordShape("Dm7", "Septakkord", intArrayOf(-1,-1,0,2,1,1), note="Moll-Septakkord", fingers=intArrayOf(0,0,0,2,1,1)),',
+'        ChordShape("Cadd9", "Add-Akkord", intArrayOf(-1,3,2,0,3,0), note="Offener Add9-Klang", fingers=intArrayOf(0,2,1,0,3,0)),',
+'        ChordShape("Gsus4", "Sus-Akkord", intArrayOf(3,3,0,0,1,3), note="Sus4-Klang", fingers=intArrayOf(2,3,0,0,1,4)),',
+'        ChordShape("E5", "Power-Akkord", intArrayOf(0,2,2,-1,-1,-1), note="Powerchord", fingers=intArrayOf(0,1,3,0,0,0)),',
+'        ChordShape("A5", "Power-Akkord", intArrayOf(-1,0,2,2,-1,-1), note="Powerchord", fingers=intArrayOf(0,0,1,3,0,0))'
+]
+if library_anchor in s and 'ChordShape("Cadd9"' not in s:
+    s = s.replace(library_anchor, library_anchor + ",\n" + "\n".join(library_additions), 1)
+elif 'ChordShape("Cadd9"' not in s:
+    raise SystemExit("FEHLER: Akkorddatenbank-Erweiterungsanker fehlt.")
+
+# Suchfilter, Favoriten und kompakteres Kartenraster verbessern.
+s = s.replace(
+'val categories = listOf("Alle", "Dur", "Moll", "Septakkord", "Sus-Akkord"); var category = "Alle"',
+'val categories = listOf("Alle", "Dur", "Moll", "Septakkord", "Sus-Akkord", "Add-Akkord", "Power-Akkord", "Favoriten"); var category = "Alle"',
+1)
+old_filter = 'val matches = ChordLibrary.all.filter { (category == "Alle" || it.quality == category) && it.name.lowercase().contains(q) }'
+new_filter = '''val favorites = a.getSharedPreferences("saitenwerk", 0).getStringSet("fav_chords", emptySet()) ?: emptySet()
+            val matches = ChordLibrary.all.filter {
+                (category == "Alle" || (category == "Favoriten" && it.name in favorites) || it.quality == category) &&
+                (it.name.lowercase().contains(q) || it.quality.lowercase().contains(q) || it.note.lowercase().contains(q))
+            }.sortedWith(compareByDescending<ChordShape> { it.name in favorites }.thenBy { it.name })'''
+if old_filter in s:
+    s = s.replace(old_filter, new_filter, 1)
+s = s.replace('val grid = GridLayout(a).apply { columnCount = 3;', 'val grid = GridLayout(a).apply { columnCount = 2;', 1)
+s = s.replace('height = a.dp(52); columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)', 'height = a.dp(60); columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)', 1)
+if 'val resultCount = TextView(a)' not in s:
+    s = s.replace('val grid = GridLayout(a).apply { columnCount = 2;', 'val resultCount = TextView(a).apply { textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(a.dp(16), 0, 0, a.dp(4)) }\n        val grid = GridLayout(a).apply { columnCount = 2;', 1)
+    s = s.replace('matches.forEach { chord ->', 'resultCount.text = matches.size.toString() + " Akkorde gefunden"\n            matches.forEach { chord ->', 1)
+    s = s.replace('content.addView(detailCard); content.addView(grid)', 'content.addView(detailCard); content.addView(resultCount); content.addView(grid)', 1)
+
 p.write_text(s, encoding="utf-8")
 print("LERNSTUDIO-OPTIMIERUNG: PASS")
