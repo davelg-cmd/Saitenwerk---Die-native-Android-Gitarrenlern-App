@@ -8,8 +8,11 @@ fields="""    private var referenceTrack: AudioTrack? = null
     private val referenceAudioHandler = Handler(Looper.getMainLooper())
     private var referenceReleaseTask: Runnable? = null
     private var selectedReferenceName: String? = null"""
-if needle in t: t=t.replace(needle,fields,1)
-elif "private val referenceAudioHandler" not in t: raise SystemExit("Audio-State fehlt")
+if "private val referenceAudioHandler" not in t:
+    if needle in t:
+        t=t.replace(needle,fields,1)
+    else:
+        raise SystemExit("Audio-State fehlt")
 x=t.index("    private fun rebuildStringButtons() {"); y=t.index("\n    private fun startTuner()",x)
 block=r'''    private fun rebuildStringButtons() {
         val panel = stringPanel ?: return
