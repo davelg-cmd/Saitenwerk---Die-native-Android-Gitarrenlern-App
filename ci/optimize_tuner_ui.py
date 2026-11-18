@@ -203,8 +203,8 @@ t = re.sub(
 if "removeKammertonSection" in t or "containsKammertonControl" in t:
     raise SystemExit("TUNER UI: destructive Kammerton cleanup still present")
 # Drop now-unused state fields left behind by the removed Kammerton controls.
-t = t.replace("    private var referenceLabel: TextView? = null\\n", "")
-t = t.replace("    private var referenceSeekReset: SeekBar? = null\\n", "")
+t = t.replace("    private var referenceLabel: TextView? = null\n", "")
+t = t.replace("    private var referenceSeekReset: SeekBar? = null\n", "")
 if "referenceHeader" in t or "Kammerton A4" in t or "referenceSeekReset" in t:
     raise SystemExit("TUNER UI: Kammerton slider section still present")
 if "Referenztöne · Saite antippen zum Anhören" in t:
