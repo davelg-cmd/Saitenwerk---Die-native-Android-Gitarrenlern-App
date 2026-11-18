@@ -93,10 +93,24 @@ cleanup = '''
     }
 
     private fun removeKammertonSection(root: android.view.ViewGroup) {
-        for (index in root.childCount - 1 downTo 0) {
-            val child = root.getChildAt(index)
-            if (containsKammertonControl(child)) root.removeViewAt(index)
+        fun removeSmallestSection(parent: android.view.ViewGroup): Boolean {
+            for (index in parent.childCount - 1 downTo 0) {
+                val child = parent.getChildAt(index)
+                if (child is android.widget.TextView &&
+                    child.text?.toString()?.contains("Kammerton", ignoreCase = true) == true) {
+                    // Never remove the tuner root or its complete content column.
+                    if (parent !== root && parent.parent is android.view.ViewGroup) {
+                        (parent.parent as android.view.ViewGroup).removeView(parent)
+                    } else {
+                        parent.removeViewAt(index)
+                    }
+                    return true
+                }
+                if (child is android.view.ViewGroup && removeSmallestSection(child)) return true
+            }
+            return false
         }
+        removeSmallestSection(root)
     }
 
     private fun removeReferenceToneHints(view: android.view.ViewGroup) {
