@@ -680,7 +680,7 @@ for chord_line in complete_chords:
     if f'ChordShape("{chord_name}"' not in s:
         if chord_anchor not in s:
             raise SystemExit("FEHLER: Akkorddatenbank-Einfügeanker fehlt: " + chord_name)
-        s = s.replace(chord_anchor, chord_line + "\\n" + chord_anchor, 1)
+        s = s.replace(chord_anchor, chord_line + "\n" + chord_anchor, 1)
 
 # Suchfilter, Favoriten und kompakteres Kartenraster verbessern.
 s = s.replace(
