@@ -380,7 +380,7 @@ replacements = [
     ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
 ]
 for old, new in replacements:
-    if old == "    private val next = TextView(host)\\n" and "private val fretboard = ChordDiagramView(host)" in s:
+    if old == "    private val next = TextView(host)\n" and "private val fretboard = ChordDiagramView(host)" in s:
         continue
     if new in s:
         continue
