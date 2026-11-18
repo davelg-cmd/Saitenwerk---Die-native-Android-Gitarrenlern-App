@@ -304,6 +304,13 @@ jobs:
           set -euo pipefail
           python3 ci/remove_songpractice_stop_button.py
 
+      - name: Song-Praxis Anhören-Button als Start-Stopp-Schalter optimieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/toggle_songpractice_play_stop.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
