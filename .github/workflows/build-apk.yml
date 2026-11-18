@@ -119,6 +119,47 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_learning_studio.py
 
+      - name: Lernstudio-Fortschritt und Quiz-Zeit validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          main = Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          s = main.read_text(encoding="utf-8")
+          start = s.find("class LearnFragment : Fragment() {")
+          end = s.find("\\nclass PathFragment : Fragment() {", start)
+          if start < 0 or end < 0:
+              raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
+          learn = s[start:end]
+
+          required = [
+              'fun recordPracticeDay()',
+              'fun recordSession(minutes: Int)',
+              'if (!sessionRecorded) { recordSession(2); sessionRecorded = true }',
+              'if (checked && previous == 0) recordPracticeDay()',
+              'learn_daily_minutes',
+              'learn_quiz_correct',
+              'learn_quiz_total',
+              'learn_best_quiz_streak',
+              'Heute erledigt: $n von ${tasks.size}',
+              'private fun stopRhythm()',
+              'rhythmHandler?.removeCallbacksAndMessages(null)',
+          ]
+          missing = [item for item in required if item not in learn]
+          if missing:
+              raise SystemExit("FEHLER: Lernstudio-Funktionen fehlen: " + ", ".join(missing))
+
+          if 'next.setOnClickListener { sessionRecorded = false;' in learn:
+              raise SystemExit("FEHLER: Quiz-Zeit wird beim nächsten Akkord erneut als neue Session gezählt.")
+
+          print("LERNSTUDIO-FORTSCHRITT UND QUIZ-ZEIT: PASS")
+          print("Tagesserie, Routine, Quizstatistik, Session-Erfassung und Metronom-Cleanup geprüft.")
+          PY
+
       - name: Dauerhaften APK-Signaturschlüssel einrichten
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
