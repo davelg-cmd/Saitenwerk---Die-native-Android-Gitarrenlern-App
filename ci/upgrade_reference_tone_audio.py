@@ -67,9 +67,13 @@ block=r'''    private fun rebuildStringButtons() {
             val phases = DoubleArray(harmonics.size)
             for (i in pcm.indices) {
                 val time = i.toDouble() / rate
-                val attack = (time / 0.012).coerceIn(0.0, 1.0)
+                // 25 ms Vorlauf plus weiche Cosinus-Hüllkurve verhindert Einschaltknacken.
+                val attackProgress = ((time - 0.025) / 0.055).coerceIn(0.0, 1.0)
+                val attack = 0.5 - 0.5 * kotlin.math.cos(Math.PI * attackProgress)
                 val decay = kotlin.math.exp(-1.55 * time)
-                val tail = ((seconds - time) / 0.075).coerceIn(0.0, 1.0)
+                // Auch das Ende läuft mit einer glatten Kurve vollständig auf null.
+                val tailProgress = ((seconds - time) / 0.12).coerceIn(0.0, 1.0)
+                val tail = 0.5 - 0.5 * kotlin.math.cos(Math.PI * tailProgress)
                 var sample = 0.0
                 for (h in harmonics.indices) {
                     phases[h] += 2.0 * Math.PI * frequency * (h + 1) / rate
