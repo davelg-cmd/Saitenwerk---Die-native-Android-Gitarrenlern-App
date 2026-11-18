@@ -74,6 +74,13 @@ t = t.replace('''            minHeight = a.dp(52)
 t = t.replace('''        selector.addView(instrumentSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))''','''        instrumentSpinner?.contentDescription = "Instrument auswählen"
         selector.addView(instrumentSpinner, LinearLayout.LayoutParams(-1, a.dp(52)))''')
 t = t.replace('''        root.addView(a.body("Spiele eine einzelne Saite an. Die Anzeige zeigt den erkannten Ton, die Abweichung in Cent und die passende Zielsaite. Wähle oben dein Instrument und die passende Stimmung."))''','''        root.addView(a.body("Spiele eine Saite einzeln an. Die Nadel zeigt die Abweichung: links = zu tief, rechts = zu hoch. Stimmen ist erreicht, wenn die Nadel mittig steht."))''')
+# Remove the redundant explanatory paragraph below the tuner.
+tuner_hint = 'root.addView(a.body("Spiele eine Saite einzeln an. Die Nadel zeigt die Abweichung: links = zu tief, rechts = zu hoch. Stimmen ist erreicht, wenn die Nadel mittig steht."))'
+if tuner_hint in t:
+    t = "\n".join(line for line in t.splitlines() if tuner_hint not in line)
+if tuner_hint in t:
+    raise SystemExit("TUNER UI: explanatory paragraph was not removed")
+
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','links = zu tief, rechts = zu hoch','android.graphics.Color.rgb(92, 175, 142)','Referenztöne · Saite antippen zum Anhören']
 missing = [x for x in required if x not in t]
 if missing: raise SystemExit("Tuner UI validation failed: " + ", ".join(missing))
