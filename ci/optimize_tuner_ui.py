@@ -99,7 +99,7 @@ if "private fun removeReferenceToneHints(view: android.view.ViewGroup)" not in t
     marker = "    override fun onCreateView"
     if t.count(marker) != 1:
         raise SystemExit("TUNER UI: onCreateView insertion point not unique")
-    t = t.replace(marker, cleanup + "\\n" + marker, 1)
+    t = t.replace(marker, cleanup + "\n" + marker, 1)
 
 hook_call = "if (view is android.view.ViewGroup) removeReferenceToneHints(view)"
 if hook_call not in t:
@@ -107,7 +107,7 @@ if hook_call not in t:
     method = re.search(r"    override fun onViewCreated\\s*\\([^)]*\\)\\s*\\{", t)
     if method:
         insert_at = method.end()
-        t = t[:insert_at] + "\\n        " + hook_call + t[insert_at:]
+        t = t[:insert_at] + "\n        " + hook_call + t[insert_at:]
     else:
         marker = "    override fun onCreateView"
         if t.count(marker) != 1:
