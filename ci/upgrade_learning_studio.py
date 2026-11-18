@@ -467,7 +467,7 @@ replacements = [
     ("                current.text = sequence[index]\n                next.text =", "                current.text = sequence[index]\n                fretboard.setChord(ChordLibrary.all.firstOrNull { it.name == sequence[index] })\n                next.text ="),
     ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
 ]
-for old, new of replacements:
+for old, new in replacements:
     if old not in s:
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
     s=s.replace(old,new,1)
