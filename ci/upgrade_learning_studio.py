@@ -564,6 +564,20 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
 }
 '''
 shared_diagram_class = shared_diagram_class.replace(r"\$", "$")
+# Saitenfolge im Griffbild um 180 Grad drehen: tiefe E-Saite unten,
+# hohe e-Saite oben. Die Akkorddaten bleiben in E-A-D-G-H-e-Reihenfolge.
+shared_diagram_class = shared_diagram_class.replace(
+    "val y = top + i * stringGap",
+    "val y = bottom - i * stringGap",
+)
+shared_diagram_class = shared_diagram_class.replace(
+    "val firstY = top + group.minOf { it.first } * stringGap",
+    "val firstY = bottom - group.maxOf { it.first } * stringGap",
+)
+shared_diagram_class = shared_diagram_class.replace(
+    "val lastY = top + group.maxOf { it.first } * stringGap",
+    "val lastY = bottom - group.minOf { it.first } * stringGap",
+)
 diagram_start = s.find("open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null) : View(context) {")
 diagram_end = s.find("\n/** Spielt den ausgewählten Griff", diagram_start)
 if diagram_start >= 0 and diagram_end > diagram_start:
