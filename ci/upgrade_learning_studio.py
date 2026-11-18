@@ -387,7 +387,7 @@ for old, new in replacements:
     else:
         # Der zuletzt gesicherte Build enthält das Griffbrett bereits mit 210dp;
         # die ältere 154dp-Einfügestelle existiert dort erwartungsgemäß nicht mehr.
-        if old.startswith("        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))") and "stage.addView(fretboard, LayoutParams(-1, host.dp(210)))" in s:
+        if old.startswith("        stage.addView(next, LayoutParams(-1, host.dp(28)))") and "stage.addView(fretboard, LayoutParams(-1, host.dp(210)))" in s:
             continue
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
 s = s.replace("private val fretboard = GuitarFretboardView(host)", "private val fretboard = ChordDiagramView(host)")
