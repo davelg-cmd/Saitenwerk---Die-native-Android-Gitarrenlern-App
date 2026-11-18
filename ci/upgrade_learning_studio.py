@@ -387,6 +387,7 @@ for old, new in replacements:
     else:
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
 s = s.replace("private val fretboard = GuitarFretboardView(host)", "private val fretboard = ChordDiagramView(host)")
+s = s.replace("stage.addView(fretboard, LayoutParams(-1, host.dp(154)))", "stage.addView(fretboard, LayoutParams(-1, host.dp(210)))")
 
 
 
