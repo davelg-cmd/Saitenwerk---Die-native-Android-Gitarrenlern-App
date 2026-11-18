@@ -6,6 +6,7 @@ import os
 root = Path(os.environ["PROJECT_DIR"])
 p = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = p.read_text(encoding="utf-8")
+s = s.replace("ChordPreviewPlayer.play(ch)", "ChordPreviewPlayer.play(ch, a)")
 # Keep the already-upgraded learning studio intact. Replacing it with the legacy
 # template would reintroduce ToneGenerator references and overwrite chord audio.
 if (
