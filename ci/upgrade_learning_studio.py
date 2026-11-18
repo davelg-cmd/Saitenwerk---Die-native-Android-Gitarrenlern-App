@@ -672,7 +672,7 @@ complete_chords = [
     '        ChordShape("Gmaj7", "Septakkord", intArrayOf(3,2,0,0,0,2), note="Offener G-Durseptakkord", fingers=intArrayOf(2,1,0,0,0,3)),',
     '        ChordShape("Gm7", "Septakkord", intArrayOf(3,5,3,3,3,3), 3, note="G-Mollseptakkord", fingers=intArrayOf(1,3,1,1,1,1)),',
     '        ChordShape("Gsus2", "Sus-Akkord", intArrayOf(3,0,0,0,3,3), note="Offener G-Sus2-Klang", fingers=intArrayOf(2,0,0,0,3,4)),',
-    '        ChordShape("G5", "Power-Akkord", intArrayOf(3,5,5,-1,-1,-1), 3, note="G-Powerchord", fingers=intArrayOf(1,3,4,0,0,0))'
+    '        ChordShape("G5", "Power-Akkord", intArrayOf(3,5,5,-1,-1,-1), 3, note="G-Powerchord", fingers=intArrayOf(1,3,4,0,0,0)),'
 ]
 chord_anchor = '        ChordShape("B", "Dur", intArrayOf(-1,1,3,3,3,1)'
 for chord_line in complete_chords:
@@ -681,6 +681,11 @@ for chord_line in complete_chords:
         if chord_anchor not in s:
             raise SystemExit("FEHLER: Akkorddatenbank-Einfügeanker fehlt: " + chord_name)
         s = s.replace(chord_anchor, chord_line + "\n" + chord_anchor, 1)
+
+# Datenbank-Integrität: kein Grundton-Dropdown darf leer bleiben.
+for required_chord in ['ChordShape("A",', 'ChordShape("B",', 'ChordShape("C",', 'ChordShape("D",', 'ChordShape("E",', 'ChordShape("F",', 'ChordShape("G",', 'ChordShape("H",', 'ChordShape("Hm",']:
+    if required_chord not in s:
+        raise SystemExit("FEHLER: Akkorddatenbank unvollständig, Eintrag fehlt: " + required_chord)
 
 # Suchfilter, Favoriten und kompakteres Kartenraster verbessern.
 s = s.replace(
