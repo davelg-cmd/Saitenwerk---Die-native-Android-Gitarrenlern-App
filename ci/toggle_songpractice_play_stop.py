@@ -6,6 +6,10 @@ import os
 main = Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = main.read_text(encoding="utf-8")
 
+if 'var progressionPlaying = false' in s and 'playProgression.text = "■ Wiedergabe stoppen"' in s:
+    print("SONG-PRAXIS: Anhören-Button ist bereits als Start/Stopp-Schalter optimiert; nichts zu tun.")
+    raise SystemExit(0)
+
 old = """            val playProgression = a.button("▶ Akkordfolge anhören")
             box.addView(playProgression, LinearLayout.LayoutParams(-1, a.dp(46)).apply { topMargin = a.dp(6) })
             playProgression.setOnClickListener {
