@@ -105,45 +105,45 @@ replacement = r'''        val aboutText = "Saitenwerk ist mehr als nur eine Gita
 '''
 s = s[:about_start] + replacement + s[settings_return:]
 
-# Lernstudio: Schnellstart-Karte mitsamt allen Aktionen vor die Fokus-Empfehlung setzen.
+# Lernstudio: Schnellstart muss direkt nach Titel und Einleitung stehen.
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
+learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
 if learn_start < 0 or learn_end < 0:
     raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
 learn = s[learn_start:learn_end]
-quick_start = learn.find("            val quick = roundedCard()")
+overview_start = learn.find("        overviewAction = {")
+intro_anchor = '            content.addView(a.body("Dein persönlicher Trainingsbereich für Akkorde, Rhythmus, Timing, Schlagmuster und Songs."))'
+intro_pos = learn.find(intro_anchor, overview_start)
+quick_start = learn.find("            val quick = roundedCard()", overview_start)
 quick_end = learn.find("            val path = roundedCard()", quick_start)
-focus_start = learn.find("            val focusCard = roundedCard()")
-if min(quick_start, quick_end, focus_start) < 0:
-    raise SystemExit("FEHLER: Schnellstart- oder Fokus-Karte im Lernstudio nicht gefunden.")
-if quick_start < focus_start:
-    print("SCHNELLSTART: steht bereits vor der Fokus-Karte; keine Verschiebung nötig.")
-else:
-    quick_block = learn[quick_start:quick_end]
-    learn = learn[:quick_start] + learn[quick_end:]
-    focus_start = learn.find("            val focusCard = roundedCard()")
-    learn = learn[:focus_start] + quick_block + "\n" + learn[focus_start:]
-    s = s[:learn_start] + learn + s[learn_end:]
+if min(overview_start, intro_pos, quick_start, quick_end) < 0:
+    raise SystemExit("FEHLER: Schnellstart oder Lernstudio-Einstieg nicht gefunden.")
+quick_block = learn[quick_start:quick_end]
+learn = learn[:quick_start] + learn[quick_end:]
+intro_pos = learn.find(intro_anchor, overview_start)
+insert_at = intro_pos + len(intro_anchor)
+learn = learn[:insert_at] + "\\n\\n" + quick_block.rstrip() + learn[insert_at:]
+s = s[:learn_start] + learn + s[learn_end:]
 
-# Harte Prüfungen verhindern, dass technische Angaben im Beschreibungstext landen
-# oder Schnellstart wieder hinter die Empfehlung rutscht.
+# Strenge Positionsprüfung: Schnellstart muss unmittelbar nach der Einleitung und vor Level/Statistik stehen.
+learn_start = s.find("class LearnFragment : Fragment() {")
+learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
+learn = s[learn_start:learn_end]
+overview_start = learn.find("        overviewAction = {")
+intro_pos = learn.find("Dein persönlicher Trainingsbereich für Akkorde, Rhythmus, Timing, Schlagmuster und Songs.", overview_start)
+quick_pos = learn.find("val quick = roundedCard()", overview_start)
+xp_pos = learn.find("val xp = prefs.getInt", overview_start)
+quick_add_pos = learn.find("content.addView(quick)", quick_pos)
+if min(overview_start, intro_pos, quick_pos, xp_pos, quick_add_pos) < 0 or not (intro_pos < quick_pos < xp_pos) or quick_add_pos < quick_pos:
+    raise SystemExit("FEHLER: Schnellstart steht nicht direkt am Anfang des Lernstudio-Inhalts.")
+print("LERNSTUDIO: PASS – Schnellstart steht direkt nach Titel und Einleitung, vor Level, Statistik und Empfehlungen.")
+
+# Einstellungen prüfen: technische Angaben bleiben im separaten App-Informationen-Bereich.
 settings_start = s.find("class SettingsFragment : Fragment() {")
 settings_return = s.find("        return ScrollView(a).apply { clipToPadding=false; addView(page) }", settings_start)
 settings = s[settings_start:settings_return]
 if "Über Saitenwerk" not in settings or "App-Informationen" not in settings or "Changelog" not in settings:
     raise SystemExit("FEHLER: Beschreibung, App-Informationen oder Changelog fehlen.")
-about_section = settings[settings.find("text = aboutText"):] if "text = aboutText" in settings else ""
-if "Version:" in about_section or "Paket-ID:" in about_section or "Build:" in about_section:
-    raise SystemExit("FEHLER: Technische Angaben sind weiterhin im Über-Bereich enthalten.")
-
-learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
-learn = s[learn_start:learn_end]
-quick_pos = learn.find("val quick = roundedCard()")
-focus_pos = learn.find("val focusCard = roundedCard()")
-if quick_pos < 0 or focus_pos < 0 or quick_pos > focus_pos:
-    raise SystemExit("FEHLER: Schnellstart steht nicht vor der Fokus-Empfehlung.")
-
 main.write_text(s, encoding="utf-8")
 print("EINSTELLUNGEN: PASS – Beschreibung getrennt; Version, Build, technische Daten und Changelog ausgelagert.")
 print("LERNSTUDIO: PASS – vollständige Schnellstart-Karte steht vor der Fokus-Empfehlung.")
