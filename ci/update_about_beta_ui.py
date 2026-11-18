@@ -1,79 +1,52 @@
 from pathlib import Path
 import os
-import re
 
 root = Path(os.environ["PROJECT_DIR"])
-java_root = root / "app/src/main"
-main = java_root / "java/de/saitenwerk/app/MainActivity.kt"
+main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 if not main.exists():
     raise SystemExit("FEHLER: MainActivity.kt fehlt.")
 s = main.read_text(encoding="utf-8")
 
-# Vorhandene Über-Karte und App-Informationsbereich sauber voneinander trennen.
-credits_start = s.find("        val credits = a.card()")
-return_start = s.find("        return ScrollView(a).apply { addView(content) }", credits_start)
-if credits_start < 0 or return_start < 0:
-    settings_pos = s.find("class SettingsFragment")
-    settings_end = s.find("\\nclass ", settings_pos + 10)
-    settings_context = s[settings_pos:settings_end if settings_end >= 0 else len(s)]
-    print("SETTINGS_SOURCE_DIAGNOSTIC:")
-    print("\\n".join(settings_context.splitlines()[:100]))
-    learn_pos = s.find("class LearnFragment : Fragment() {")
-    learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_pos)
-    learn_context = s[learn_pos:learn_end if learn_end >= 0 else len(s)]
-    for term in ("Schnellstart", "quickStart", "quickstart", "Quickstart"):
-        pos = learn_context.find(term)
-        if pos >= 0:
-            print("QUICKSTART_SOURCE_CONTEXT:")
-            print(learn_context[max(0, pos - 1800):pos + 2600])
-            break
-    raise SystemExit("FEHLER: Über-Karte oder Rückgabe des Einstellungsbildschirms nicht gefunden.")
+# Einstellungen: Beschreibung und technische App-Informationen trennen.
+settings_start = s.find("class SettingsFragment : Fragment() {")
+about_start = s.find('        section("Über Saitenwerk"', settings_start)
+settings_return = s.find("        return ScrollView(a).apply { clipToPadding=false; addView(page) }", about_start)
+if min(settings_start, about_start, settings_return) < 0:
+    raise SystemExit("FEHLER: Einstellungsbereich oder Über-Saitenwerk-Abschnitt nicht gefunden.")
 
-replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packageName, 0)
-        val appVersionName = appInfo.versionName ?: "unbekannt"
-        val appVersionCode = appInfo.longVersionCode
-        val credits = a.card()
-        val creditsContent = LinearLayout(a).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(a.dp(18), a.dp(16), a.dp(18), a.dp(16))
-        }
-        creditsContent.addView(TextView(a).apply {
+replacement = r'''        val aboutText = "Saitenwerk ist mehr als nur eine Gitarren-App – es ist ein Experiment.\n\n" +
+            "Die Idee hinter diesem Projekt war von Anfang an eine ganz bestimmte: Ich wollte zeigen, dass man keine Programmierkenntnisse oder jahrelange Erfahrung in der Softwareentwicklung benötigt, um eine eigene App auf die Beine zu stellen.\n\n" +
+            "Mit Neugier, Ausdauer und der Unterstützung künstlicher Intelligenz ist Saitenwerk entstanden – von der ersten Idee bis hin zu einer eigenständigen Android-App.\n\n" +
+            "Man muss nicht alles können, um etwas Eigenes zu erschaffen. Man muss nur anfangen."
+        val aboutCard = a.card().apply { radius = a.dp(18).toFloat(); strokeColor = a.getColor(R.color.sw_outline); strokeWidth = a.dp(1) }
+        val aboutBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(18), a.dp(17), a.dp(18), a.dp(17)) }
+        aboutBox.addView(TextView(a).apply {
             text = "Über Saitenwerk"
-            textSize = 18f
+            textSize = 17f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(a.getColor(R.color.sw_copper))
         })
-        creditsContent.addView(TextView(a).apply {
-            text = "Saitenwerk ist mehr als nur eine Gitarren-App – es ist ein Experiment.\n\n" +
-                "Die Idee hinter diesem Projekt war von Anfang an eine ganz bestimmte: Ich wollte zeigen, dass man keine Programmierkenntnisse oder jahrelange Erfahrung in der Softwareentwicklung benötigt, um eine eigene App auf die Beine zu stellen.\n\n" +
-                "Mit Neugier, Ausdauer und der Unterstützung künstlicher Intelligenz ist Saitenwerk entstanden – von der ersten Idee bis hin zu einer eigenständigen Android-App.\n\n" +
-                "Man muss nicht alles können, um etwas Eigenes zu erschaffen. Man muss nur anfangen."
+        aboutBox.addView(TextView(a).apply {
+            text = aboutText
             textSize = 14f
+            setLineSpacing(a.dp(2).toFloat(), 1f)
             setTextColor(a.getColor(R.color.sw_muted))
-            setPadding(0, a.dp(8), 0, 0)
+            setPadding(0, a.dp(7), 0, 0)
         })
-        credits.addView(creditsContent)
-        content.addView(credits, LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(0, a.dp(14), 0, 0)
-        })
+        aboutCard.addView(aboutBox)
+        page.addView(aboutCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = a.dp(13) })
 
-        val appInfoCard = a.card()
-        val appInfoContent = LinearLayout(a).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(a.dp(18), a.dp(16), a.dp(18), a.dp(16))
-        }
-        appInfoContent.addView(TextView(a).apply {
+        val buildNumber = version.substringAfterLast(".")
+        val appInfoCard = a.card().apply { radius = a.dp(18).toFloat(); strokeColor = a.getColor(R.color.sw_outline); strokeWidth = a.dp(1) }
+        val appInfoBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(18), a.dp(17), a.dp(18), a.dp(17)) }
+        appInfoBox.addView(TextView(a).apply {
             text = "App-Informationen"
-            textSize = 18f
+            textSize = 17f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(a.getColor(R.color.sw_copper))
         })
         fun infoRow(label: String, value: String) {
-            val line = LinearLayout(a).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, a.dp(8), 0, a.dp(4))
-            }
+            val line = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, a.dp(8), 0, a.dp(4)) }
             line.addView(TextView(a).apply {
                 text = label
                 textSize = 13f
@@ -86,15 +59,16 @@ replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packag
                 setTextColor(a.getColor(R.color.sw_text))
                 gravity = Gravity.END
             })
-            appInfoContent.addView(line)
+            appInfoBox.addView(line)
         }
-        infoRow("Version", appVersionName)
-        infoRow("Build-Nummer", appVersionCode.toString())
+        infoRow("Version", version)
+        infoRow("Build-Nummer", buildNumber)
+        infoRow("Version-Code", code.toString())
         infoRow("Release-Kanal", "Beta")
         infoRow("Plattform", "Android")
         infoRow("Paket-ID", a.packageName)
-        infoRow("Mindestversion", "Android 8.0")
-        appInfoContent.addView(TextView(a).apply {
+        infoRow("Mindestversion", "Android 8.0 (API 26)")
+        appInfoBox.addView(TextView(a).apply {
             text = "Changelog"
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -102,16 +76,14 @@ replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packag
             setPadding(0, a.dp(16), 0, a.dp(4))
         })
         val changes = listOf(
-            "18.11.2026 · Build 348" to "Premium-Akkord-Dropdowns, einheitliche Kupfer-Typografie und überarbeitete Menüs.",
+            "18.11.2026 · Build $buildNumber" to "Schnellstart im Lernstudio nach oben verschoben. Über Saitenwerk und App-Informationen übersichtlich getrennt.",
+            "18.11.2026 · Build 350" to "Premium-Akkord-Dropdowns, einheitliche Kupfer-Typografie und überarbeitete Menüs.",
             "18.11.2026 · Build 347" to "Gitarrenklänge und musikalische Wiedergabe weiter verbessert.",
             "18.11.2026 · Build 346" to "Lernstudio, Trainingsabläufe und Fortschrittsanzeige optimiert.",
             "17.11.2026 · Build 335" to "Songpraxis und Bedienabläufe überarbeitet."
         )
         changes.forEach { (date, description) ->
-            val entry = LinearLayout(a).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(0, a.dp(8), 0, a.dp(8))
-            }
+            val entry = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(0, a.dp(8), 0, a.dp(8)) }
             entry.addView(TextView(a).apply {
                 text = date
                 textSize = 13f
@@ -121,39 +93,57 @@ replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packag
             entry.addView(TextView(a).apply {
                 text = description
                 textSize = 13f
+                setLineSpacing(a.dp(1).toFloat(), 1f)
                 setTextColor(a.getColor(R.color.sw_muted))
                 setPadding(0, a.dp(3), 0, 0)
             })
-            appInfoContent.addView(entry)
+            appInfoBox.addView(entry)
         }
-        appInfoCard.addView(appInfoContent)
-        content.addView(appInfoCard, LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(0, a.dp(14), 0, 0)
-        })
+        appInfoCard.addView(appInfoBox)
+        page.addView(appInfoCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = a.dp(13) })
 
 '''
-s = s[:credits_start] + replacement + s[return_start:]
+s = s[:about_start] + replacement + s[settings_return:]
 
-# Diagnoseausgabe: zeigt den tatsächlichen Schnellstart-Code im Lernstudio,
-# damit die anschließende Verschiebung an der realen Implementierung ansetzt.
+# Lernstudio: Schnellstart-Karte mitsamt allen Aktionen vor die Fokus-Empfehlung setzen.
 learn_start = s.find("class LearnFragment : Fragment() {")
-learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_start)
-learn = s[learn_start:learn_end] if learn_start >= 0 and learn_end > learn_start else ""
-for term in ("Schnellstart", "quickStart", "quickstart", "Quickstart"):
-    pos = learn.find(term)
-    if pos >= 0:
-        print("QUICKSTART_SOURCE_CONTEXT [" + term + "]:")
-        print(learn[max(0, pos - 1400):min(len(learn), pos + 2200)])
-        break
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
+if learn_start < 0 or learn_end < 0:
+    raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
+learn = s[learn_start:learn_end]
+quick_start = learn.find("            val quick = roundedCard()")
+quick_end = learn.find("            val path = roundedCard()", quick_start)
+focus_start = learn.find("            val focusCard = roundedCard()")
+if min(quick_start, quick_end, focus_start) < 0:
+    raise SystemExit("FEHLER: Schnellstart- oder Fokus-Karte im Lernstudio nicht gefunden.")
+if quick_start < focus_start:
+    print("SCHNELLSTART: steht bereits vor der Fokus-Karte; keine Verschiebung nötig.")
 else:
-    print("QUICKSTART_SOURCE_CONTEXT: kein eindeutiger Schnellstart-Anker im LearnFragment gefunden.")
+    quick_block = learn[quick_start:quick_end]
+    learn = learn[:quick_start] + learn[quick_end:]
+    focus_start = learn.find("            val focusCard = roundedCard()")
+    learn = learn[:focus_start] + quick_block + "\n" + learn[focus_start:]
+    s = s[:learn_start] + learn + s[learn_end:]
 
-settings_start = s.find("class SettingsFragment")
-settings_end = s.find("\\nclass ", settings_start + 10)
-settings = s[settings_start:settings_end if settings_end >= 0 else len(s)]
+# Harte Prüfungen verhindern, dass technische Angaben im Beschreibungstext landen
+# oder Schnellstart wieder hinter die Empfehlung rutscht.
+settings_start = s.find("class SettingsFragment : Fragment() {")
+settings_return = s.find("        return ScrollView(a).apply { clipToPadding=false; addView(page) }", settings_start)
+settings = s[settings_start:settings_return]
 if "Über Saitenwerk" not in settings or "App-Informationen" not in settings or "Changelog" not in settings:
-    raise SystemExit("FEHLER: Über-Bereich oder App-Informationen/Changelog fehlen.")
-if 'Version: $appVersionName' in settings or 'Build: $appVersionCode' in settings:
-    raise SystemExit("FEHLER: Versionsdaten stehen weiterhin im Über-Bereich.")
+    raise SystemExit("FEHLER: Beschreibung, App-Informationen oder Changelog fehlen.")
+about_section = settings[settings.find("text = aboutText"):] if "text = aboutText" in settings else ""
+if "Version:" in about_section or "Paket-ID:" in about_section or "Build:" in about_section:
+    raise SystemExit("FEHLER: Technische Angaben sind weiterhin im Über-Bereich enthalten.")
+
+learn_start = s.find("class LearnFragment : Fragment() {")
+learn_end = s.find("\nclass PathFragment : Fragment() {", learn_start)
+learn = s[learn_start:learn_end]
+quick_pos = learn.find("val quick = roundedCard()")
+focus_pos = learn.find("val focusCard = roundedCard()")
+if quick_pos < 0 or focus_pos < 0 or quick_pos > focus_pos:
+    raise SystemExit("FEHLER: Schnellstart steht nicht vor der Fokus-Empfehlung.")
+
 main.write_text(s, encoding="utf-8")
-print("EINSTELLUNGEN: PASS – Über Saitenwerk ist getrennt; Versionsdaten und Changelog sind ausgelagert.")
+print("EINSTELLUNGEN: PASS – Beschreibung getrennt; Version, Build, technische Daten und Changelog ausgelagert.")
+print("LERNSTUDIO: PASS – vollständige Schnellstart-Karte steht vor der Fokus-Empfehlung.")
