@@ -538,6 +538,7 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
     private fun dp(value: Float) = value * resources.displayMetrics.density
 }
 '''
+shared_diagram_class = shared_diagram_class.replace(r"\$", "$")
 import re
 diagram_pattern = r'class ChordDiagramView\(context: android\.content\.Context, private val shape: ChordShape\) : View\(context\) \{.*?(?=\n/\*\* Spielt den ausgewählten Griff)'
 s, diagram_count = re.subn(diagram_pattern, lambda _: shared_diagram_class.rstrip(), s, count=1, flags=re.S)
