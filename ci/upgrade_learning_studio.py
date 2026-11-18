@@ -370,6 +370,109 @@ replacement = r'''class LearnFragment : Fragment() {
 
 s = s[:start] + replacement + s[end:]
 
+
+# Griffbrett im Akkordwechseltrainer ergänzen: horizontale Gitarrenansicht mit
+# sechs Saiten, Bundlinien und den gegriffenen Positionen des aktiven Akkords.
+fretboard_class = r'''
+class GuitarFretboardView(context: android.content.Context) : View(context) {
+    private var chord: ChordShape? = null
+    private val line = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(145, 153, 164)
+        strokeWidth = dp(1.25f)
+    }
+    private val nut = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(224, 224, 218)
+        strokeWidth = dp(4f)
+    }
+    private val marker = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(217, 154, 112)
+        style = android.graphics.Paint.Style.FILL
+    }
+    private val markerText = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        textSize = dp(11f)
+        textAlign = android.graphics.Paint.Align.CENTER
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    private val labels = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.LTGRAY
+        textSize = dp(10f)
+        textAlign = android.graphics.Paint.Align.CENTER
+    }
+
+    fun setChord(value: ChordShape?) {
+        chord = value
+        contentDescription = value?.let { "Gitarrengriffbrett für Akkord \${it.name}" } ?: "Gitarrengriffbrett"
+        invalidate()
+    }
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        super.onDraw(canvas)
+        val shape = chord ?: return
+        val left = dp(35f)
+        val right = width - dp(12f)
+        val top = dp(22f)
+        val bottom = height - dp(18f)
+        if (right <= left || bottom <= top) return
+        val fretWidth = (right - left) / 5f
+        val stringGap = (bottom - top) / 5f
+        val stringNames = arrayOf("E", "A", "D", "G", "H", "e")
+
+        // Griffbrett: tiefe E-Saite unten, hohe e-Saite oben.
+        for (i in 0..5) {
+            val y = bottom - i * stringGap
+            line.strokeWidth = dp(if (i == 0 || i == 5) 1.8f else 1.2f)
+            canvas.drawLine(left, y, right, y, line)
+            canvas.drawText(stringNames[i], dp(15f), y + dp(3.5f), labels)
+        }
+        for (fret in 0..5) {
+            val x = left + fret * fretWidth
+            canvas.drawLine(x, top, x, bottom, if (fret == 0 && shape.baseFret == 1) nut else line)
+        }
+
+        if (shape.baseFret > 1) {
+            canvas.drawText("\${shape.baseFret}. Bund", left + dp(34f), dp(12f), labels)
+        } else {
+            canvas.drawText("Sattel", left + dp(18f), dp(12f), labels)
+        }
+
+        shape.frets.forEachIndexed { stringIndex, fret ->
+            val y = bottom - stringIndex * stringGap
+            when {
+                fret < 0 -> canvas.drawText("×", left - dp(13f), y + dp(4f), markerText)
+                fret == 0 -> canvas.drawText("○", left - dp(13f), y + dp(4f), markerText)
+                else -> {
+                    val relative = fret - shape.baseFret
+                    if (relative in 0..4) {
+                        val x = left + (relative + .5f) * fretWidth
+                        canvas.drawCircle(x, y, dp(7f), marker)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun dp(value: Float) = value * resources.displayMetrics.density
+}
+'''
+if "class GuitarFretboardView(context:" not in s:
+    class_anchor = "class ChordTrainingPanel(private val host: MainActivity) : LinearLayout(host) {"
+    if class_anchor not in s:
+        raise SystemExit("FEHLER: ChordTrainingPanel-Anker nicht gefunden.")
+    s = s.replace(class_anchor, fretboard_class + "\n" + class_anchor, 1)
+
+replacements = [
+    ("    private val next = TextView(host)\n", "    private val next = TextView(host)\n    private val fretboard = GuitarFretboardView(host)\n"),
+    ("        else \"\"\n    }\n\n    private fun openChordPicker()", "        else \"\"\n        fretboard.setChord(ChordLibrary.all.firstOrNull { it.name == current.text.toString() })\n    }\n\n    private fun openChordPicker()"),
+    ("                current.text = sequence[index]\n                next.text =", "                current.text = sequence[index]\n                fretboard.setChord(ChordLibrary.all.firstOrNull { it.name == sequence[index] })\n                next.text ="),
+    ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
+]
+for old, new of replacements:
+    if old not in s:
+        raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
+    s=s.replace(old,new,1)
+
+
 # Neue Sekunden-Erfassung muss beim Zurücksetzen des Lernstands ebenfalls gelöscht werden.
 reset_anchor = '.remove("learn_quiz_correct")'
 if reset_anchor in s and '.remove("learn_daily_seconds")' not in s:
