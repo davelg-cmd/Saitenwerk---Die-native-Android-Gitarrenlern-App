@@ -45,7 +45,7 @@ th = themes.read_text(encoding="utf-8")
 if 'name="popupMenuStyle"' not in th:
     th = th.replace(
         '<item name="colorSecondary">@color/sw_blue</item>',
-        '<item name="colorSecondary">@color/sw_blue</item>\\n    <item name="popupMenuStyle">@style/Widget.Saitenwerk.PopupMenu</item>\\n    <item name="android:popupBackground">@drawable/sw_popup_background</item>'
+        '<item name="colorSecondary">@color/sw_blue</item>' + '\\n    <item name="popupMenuStyle">@style/Widget.Saitenwerk.PopupMenu</item>' + '\\n    <item name="android:popupBackground">@drawable/sw_popup_background</item>'
     )
 themes.write_text(th, encoding="utf-8")
 
