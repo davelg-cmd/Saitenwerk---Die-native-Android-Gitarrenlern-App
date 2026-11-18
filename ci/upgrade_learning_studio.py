@@ -258,13 +258,21 @@ replacement = r'''class LearnFragment : Fragment() {
             var step = 0
             var hits = 0
             var mistakes = 0
+            var score = 0
+            var combo = 0
+            var bestCombo = 0
+            var answered = false
+            var expectedAt = 0L
+            var difficulty = prefs.getString("learn_strum_difficulty", "Normal") ?: "Normal"
             val patternButton = a.button(selectedName)
             val patternHint = TextView(a).apply { text = "Pattern: " + selected.joinToString("  "); textSize = 16f; gravity = Gravity.CENTER; setTextColor(a.getColor(R.color.sw_text)); setPadding(0, a.dp(10), 0, a.dp(10)) }
             val beatRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
             val status = TextView(a).apply { text = "Bereit · spiele die hervorgehobenen Schläge"; textSize = 13f; gravity = Gravity.CENTER; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(6), 0, a.dp(8)) }
             val tempoLabel = TextView(a).apply { text = "Tempo: $bpm BPM"; textSize = 15f; setTextColor(a.getColor(R.color.sw_text)) }
             val slider = SeekBar(a).apply { max = 110; progress = bpm - 50 }
-            val stats = TextView(a).apply { text = "Treffer: 0 · Fehler: 0"; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); gravity = Gravity.CENTER }
+            val difficultyButton = a.button("Schwierigkeit · $difficulty")
+            val stats = TextView(a).apply { text = "Punkte: 0 · Genauigkeit: 0% · Serie: 0"; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); gravity = Gravity.CENTER }
+            val timing = TextView(a).apply { text = "Timing-Fenster · ±300 ms"; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); gravity = Gravity.CENTER }
             val start = a.button("Training starten")
             val down = a.button("↓ Abschlag")
             val up = a.button("↑ Aufschlag")
@@ -273,10 +281,12 @@ replacement = r'''class LearnFragment : Fragment() {
             actionRow.addView(up, LinearLayout.LayoutParams(0, a.dp(50), 1f).apply { leftMargin = a.dp(4) })
             box.addView(patternButton, LinearLayout.LayoutParams(-1, a.dp(46)))
             box.addView(patternHint)
+            box.addView(difficultyButton, LinearLayout.LayoutParams(-1, a.dp(44)).apply { topMargin = a.dp(5) })
             box.addView(beatRow, LinearLayout.LayoutParams(-1, a.dp(58)))
             box.addView(status)
             box.addView(tempoLabel)
             box.addView(slider, LinearLayout.LayoutParams(-1, a.dp(42)))
+            box.addView(timing)
             box.addView(stats)
             box.addView(start, LinearLayout.LayoutParams(-1, a.dp(48)))
             box.addView(actionRow, LinearLayout.LayoutParams(-1, a.dp(54)).apply { topMargin = a.dp(6) })
@@ -314,27 +324,70 @@ replacement = r'''class LearnFragment : Fragment() {
                     }.setNegativeButton("Abbrechen", null).show()
             }
             fun userHit(direction: String) {
-                if (!strumRunning || selected.isEmpty()) return
+                if (!strumRunning || selected.isEmpty() || answered) return
                 val expected = selected[step]
-                if (direction == expected) { hits++; status.text = "✓ $direction richtig" } else { mistakes++; status.text = "✕ Erwartet: $expected" }
-                stats.text = "Treffer: $hits · Fehler: $mistakes · Genauigkeit: " + (if (hits + mistakes > 0) (hits * 100 / (hits + mistakes)) else 0) + "%"
-                step = (step + 1) % selected.size
-                markBeat()
+                val delta = kotlin.math.abs(android.os.SystemClock.elapsedRealtime() - expectedAt)
+                val window = when (difficulty) {
+                    "Leicht" -> 420L
+                    "Schwer" -> 220L
+                    "Profi" -> 140L
+                    else -> 300L
+                }
+                answered = true
+                if (direction == expected && delta <= window) {
+                    hits++
+                    combo++
+                    bestCombo = maxOf(bestCombo, combo)
+                    score += when {
+                        delta <= 80L -> 100
+                        delta <= 160L -> 80
+                        else -> 60
+                    } + combo.coerceAtMost(20) * 2
+                    status.text = "✓ Perfekt · " + delta + " ms"
+                } else {
+                    mistakes++
+                    combo = 0
+                    status.text = if (direction != expected) "✕ " + direction + " · erwartet " + expected else "◷ Timing · " + delta + " ms"
+                }
+                val attempts = hits + mistakes
+                val accuracy = if (attempts > 0) hits * 100 / attempts else 0
+                stats.text = "Punkte: " + score + " · Genauigkeit: " + accuracy + "% · Serie: " + combo + " · Bestwert: " + bestCombo
             }
             down.setOnClickListener { userHit("↓") }
             up.setOnClickListener { userHit("↑") }
+            difficultyButton.setOnClickListener {
+                if (strumRunning) return@setOnClickListener
+                val levels = arrayOf("Leicht", "Normal", "Schwer", "Profi")
+                androidx.appcompat.app.AlertDialog.Builder(a)
+                    .setTitle("Schwierigkeit")
+                    .setSingleChoiceItems(levels, levels.indexOf(difficulty).coerceAtLeast(0)) { d, which ->
+                        difficulty = levels[which]
+                        difficultyButton.text = "Schwierigkeit · " + difficulty
+                        prefs.edit().putString("learn_strum_difficulty", difficulty).apply()
+                        timing.text = "Timing-Fenster · ±" + when (difficulty) {
+                            "Leicht" -> 420
+                            "Schwer" -> 220
+                            "Profi" -> 140
+                            else -> 300
+                        } + " ms"
+                        d.dismiss()
+                    }.setNegativeButton("Abbrechen", null).show()
+            }
             start.setOnClickListener {
                 if (strumRunning) {
-                    stopStrumming(); start.text = "Training starten"; status.text = "Pausiert"
+                    prefs.edit().putInt("learn_strum_best_score", maxOf(prefs.getInt("learn_strum_best_score", 0), score)).apply()
+                    stopStrumming(); start.text = "Training starten"; status.text = "Pausiert · " + score + " Punkte"
                 } else {
                     strumRunning = true; strumStartedAt = android.os.SystemClock.elapsedRealtime(); strumStep = 0
-                    start.text = "Training stoppen"; step = 0; hits = 0; mistakes = 0
+                    start.text = "Training stoppen"; step = 0; hits = 0; mistakes = 0; score = 0; combo = 0; bestCombo = 0; answered = false
                     strumTone = ToneGenerator(AudioManager.STREAM_MUSIC, 60); strumHandler = Handler(Looper.getMainLooper())
                     val interval = (60000L / bpm / 2).coerceAtLeast(100L)
                     val task = object : Runnable {
                         override fun run() {
                             if (!strumRunning) return
                             step = strumStep % selected.size
+                            answered = false
+                            expectedAt = android.os.SystemClock.elapsedRealtime()
                             val strong = step == 0
                             strumTone?.startTone(if (strong) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP, if (strong) 75 else 45)
                             markBeat(); strumStep++
@@ -344,6 +397,12 @@ replacement = r'''class LearnFragment : Fragment() {
                     strumHandler?.post(task); markBeat()
                 }
             }
+            timing.text = "Timing-Fenster · ±" + when (difficulty) {
+                "Leicht" -> 420
+                "Schwer" -> 220
+                "Profi" -> 140
+                else -> 300
+            } + " ms"
             rebuildBeats(); markBeat()
             content.addView(card)
         }
@@ -453,7 +512,8 @@ replacement = r'''class LearnFragment : Fragment() {
             row2.addView(quickButton("♩ Rhythmus") { showRhythm() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { rightMargin = a.dp(5); topMargin = a.dp(8) })
             row2.addView(quickButton("✓ Tagesroutine") { showRoutine() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
             val row3 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
-            row3.addView(quickButton("↘ Schlagmuster") { showStrumming() }, LinearLayout.LayoutParams(-1, a.dp(48)).apply { topMargin = a.dp(8) })
+            row3.addView(quickButton("↘ Schlagmuster") { showStrumming() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { rightMargin = a.dp(5); topMargin = a.dp(8) })
+            row3.addView(quickButton("♬ Song-Praxis") { a.openSection(4) }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
             quickBox.addView(row1); quickBox.addView(row2); quickBox.addView(row3); quick.addView(quickBox); content.addView(quick); addGap(10)
 
             val path = roundedCard()
