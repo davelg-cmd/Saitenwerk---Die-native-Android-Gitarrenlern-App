@@ -705,6 +705,7 @@ chords_replacement = r'''class ChordsFragment : Fragment() {
             setTextColor(a.getColor(R.color.sw_text))
         })
         chooser.addView(a.body("Wähle einen Buchstaben und anschließend den gewünschten Akkord."))
+        var showChordSelection: ((ChordShape) -> Unit)? = null
         val letterGrid = GridLayout(a).apply {
             columnCount = 4
             useDefaultMargins = false
@@ -725,7 +726,7 @@ chords_replacement = r'''class ChordsFragment : Fragment() {
                     popup.menu.add(android.view.Menu.NONE, index, index, chord.name)
                 }
                 popup.setOnMenuItemClickListener { item ->
-                    chords.getOrNull(item.itemId)?.let { showChord(it) }
+                    chords.getOrNull(item.itemId)?.let { showChordSelection?.invoke(it) }
                     true
                 }
                 popup.show()
@@ -748,7 +749,7 @@ chords_replacement = r'''class ChordsFragment : Fragment() {
         }
         detailCard.addView(detail)
 
-        fun showChord(ch: ChordShape) {
+        showChordSelection = { ch ->
             detail.removeAllViews()
             detail.addView(TextView(a).apply {
                 text = ch.name
