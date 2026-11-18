@@ -19,11 +19,16 @@ replacement = r'''class LearnFragment : Fragment() {
     private var rhythmBeat = 0
     private var rhythmBpm = 80
     private var rhythmMeter = "4/4"
+    private var rhythmStartedAt = 0L
+    private var quizStartedAt = 0L
+    private var onSessionElapsed: ((Int) -> Unit)? = null
 
     override fun onDestroyView() {
         chordTraining?.stop()
         chordTraining = null
+        finishQuizSession()
         stopRhythm()
+        onSessionElapsed = null
         super.onDestroyView()
     }
 
@@ -51,7 +56,8 @@ replacement = r'''class LearnFragment : Fragment() {
             val total = prefs.getInt("learn_quiz_total", 0)
             val best = prefs.getInt("learn_best_quiz_streak", 0)
             val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
-            val minutes = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_minutes", 0) else 0
+            val dailySeconds = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_seconds", prefs.getInt("learn_daily_minutes", 0) * 60) else 0
+            val minutes = String.format(java.util.Locale.GERMANY, "%.1f min", dailySeconds / 60.0)
             val routineDone = if (prefs.getString("learn_routine_day", "") == day) Integer.bitCount(prefs.getInt("learn_routine_done", 0)) else 0
             val routineTotal = 5
             val rate = if (total > 0) correct * 100 / total else 0
@@ -65,7 +71,7 @@ replacement = r'''class LearnFragment : Fragment() {
                     it.addView(box, LinearLayout.LayoutParams(0, a.dp(58), 1f))
                 }
                 stat("$routineDone/$routineTotal", "Heute")
-                stat("$minutes min", "Übungszeit")
+                stat(minutes, "Übungszeit")
                 stat("$rate%", "Quiz-Treffer")
                 stat("$best", "Beste Serie")
             }
@@ -84,14 +90,19 @@ replacement = r'''class LearnFragment : Fragment() {
             }
         }
 
-        fun recordSession(minutes: Int) {
+        fun recordSession(seconds: Int) {
             val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
             recordPracticeDay()
-            val oldMinutes = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_minutes", 0) else 0
-            prefs.edit().putString("learn_daily_day", day).putInt("learn_daily_minutes", oldMinutes + minutes)
+            val oldSeconds = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_seconds", prefs.getInt("learn_daily_minutes", 0) * 60) else 0
+            val totalSeconds = oldSeconds + seconds.coerceAtLeast(1)
+            prefs.edit().putString("learn_daily_day", day).putInt("learn_daily_seconds", totalSeconds)
+                .putInt("learn_daily_minutes", totalSeconds / 60)
                 .putInt("learn_sessions", prefs.getInt("learn_sessions", 0) + 1).apply()
             updatePracticeStats()
         }
+        onSessionElapsed = { seconds -> recordSession(seconds) }
+
+        fun finishQuizSession() { this@LearnFragment.finishQuizSession() }
 
         var overviewAction: (() -> Unit)? = null
 
@@ -105,7 +116,8 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         fun showQuiz() {
-            chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            quizStartedAt = SystemClock.elapsedRealtime()
             val (card, box) = panel("Akkord-Blitztrainer", "Erkenne Griffbilder. Die Serie steigt nur bei richtigen Antworten – so siehst du sofort, wie sicher du bist.")
             val header = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
             val score = TextView(a).apply { textSize = 13f; setTextColor(a.getColor(R.color.sw_muted)) }
@@ -140,7 +152,7 @@ replacement = r'''class LearnFragment : Fragment() {
                     b.setOnClickListener {
                         if (locked) return@setOnClickListener
                         locked = true
-                        if (!sessionRecorded) { recordSession(2); sessionRecorded = true }
+                        sessionRecorded = true
                         val correctAnswer = option == answer
                         if (correctAnswer) localStreak++ else localStreak = 0
                         val total = prefs.getInt("learn_quiz_total", 0) + 1
@@ -157,18 +169,18 @@ replacement = r'''class LearnFragment : Fragment() {
                 updateHeader()
             }
             next.setOnClickListener { newQuestion() }
-            finish.setOnClickListener { overviewAction?.invoke() }
+            finish.setOnClickListener { finishQuizSession(); overviewAction?.invoke() }
             newQuestion(); content.addView(card)
         }
 
         fun showChanges() {
-            stopRhythm(); content.removeAllViews()
+            finishQuizSession(); stopRhythm(); content.removeAllViews()
             content.addView(a.body("Dein Haupttraining für saubere Akkordwechsel. Wähle Akkorde, Takt und Tempo direkt im Trainer und steigere dich erst, wenn die Wechsel sicher sitzen."))
             chordTraining = ChordTrainingPanel(a); content.addView(chordTraining, LinearLayout.LayoutParams(-1, -2))
         }
 
         fun showRhythm() {
-            chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             val (card, box) = panel("Rhythmus & Timing", "Trainiere Puls, Taktgefühl und Geschwindigkeit. Der erste Schlag jedes Taktes wird deutlich markiert.")
             rhythmBpm = prefs.getInt("learn_rhythm_bpm", 80).coerceIn(50, 160)
             rhythmMeter = prefs.getString("learn_rhythm_meter", "4/4") ?: "4/4"
@@ -196,7 +208,7 @@ replacement = r'''class LearnFragment : Fragment() {
             start.setOnClickListener {
                 if (rhythmRunning) { stopRhythm(); start.text = "Metronom starten"; beat.text = "Pausiert" }
                 else {
-                    rhythmRunning = true; rhythmBeat = 0; rhythmTone = ToneGenerator(AudioManager.STREAM_MUSIC, 65); rhythmHandler = Handler(Looper.getMainLooper()); start.text = "Metronom stoppen"
+                    rhythmRunning = true; rhythmStartedAt = SystemClock.elapsedRealtime(); rhythmBeat = 0; rhythmTone = ToneGenerator(AudioManager.STREAM_MUSIC, 65); rhythmHandler = Handler(Looper.getMainLooper()); start.text = "Metronom stoppen"
                     val beatsPerBar = rhythmMeter.substringBefore("/").toIntOrNull() ?: 4
                     val task = object : Runnable {
                         override fun run() {
@@ -207,14 +219,14 @@ replacement = r'''class LearnFragment : Fragment() {
                             rhythmBeat++; rhythmHandler?.postDelayed(this, (60000L / rhythmBpm).coerceAtLeast(100L))
                         }
                     }
-                    rhythmHandler?.post(task); recordSession(1)
+                    rhythmHandler?.post(task)
                 }
             }
             content.addView(card)
         }
 
         fun showRoutine() {
-            chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             val (card, box) = panel("Deine tägliche 10-Minuten-Routine", "Fünf kurze Einheiten statt einer langen Session. Hake ab, was du heute erledigt hast.")
             val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
             if (prefs.getString("learn_routine_day", "") != day) prefs.edit().putString("learn_routine_day", day).putInt("learn_routine_done", 0).apply()
@@ -243,7 +255,7 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         overviewAction = {
-            chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             content.addView(a.title("Lernstudio"))
             content.addView(a.body("Dein Übungsbereich für Akkorde, Rhythmus, Timing und tägliche Routinen. Wähle eine Übung und leg direkt los."))
             val streak = prefs.getInt("learn_streak", 0)
@@ -334,8 +346,17 @@ replacement = r'''class LearnFragment : Fragment() {
         return root
     }
 
+    private fun finishQuizSession() {
+        val started = quizStartedAt
+        quizStartedAt = 0L
+        if (started > 0L) onSessionElapsed?.invoke(((SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
+    }
+
     private fun stopRhythm() {
+        val started = rhythmStartedAt
+        rhythmStartedAt = 0L
         rhythmRunning = false; rhythmHandler?.removeCallbacksAndMessages(null); rhythmHandler = null
+        if (started > 0L) onSessionElapsed?.invoke(((SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
         try { rhythmTone?.stopTone(); rhythmTone?.release() } catch (_: Exception) {}
         rhythmTone = null
     }
