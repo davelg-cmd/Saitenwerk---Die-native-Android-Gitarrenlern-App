@@ -269,6 +269,13 @@ jobs:
           set -euo pipefail
           python3 ci/premium_chord_dropdown_typography.py
 
+      - name: Einstellungen und App-Informationen aktualisieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/update_about_beta_ui.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
