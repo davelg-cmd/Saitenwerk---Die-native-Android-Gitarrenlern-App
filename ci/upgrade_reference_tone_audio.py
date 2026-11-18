@@ -37,7 +37,7 @@ block=r'''    private fun rebuildStringButtons() {
                     cornerRadius = 11f * resources.displayMetrics.density
                     setColor(if (selected) requireContext().getColor(R.color.sw_copper) else requireContext().getColor(R.color.sw_surface2))
                     setStroke(((if (selected) 2f else 1f) * resources.displayMetrics.density).toInt(),
-                        if (selected) requireContext().getColor(R.color.sw_copper) else requireContext().getColor(R.color.sw_border))
+                        if (selected) requireContext().getColor(R.color.sw_copper) else requireContext().getColor(R.color.sw_outline))
                 }
                 setPadding(2, 5, 2, 5)
                 setOnClickListener {
