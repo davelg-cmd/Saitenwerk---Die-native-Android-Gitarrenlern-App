@@ -58,15 +58,20 @@ t = t.replace('text = "Instrument & Stimmung"','text = "INSTRUMENT"').replace('t
 t = t.replace('text = "0 Cent"','text = "0 Cent · möglichst nahe an 0 stimmen"')
 t = t.replace('text = "Warte auf einen Ton"','text = "— Hz"')
 t = t.replace('text = "BEREIT ZUM STIMMEN"','text = "BEREIT · SAITE ANSCHLAGEN"')
-t = t.replace('''        stringPanel = LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL''','''        selector.addView(TextView(a).apply {
+# Keep the helper label idempotent: previous builds may already contain it.
+label_block = '''        selector.addView(TextView(a).apply {
             text = "Referenztöne · Saite antippen zum Anhören"
             textSize = 12f
             setTextColor(a.getColor(R.color.sw_muted))
             setPadding(0, a.dp(8), 0, a.dp(2))
         })
-        stringPanel = LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL''')
+'''
+t = t.replace(label_block, "")
+anchor = '''        stringPanel = LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL'''
+if t.count(anchor) != 1:
+    raise SystemExit("String panel anchor not unique")
+t = t.replace(anchor, label_block + anchor, 1)
 t = t.replace('''            minHeight = a.dp(52)
             isClickable = true
             isFocusable = true
@@ -84,6 +89,9 @@ if tuner_hint in t:
     t = "\n".join(line for line in t.splitlines() if tuner_hint not in line)
 if tuner_hint in t:
     raise SystemExit("TUNER UI: explanatory paragraph was not removed")
+
+if t.count('text = "Referenztöne · Saite antippen zum Anhören"') != 1:
+    raise SystemExit("TUNER UI: Referenztöne label must appear exactly once")
 
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)','Referenztöne · Saite antippen zum Anhören']
 missing = [x for x in required if x not in t]
