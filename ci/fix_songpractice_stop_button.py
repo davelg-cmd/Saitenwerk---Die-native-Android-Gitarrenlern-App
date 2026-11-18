@@ -8,6 +8,12 @@ root = Path(os.environ["PROJECT_DIR"])
 path = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = path.read_text(encoding="utf-8")
 
+# The current play/stop toggle styles its own TextView. Do not inject a
+# gravity assignment into the click-listener scope around its stop label.
+if "var progressionPlaying = false" in s:
+    print("SONGPRAXIS: Start/Stopp-Button ist bereits im Toggle-Patch zentriert; kein separater Eingriff nötig.")
+    raise SystemExit(0)
+
 needle = "Wiedergabe stoppen"
 positions = [m.start() for m in re.finditer(re.escape(needle), s)]
 if not positions:
