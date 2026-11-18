@@ -271,6 +271,8 @@ replacement = r'''class LearnFragment : Fragment() {
             val quizTotal = prefs.getInt("learn_quiz_total", 0)
             val quizCorrect = prefs.getInt("learn_quiz_correct", 0)
             val quizRate = if (quizTotal > 0) quizCorrect * 100 / quizTotal else 0
+            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(java.util.Date())
+            val minutesToday = if (prefs.getString("learn_daily_day", "") == today) prefs.getInt("learn_daily_minutes", 0) else 0
             val focusAction: () -> Unit = when {
                 quizTotal < 5 -> {
                     focusText.text = "Starte mit dem Akkord-Blitztrainer und sammle deine ersten sicheren Treffer."
@@ -280,7 +282,7 @@ replacement = r'''class LearnFragment : Fragment() {
                     focusText.text = "Deine Akkorderkennung ist noch ausbaufähig. Kurze, häufige Wiederholungen bringen dich weiter."
                     { showQuiz() }
                 }
-                prefs.getString("learn_daily_day", "") != day || minutes < 5 -> {
+                prefs.getString("learn_daily_day", "") != today || minutesToday < 5 -> {
                     focusText.text = "Du hast heute noch wenig Übungszeit gesammelt. Ein kurzer Wechselblock reicht."
                     { showChanges() }
                 }
