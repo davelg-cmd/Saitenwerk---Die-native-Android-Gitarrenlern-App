@@ -374,86 +374,7 @@ s = s[:start] + replacement + s[end:]
 # Griffbrett im Akkordwechseltrainer ergänzen: horizontale Gitarrenansicht mit
 # sechs Saiten, Bundlinien und den gegriffenen Positionen des aktiven Akkords.
 fretboard_class = r'''
-class GuitarFretboardView(context: android.content.Context) : View(context) {
-    private var chord: ChordShape? = null
-    private val line = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.rgb(145, 153, 164)
-        strokeWidth = dp(1.25f)
-    }
-    private val nut = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.rgb(224, 224, 218)
-        strokeWidth = dp(4f)
-    }
-    private val marker = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.rgb(217, 154, 112)
-        style = android.graphics.Paint.Style.FILL
-    }
-    private val markerText = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.WHITE
-        textSize = dp(11f)
-        textAlign = android.graphics.Paint.Align.CENTER
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-    }
-    private val labels = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.LTGRAY
-        textSize = dp(10f)
-        textAlign = android.graphics.Paint.Align.CENTER
-    }
-
-    fun setChord(value: ChordShape?) {
-        chord = value
-        contentDescription = value?.let { "Gitarrengriffbrett für Akkord ${it.name}" } ?: "Gitarrengriffbrett"
-        invalidate()
-    }
-
-    override fun onDraw(canvas: android.graphics.Canvas) {
-        super.onDraw(canvas)
-        val shape = chord ?: return
-        val left = dp(35f)
-        val right = width - dp(12f)
-        val top = dp(22f)
-        val bottom = height - dp(18f)
-        if (right <= left || bottom <= top) return
-        val fretWidth = (right - left) / 5f
-        val stringGap = (bottom - top) / 5f
-        val stringNames = arrayOf("E", "A", "D", "G", "H", "e")
-
-        // Griffbrett: tiefe E-Saite unten, hohe e-Saite oben.
-        for (i in 0..5) {
-            val y = bottom - i * stringGap
-            line.strokeWidth = dp(if (i == 0 || i == 5) 1.8f else 1.2f)
-            canvas.drawLine(left, y, right, y, line)
-            canvas.drawText(stringNames[i], dp(15f), y + dp(3.5f), labels)
-        }
-        for (fret in 0..5) {
-            val x = left + fret * fretWidth
-            canvas.drawLine(x, top, x, bottom, if (fret == 0 && shape.baseFret == 1) nut else line)
-        }
-
-        if (shape.baseFret > 1) {
-            canvas.drawText("${shape.baseFret}. Bund", left + dp(34f), dp(12f), labels)
-        } else {
-            canvas.drawText("Sattel", left + dp(18f), dp(12f), labels)
-        }
-
-        shape.frets.forEachIndexed { stringIndex, fret ->
-            val y = bottom - stringIndex * stringGap
-            when {
-                fret < 0 -> canvas.drawText("×", left - dp(13f), y + dp(4f), markerText)
-                fret == 0 -> canvas.drawText("○", left - dp(13f), y + dp(4f), markerText)
-                else -> {
-                    val relative = fret - shape.baseFret
-                    if (relative in 0..4) {
-                        val x = left + (relative + .5f) * fretWidth
-                        canvas.drawCircle(x, y, dp(7f), marker)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun dp(value: Float) = value * resources.displayMetrics.density
-}
+class GuitarFretboardView(context: android.content.Context) : ChordDiagramView(context)
 '''
 if "class GuitarFretboardView(context:" not in s:
     class_anchor = "class ChordTrainingPanel(private val host: MainActivity) : LinearLayout(host) {"
@@ -472,6 +393,156 @@ for old, new in replacements:
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
     s=s.replace(old,new,1)
 
+
+
+# Gemeinsame Akkorddarstellung mit Fingersätzen für Bibliothek, Quiz und Trainer.
+finger_data = [
+('data class ChordShape(val name: String, val quality: String, val frets: IntArray, val baseFret: Int = 1, val note: String = "")','data class ChordShape(val name: String, val quality: String, val frets: IntArray, val baseFret: Int = 1, val note: String = "", val fingers: IntArray = IntArray(6))'),
+('ChordShape("C", "Dur", intArrayOf(-1,3,2,0,1,0), note="Offener C-Dur-Griff")','ChordShape("C", "Dur", intArrayOf(-1,3,2,0,1,0), note="Offener C-Dur-Griff", fingers=intArrayOf(0,3,2,0,1,0))'),
+('ChordShape("G", "Dur", intArrayOf(3,2,0,0,0,3), note="Offener G-Dur-Griff")','ChordShape("G", "Dur", intArrayOf(3,2,0,0,0,3), note="Offener G-Dur-Griff", fingers=intArrayOf(2,1,0,0,0,3))'),
+('ChordShape("D", "Dur", intArrayOf(-1,-1,0,2,3,2), note="Offener D-Dur-Griff")','ChordShape("D", "Dur", intArrayOf(-1,-1,0,2,3,2), note="Offener D-Dur-Griff", fingers=intArrayOf(0,0,0,1,3,2))'),
+('ChordShape("A", "Dur", intArrayOf(-1,0,2,2,2,0), note="Offener A-Dur-Griff")','ChordShape("A", "Dur", intArrayOf(-1,0,2,2,2,0), note="Offener A-Dur-Griff", fingers=intArrayOf(0,0,1,2,3,0))'),
+('ChordShape("E", "Dur", intArrayOf(0,2,2,1,0,0), note="Offener E-Dur-Griff")','ChordShape("E", "Dur", intArrayOf(0,2,2,1,0,0), note="Offener E-Dur-Griff", fingers=intArrayOf(0,2,3,1,0,0))'),
+('ChordShape("F", "Dur", intArrayOf(1,3,3,2,1,1), note="Barré-Griff im 1. Bund")','ChordShape("F", "Dur", intArrayOf(1,3,3,2,1,1), note="Barré-Griff im 1. Bund", fingers=intArrayOf(1,3,4,2,1,1))'),
+('ChordShape("Am", "Moll", intArrayOf(-1,0,2,2,1,0))','ChordShape("Am", "Moll", intArrayOf(-1,0,2,2,1,0), fingers=intArrayOf(0,0,2,3,1,0))'),
+('ChordShape("Em", "Moll", intArrayOf(0,2,2,0,0,0))','ChordShape("Em", "Moll", intArrayOf(0,2,2,0,0,0), fingers=intArrayOf(0,2,3,0,0,0))'),
+('ChordShape("Dm", "Moll", intArrayOf(-1,-1,0,2,3,1))','ChordShape("Dm", "Moll", intArrayOf(-1,-1,0,2,3,1), fingers=intArrayOf(0,0,0,2,3,1))'),
+('ChordShape("Bm", "Moll", intArrayOf(-1,2,4,4,3,2), 2)','ChordShape("Bm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, fingers=intArrayOf(0,1,3,4,2,1))'),
+('ChordShape("C7", "Septakkord", intArrayOf(-1,3,2,3,1,0))','ChordShape("C7", "Septakkord", intArrayOf(-1,3,2,3,1,0), fingers=intArrayOf(0,3,2,4,1,0))'),
+('ChordShape("D7", "Septakkord", intArrayOf(-1,-1,0,2,1,2))','ChordShape("D7", "Septakkord", intArrayOf(-1,-1,0,2,1,2), fingers=intArrayOf(0,0,0,2,1,3))'),
+('ChordShape("E7", "Septakkord", intArrayOf(0,2,0,1,0,0))','ChordShape("E7", "Septakkord", intArrayOf(0,2,0,1,0,0), fingers=intArrayOf(0,2,0,1,0,0))'),
+('ChordShape("G7", "Septakkord", intArrayOf(3,2,0,0,0,1))','ChordShape("G7", "Septakkord", intArrayOf(3,2,0,0,0,1), fingers=intArrayOf(3,2,0,0,0,1))'),
+('ChordShape("Am7", "Septakkord", intArrayOf(-1,0,2,0,1,0))','ChordShape("Am7", "Septakkord", intArrayOf(-1,0,2,0,1,0), fingers=intArrayOf(0,0,2,0,1,0))'),
+('ChordShape("Em7", "Septakkord", intArrayOf(0,2,0,0,0,0))','ChordShape("Em7", "Septakkord", intArrayOf(0,2,0,0,0,0), fingers=intArrayOf(0,2,0,0,0,0))'),
+('ChordShape("Dsus2", "Sus-Akkord", intArrayOf(-1,-1,0,2,3,0))','ChordShape("Dsus2", "Sus-Akkord", intArrayOf(-1,-1,0,2,3,0), fingers=intArrayOf(0,0,0,1,3,0))'),
+('ChordShape("Dsus4", "Sus-Akkord", intArrayOf(-1,-1,0,2,3,3))','ChordShape("Dsus4", "Sus-Akkord", intArrayOf(-1,-1,0,2,3,3), fingers=intArrayOf(0,0,0,1,3,4))'),
+('ChordShape("Asus2", "Sus-Akkord", intArrayOf(-1,0,2,2,0,0))','ChordShape("Asus2", "Sus-Akkord", intArrayOf(-1,0,2,2,0,0), fingers=intArrayOf(0,0,2,3,0,0))'),
+('ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0))','ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0), fingers=intArrayOf(0,0,1,2,3,0))')
+]
+for old, new in finger_data:
+    if old not in s:
+        raise SystemExit("FEHLER: Fingersatz-Anker fehlt: " + old[:70])
+    s = s.replace(old, new, 1)
+
+shared_diagram_class = r'''
+open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null) : View(context) {
+    private var shape: ChordShape? = initialShape
+    private val gridPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(142, 151, 163)
+        strokeWidth = dp(1.4f)
+        style = android.graphics.Paint.Style.STROKE
+    }
+    private val nutPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(224, 226, 229)
+        strokeWidth = dp(4f)
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    private val dotPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(217, 154, 112)
+        style = android.graphics.Paint.Style.FILL
+    }
+    private val fingerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        textAlign = android.graphics.Paint.Align.CENTER
+        textSize = dp(11f)
+        typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+    }
+    private val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.LTGRAY
+        textAlign = android.graphics.Paint.Align.CENTER
+        textSize = dp(12f)
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+    }
+    private val titlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(217, 154, 112)
+        textAlign = android.graphics.Paint.Align.LEFT
+        textSize = dp(12f)
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+    }
+
+    fun setChord(value: ChordShape?) {
+        shape = value
+        contentDescription = value?.let { "Akkord \${it.name}, Griffbild mit Fingerzahlen" } ?: "Gitarrengriffbild"
+        invalidate()
+    }
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        super.onDraw(canvas)
+        val chord = shape ?: return
+        val top = dp(42f)
+        val bottom = height - dp(55f)
+        val left = width * .16f
+        val right = width * .84f
+        if (bottom <= top || right <= left) return
+        val dx = (right - left) / 5f
+        val dy = (bottom - top) / 4f
+        val radius = dp(11f)
+        val stringLabels = arrayOf("E", "A", "D", "G", "H", "e")
+
+        canvas.drawText(if (chord.baseFret == 1) "Sattel" else "\${chord.baseFret}. Bund", left, dp(19f), titlePaint)
+        for (i in 0..5) {
+            val x = left + i * dx
+            gridPaint.strokeWidth = dp(if (i == 0 || i == 5) 1.8f else 1.25f)
+            canvas.drawLine(x, top, x, bottom, gridPaint)
+        }
+        for (i in 0..4) canvas.drawLine(left, top + i * dy, right, top + i * dy, gridPaint)
+        if (chord.baseFret == 1) canvas.drawLine(left, top, right, top, nutPaint)
+
+        val fingerGroups = (0..5).mapNotNull { i ->
+            val fret = chord.frets.getOrElse(i) { -1 }
+            val finger = chord.fingers.getOrElse(i) { 0 }
+            if (fret > 0 && finger in 1..4) Triple(i, fret, finger) else null
+        }.groupBy { Pair(it.second, it.third) }
+        fingerGroups.values.filter { it.size > 1 }.forEach { group ->
+            val fret = group.first().second
+            val relative = fret - chord.baseFret
+            if (relative in 0..3) {
+                val y = top + (relative + .5f) * dy
+                val firstX = left + group.minOf { it.first } * dx
+                val lastX = left + group.maxOf { it.first } * dx
+                val barre = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    color = dotPaint.color
+                    strokeWidth = dp(17f)
+                    strokeCap = android.graphics.Paint.Cap.ROUND
+                }
+                canvas.drawLine(firstX, y, lastX, y, barre)
+            }
+        }
+
+        for (i in 0..5) {
+            val x = left + i * dx
+            val fret = chord.frets.getOrElse(i) { -1 }
+            val finger = chord.fingers.getOrElse(i) { 0 }
+            when {
+                fret < 0 -> canvas.drawText("×", x, top - dp(12f), labelPaint)
+                fret == 0 -> canvas.drawText("○", x, top - dp(12f), labelPaint)
+                else -> {
+                    val relative = fret - chord.baseFret
+                    if (relative in 0..3) {
+                        val y = top + (relative + .5f) * dy
+                        canvas.drawCircle(x, y, radius, dotPaint)
+                        if (finger in 1..4) {
+                            val baseline = y - (fingerPaint.ascent() + fingerPaint.descent()) / 2f
+                            canvas.drawText(finger.toString(), x, baseline, fingerPaint)
+                        }
+                    }
+                }
+            }
+            canvas.drawText(stringLabels[i], x, height - dp(30f), labelPaint)
+        }
+        labelPaint.textSize = dp(9f)
+        canvas.drawText("1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein", width / 2f, height - dp(8f), labelPaint)
+        labelPaint.textSize = dp(12f)
+    }
+
+    private fun dp(value: Float) = value * resources.displayMetrics.density
+}
+'''
+import re
+diagram_pattern = r'class ChordDiagramView\(context: android\.content\.Context, private val shape: ChordShape\) : View\(context\) \{.*?(?=\n/\*\* Spielt den ausgewählten Griff)'
+s, diagram_count = re.subn(diagram_pattern, lambda _: shared_diagram_class.rstrip(), s, count=1, flags=re.S)
+if diagram_count != 1:
+    raise SystemExit("FEHLER: Gemeinsame Akkorddiagramm-Ansicht konnte nicht ersetzt werden.")
 
 # Neue Sekunden-Erfassung muss beim Zurücksetzen des Lernstands ebenfalls gelöscht werden.
 reset_anchor = '.remove("learn_quiz_correct")'
