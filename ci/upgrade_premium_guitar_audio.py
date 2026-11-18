@@ -15,6 +15,9 @@ required_resources = [
 missing = [p for p in required_resources if not (root / p).is_file()]
 if missing:
     raise SystemExit("FEHLER: Original-Gitarrenaufnahmen fehlen: " + ", ".join(missing))
+if "object GuitarAudioEngine {" in s and "GuitarAudioEngine.playProgression" in s:
+    print("PREMIUM-GITARRENKLANG: BEREITS VOLLSTÄNDIG INTEGRIERT")
+    raise SystemExit(0)
 
 engine = r'''
 /** Gemeinsame Sample-Engine für authentische Gitarrenklänge in der gesamten App. */
@@ -68,6 +71,7 @@ object GuitarAudioEngine {
         val stream = player.play(sampleIds[index], safeVolume, safeVolume, 1, 0, rate)
         if (stream != 0) {
             activeStreams.add(stream)
+            if (activeStreams.size > 64) activeStreams.clear()
             if (fadeMs > 0L) {
                 val steps = 5
                 for (step in 1..steps) {
