@@ -103,9 +103,10 @@ if "private fun removeReferenceToneHints(view: android.view.ViewGroup)" not in t
 
 if "removeReferenceToneHints(root)" not in t:
     marker = "\\n        return root"
-    if t.count(marker) != 1:
-        raise SystemExit("TUNER UI: root return insertion point not unique")
-    t = t.replace(marker, "\\n        removeReferenceToneHints(root)" + marker, 1)
+    position = t.rfind(marker)
+    if position < 0:
+        raise SystemExit("TUNER UI: final root return not found")
+    t = t[:position] + "\\n        removeReferenceToneHints(root)" + t[position:]
 
 if t.count("removeReferenceToneHints(root)") != 1:
     raise SystemExit("TUNER UI: cleanup call must occur exactly once")
