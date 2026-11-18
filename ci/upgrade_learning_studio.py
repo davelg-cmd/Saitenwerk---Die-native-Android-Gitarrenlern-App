@@ -644,7 +644,7 @@ complete_chords = [
     '        ChordShape("Hm7", "Septakkord", intArrayOf(-1,2,0,2,0,2), note="H-Mollseptakkord", fingers=intArrayOf(0,2,0,3,0,4)),',
     '        ChordShape("Hsus2", "Sus-Akkord", intArrayOf(-1,2,4,4,2,2), 2, note="H-Sus2-Barrégriff", fingers=intArrayOf(0,1,3,4,1,1)),',
     '        ChordShape("Hsus4", "Sus-Akkord", intArrayOf(-1,2,4,4,5,2), 2, note="H-Sus4-Barrégriff", fingers=intArrayOf(0,1,3,3,4,1)),',
-    '        ChordShape("Hadd9", "Add-Akkord", intArrayOf(-1,2,4,4,2,4), 2, note="H mit hinzugefügter None", fingers=intArrayOf(0,1,3,4,1,4)),',
+    '        ChordShape("Hadd9", "Add-Akkord", intArrayOf(-1,2,1,4,2,2), note="Hadd9-Barrégriff", fingers=intArrayOf(0,2,1,4,3,3)),',
     '        ChordShape("H5", "Power-Akkord", intArrayOf(-1,2,4,4,-1,-1), 2, note="H-Powerchord", fingers=intArrayOf(0,1,3,4,0,0)),',
     '        ChordShape("Bbm", "Moll", intArrayOf(-1,1,3,3,2,1), note="B-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),',
     '        ChordShape("Bbmaj7", "Septakkord", intArrayOf(-1,1,3,2,3,1), note="B-Dur mit großer Septime", fingers=intArrayOf(0,1,4,2,3,1)),',
