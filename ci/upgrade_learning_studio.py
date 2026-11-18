@@ -117,7 +117,7 @@ replacement = r'''class LearnFragment : Fragment() {
             actions.addView(next, LinearLayout.LayoutParams(0, a.dp(46), 1f))
             actions.addView(finish, LinearLayout.LayoutParams(0, a.dp(46), 1f).apply { leftMargin = a.dp(6) })
             box.addView(actions)
-            var answer = ""; var locked = false; var localStreak = 0; var answered = 0
+            var answer = ""; var locked = false; var localStreak = 0; var sessionRecorded = false
 
             fun updateHeader() {
                 val total = prefs.getInt("learn_quiz_total", 0); val correct = prefs.getInt("learn_quiz_correct", 0)
@@ -135,7 +135,8 @@ replacement = r'''class LearnFragment : Fragment() {
                     val b = a.button(option)
                     b.setOnClickListener {
                         if (locked) return@setOnClickListener
-                        locked = true; answered++
+                        locked = true
+                        if (!sessionRecorded) { recordSession(2); sessionRecorded = true }
                         val correctAnswer = option == answer
                         if (correctAnswer) localStreak++ else localStreak = 0
                         val total = prefs.getInt("learn_quiz_total", 0) + 1
@@ -151,8 +152,8 @@ replacement = r'''class LearnFragment : Fragment() {
                 }
                 updateHeader()
             }
-            next.setOnClickListener { if (answered > 0) recordSession(2); newQuestion() }
-            finish.setOnClickListener { if (answered > 0) recordSession(2); overviewAction?.invoke() }
+            next.setOnClickListener { sessionRecorded = false; newQuestion() }
+            finish.setOnClickListener { overviewAction?.invoke() }
             newQuestion(); content.addView(card)
         }
 
