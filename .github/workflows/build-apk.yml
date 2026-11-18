@@ -255,6 +255,13 @@ jobs:
           set -euo pipefail
           python3 ci/keep_screen_on_during_practice.py
 
+      - name: Dropdowns, Menüs und Kontextfenster vereinheitlichen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/unify_menu_dialog_design.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
