@@ -144,7 +144,7 @@ if hook_call not in t:
     raise SystemExit("TUNER UI: runtime cleanup hook missing")
 if hook_call_kammerton not in t:
     if hook_call in t:
-        t = t.replace(hook_call, hook_call + "\\n        " + hook_call_kammerton, 1)
+        t = t.replace(hook_call, hook_call + "\n        " + hook_call_kammerton, 1)
     else:
         raise SystemExit("TUNER UI: Kammerton removal hook missing")
 
@@ -171,7 +171,7 @@ if "private fun removeKammertonSection(root: android.view.ViewGroup)" not in t:
     marker = "    private fun removeReferenceToneHints"
     if t.count(marker) != 1:
         raise SystemExit("TUNER UI: Kammerton helper insertion point not unique")
-    t = t.replace(marker, kammerton_helpers + "\\n" + marker, 1)
+    t = t.replace(marker, kammerton_helpers + "\n" + marker, 1)
 
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)']
 missing = [x for x in required if x not in t]
