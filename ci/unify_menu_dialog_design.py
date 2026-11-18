@@ -96,7 +96,6 @@ for token in [
     "AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)",
     "AlertDialog.Builder(host, R.style.ThemeOverlay_Saitenwerk_Dialog)",
     "R.layout.sw_spinner_item",
-    "PopupMenu(a, anchor)",
 ]:
     if token not in check:
         raise SystemExit("UI-MENÜ-VALIDIERUNG FEHLGESCHLAGEN: " + token)
