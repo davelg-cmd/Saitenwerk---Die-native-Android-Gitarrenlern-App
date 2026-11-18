@@ -227,6 +227,13 @@ jobs:
           set -euo pipefail
           python3 ci/optimize_tuner_ui.py
 
+      - name: Saitenbuttons und Referenzton-Soundengine optimieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_reference_tone_audio.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
