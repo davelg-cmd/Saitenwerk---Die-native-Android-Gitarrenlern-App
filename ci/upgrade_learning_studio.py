@@ -617,6 +617,71 @@ if library_anchor in s and 'ChordShape("Cadd9"' not in s:
 elif 'ChordShape("Cadd9"' not in s:
     raise SystemExit("FEHLER: Akkorddatenbank-Erweiterungsanker fehlt.")
 
+# Vollständige Akkordfamilien für alle deutschen Grundton-Buchstaben.
+# H wird unabhängig von Cadd9/anderen älteren Datenbank-Erweiterungen ergänzt.
+if 'ChordShape("Hm", "Moll"' not in s:
+    old_h_minor = '        ChordShape("Bm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, fingers=intArrayOf(0,1,3,4,2,1)),'
+    new_h_minor = '        ChordShape("Hm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, note="Deutscher H-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),'
+    if old_h_minor in s:
+        s = s.replace(old_h_minor, new_h_minor, 1)
+
+# In deutscher Notation ist B = B♭ und H = B natural.
+s = s.replace(
+    'ChordShape("B", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="Barré-Durgriff", fingers=intArrayOf(0,1,3,3,3,1))',
+    'ChordShape("B", "Dur", intArrayOf(-1,1,3,3,3,1), note="Deutscher B-Dur-Griff (international Bb)", fingers=intArrayOf(0,1,3,3,3,1))',
+    1
+)
+s = s.replace(
+    'ChordShape("B7", "Septakkord", intArrayOf(-1,2,1,2,0,2), note="Dominantischer Septakkord", fingers=intArrayOf(0,2,1,3,0,4))',
+    'ChordShape("B7", "Septakkord", intArrayOf(-1,1,3,1,3,1), note="Deutscher B7 (international Bb7)", fingers=intArrayOf(0,1,3,1,4,1))',
+    1
+)
+
+complete_chords = [
+    '        ChordShape("H", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="H-Dur-Barrégriff", fingers=intArrayOf(0,1,3,3,3,1)),',
+    '        ChordShape("H7", "Septakkord", intArrayOf(-1,2,1,2,0,2), note="H-Dominantseptakkord", fingers=intArrayOf(0,2,1,3,0,4)),',
+    '        ChordShape("Hmaj7", "Septakkord", intArrayOf(-1,2,4,3,4,2), 2, note="H-Dur mit großer Septime", fingers=intArrayOf(0,1,3,2,4,1)),',
+    '        ChordShape("Hm7", "Septakkord", intArrayOf(-1,2,0,2,0,2), note="H-Mollseptakkord", fingers=intArrayOf(0,2,0,3,0,4)),',
+    '        ChordShape("Hsus2", "Sus-Akkord", intArrayOf(-1,2,4,4,2,2), 2, note="H-Sus2-Barrégriff", fingers=intArrayOf(0,1,3,4,1,1)),',
+    '        ChordShape("Hsus4", "Sus-Akkord", intArrayOf(-1,2,4,4,5,2), 2, note="H-Sus4-Barrégriff", fingers=intArrayOf(0,1,3,3,4,1)),',
+    '        ChordShape("Hadd9", "Add-Akkord", intArrayOf(-1,2,4,4,2,4), 2, note="H mit hinzugefügter None", fingers=intArrayOf(0,1,3,4,1,4)),',
+    '        ChordShape("H5", "Power-Akkord", intArrayOf(-1,2,4,4,-1,-1), 2, note="H-Powerchord", fingers=intArrayOf(0,1,3,4,0,0)),',
+    '        ChordShape("Bbm", "Moll", intArrayOf(-1,1,3,3,2,1), note="B-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),',
+    '        ChordShape("Bbmaj7", "Septakkord", intArrayOf(-1,1,3,2,3,1), note="B-Dur mit großer Septime", fingers=intArrayOf(0,1,4,2,3,1)),',
+    '        ChordShape("Bbm7", "Septakkord", intArrayOf(-1,1,3,1,2,1), note="B-Mollseptakkord", fingers=intArrayOf(0,1,3,1,2,1)),',
+    '        ChordShape("Bbsus4", "Sus-Akkord", intArrayOf(-1,1,3,3,4,1), note="B-Sus4-Barrégriff", fingers=intArrayOf(0,1,3,3,4,1)),',
+    '        ChordShape("Bb5", "Power-Akkord", intArrayOf(-1,1,3,-1,-1,-1), note="B-Powerchord", fingers=intArrayOf(0,1,3,0,0,0)),',
+    '        ChordShape("Amaj7", "Septakkord", intArrayOf(-1,0,2,1,2,0), note="A-Dur mit großer Septime", fingers=intArrayOf(0,0,2,1,3,0)),',
+    '        ChordShape("Aadd9", "Add-Akkord", intArrayOf(-1,0,2,4,2,0), note="Offener Aadd9-Klang", fingers=intArrayOf(0,0,1,3,2,0)),',
+    '        ChordShape("Cm", "Moll", intArrayOf(-1,3,5,5,4,3), 3, note="C-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),',
+    '        ChordShape("Cm7", "Septakkord", intArrayOf(-1,3,5,3,4,3), 3, note="C-Mollseptakkord", fingers=intArrayOf(0,1,3,1,2,1)),',
+    '        ChordShape("Csus4", "Sus-Akkord", intArrayOf(-1,3,3,0,1,1), note="C-Sus4", fingers=intArrayOf(0,3,4,0,1,1)),',
+    '        ChordShape("C5", "Power-Akkord", intArrayOf(-1,3,5,5,-1,-1), 3, note="C-Powerchord", fingers=intArrayOf(0,1,3,4,0,0)),',
+    '        ChordShape("Dadd9", "Add-Akkord", intArrayOf(-1,-1,0,2,3,0), note="Offener Dadd9-Klang", fingers=intArrayOf(0,0,0,1,3,0)),',
+    '        ChordShape("D5", "Power-Akkord", intArrayOf(-1,-1,0,2,3,-1), note="D-Powerchord", fingers=intArrayOf(0,0,0,1,3,0)),',
+    '        ChordShape("Emaj7", "Septakkord", intArrayOf(0,2,1,1,0,0), note="E-Dur mit großer Septime", fingers=intArrayOf(0,2,1,3,0,0)),',
+    '        ChordShape("Esus2", "Sus-Akkord", intArrayOf(0,2,4,4,0,0), note="E-Sus2", fingers=intArrayOf(0,1,3,4,0,0)),',
+    '        ChordShape("Esus4", "Sus-Akkord", intArrayOf(0,2,2,2,0,0), note="E-Sus4", fingers=intArrayOf(0,1,2,3,0,0)),',
+    '        ChordShape("Fm", "Moll", intArrayOf(1,3,3,1,1,1), note="F-Moll-Barrégriff", fingers=intArrayOf(1,3,4,1,1,1)),',
+    '        ChordShape("F7", "Septakkord", intArrayOf(1,3,1,2,1,1), note="F-Dominantseptakkord", fingers=intArrayOf(1,3,1,2,1,1)),',
+    '        ChordShape("Fmaj7", "Septakkord", intArrayOf(-1,-1,3,2,1,0), note="F-Dur mit großer Septime", fingers=intArrayOf(0,0,3,2,1,0)),',
+    '        ChordShape("Fm7", "Septakkord", intArrayOf(1,3,1,1,1,1), note="F-Mollseptakkord", fingers=intArrayOf(1,3,1,1,1,1)),',
+    '        ChordShape("Fsus4", "Sus-Akkord", intArrayOf(1,3,3,3,1,1), note="F-Sus4-Barrégriff", fingers=intArrayOf(1,3,3,3,1,1)),',
+    '        ChordShape("F5", "Power-Akkord", intArrayOf(1,3,3,-1,-1,-1), note="F-Powerchord", fingers=intArrayOf(1,3,4,0,0,0)),',
+    '        ChordShape("Gm", "Moll", intArrayOf(3,5,5,3,3,3), 3, note="G-Moll-Barrégriff", fingers=intArrayOf(1,3,4,1,1,1)),',
+    '        ChordShape("Gmaj7", "Septakkord", intArrayOf(3,2,0,0,0,2), note="Offener G-Durseptakkord", fingers=intArrayOf(2,1,0,0,0,3)),',
+    '        ChordShape("Gm7", "Septakkord", intArrayOf(3,5,3,3,3,3), 3, note="G-Mollseptakkord", fingers=intArrayOf(1,3,1,1,1,1)),',
+    '        ChordShape("Gsus2", "Sus-Akkord", intArrayOf(3,0,0,0,3,3), note="Offener G-Sus2-Klang", fingers=intArrayOf(2,0,0,0,3,4)),',
+    '        ChordShape("G5", "Power-Akkord", intArrayOf(3,5,5,-1,-1,-1), 3, note="G-Powerchord", fingers=intArrayOf(1,3,4,0,0,0))'
+]
+chord_anchor = '        ChordShape("B", "Dur", intArrayOf(-1,1,3,3,3,1)'
+for chord_line in complete_chords:
+    chord_name = chord_line.split('ChordShape("', 1)[1].split('"', 1)[0]
+    if f'ChordShape("{chord_name}"' not in s:
+        if chord_anchor not in s:
+            raise SystemExit("FEHLER: Akkorddatenbank-Einfügeanker fehlt: " + chord_name)
+        s = s.replace(chord_anchor, chord_line + "\\n" + chord_anchor, 1)
+
 # Suchfilter, Favoriten und kompakteres Kartenraster verbessern.
 s = s.replace(
 'val categories = listOf("Alle", "Dur", "Moll", "Septakkord", "Sus-Akkord"); var category = "Alle"',
