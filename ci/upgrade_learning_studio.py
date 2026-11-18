@@ -180,7 +180,7 @@ replacement = r'''class LearnFragment : Fragment() {
 
         fun showRhythm() {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
-            val (card, box) = panel("Rhythmus & Timing", "Trainiere Puls, Taktgefühl und Geschwindigkeit. Der erste Schlag jedes Taktes wird deutlich markiert.")
+            val (card, box) = panel("Rhythmus & Timing", "Trainiere Puls, Taktgefühl und Geschwindigkeit. Im 6/8-Takt hörst du zwei große Pulse pro Takt.")
             rhythmBpm = prefs.getInt("learn_rhythm_bpm", 80).coerceIn(50, 160)
             rhythmMeter = prefs.getString("learn_rhythm_meter", "4/4") ?: "4/4"
             val tempoLabel = TextView(a).apply { text = "BPM $rhythmBpm"; textSize = 18f; setTextColor(a.getColor(R.color.sw_text)); gravity = Gravity.CENTER }
@@ -195,10 +195,14 @@ replacement = r'''class LearnFragment : Fragment() {
             val meterRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
             meterRow.addView(TextView(a).apply { text = "Takt"; textSize = 13f; setTextColor(a.getColor(R.color.sw_muted)) }, LinearLayout.LayoutParams(0, a.dp(46), 1f))
             val meterButton = a.button(rhythmMeter); meterRow.addView(meterButton, LinearLayout.LayoutParams(a.dp(100), a.dp(46))); box.addView(meterRow)
+            val meterHint = TextView(a).apply { text = if (rhythmMeter == "6/8") "Zwei große Pulse pro Takt (1–2), jeweils über drei Achtel." else "Ein Puls pro Zählzeit."; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, 0, 0, a.dp(4)) }
+            box.addView(meterHint)
             meterButton.setOnClickListener {
                 val meters = arrayOf("2/4", "3/4", "4/4", "6/8")
                 androidx.appcompat.app.AlertDialog.Builder(a).setTitle("Taktart").setSingleChoiceItems(meters, meters.indexOf(rhythmMeter).coerceAtLeast(0)) { d, which ->
-                    rhythmMeter = meters[which]; meterButton.text = rhythmMeter; prefs.edit().putString("learn_rhythm_meter", rhythmMeter).apply(); d.dismiss()
+                    rhythmMeter = meters[which]; meterButton.text = rhythmMeter
+                    meterHint.text = if (rhythmMeter == "6/8") "Zwei große Pulse pro Takt (1–2), jeweils über drei Achtel." else "Ein Puls pro Zählzeit."
+                    prefs.edit().putString("learn_rhythm_meter", rhythmMeter).apply(); d.dismiss()
                 }.setNegativeButton("Abbrechen", null).show()
             }
             val beat = TextView(a).apply { text = "Bereit"; textSize = 30f; gravity = Gravity.CENTER; setTextColor(a.getColor(R.color.sw_copper)); setPadding(0, a.dp(12), 0, a.dp(8)) }
@@ -208,14 +212,17 @@ replacement = r'''class LearnFragment : Fragment() {
                 if (rhythmRunning) { stopRhythm(); start.text = "Metronom starten"; beat.text = "Pausiert" }
                 else {
                     rhythmRunning = true; rhythmStartedAt = android.os.SystemClock.elapsedRealtime(); rhythmBeat = 0; rhythmTone = ToneGenerator(AudioManager.STREAM_MUSIC, 65); rhythmHandler = Handler(Looper.getMainLooper()); start.text = "Metronom stoppen"
-                    val beatsPerBar = rhythmMeter.substringBefore("/").toIntOrNull() ?: 4
+                    val compoundSixEight = rhythmMeter == "6/8"
+                    val beatsPerBar = if (compoundSixEight) 2 else rhythmMeter.substringBefore("/").toIntOrNull() ?: 4
+                    val pulseInterval = if (compoundSixEight) 90000L / rhythmBpm else 60000L / rhythmBpm
                     val task = object : Runnable {
                         override fun run() {
                             if (!rhythmRunning) return
-                            val strong = rhythmBeat % beatsPerBar == 0
+                            val beatInBar = rhythmBeat % beatsPerBar
+                            val strong = beatInBar == 0
                             rhythmTone?.startTone(if (strong) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP, if (strong) 80 else 55)
-                            beat.text = if (strong) "1 · TAKT" else "${rhythmBeat % beatsPerBar + 1}"
-                            rhythmBeat++; rhythmHandler?.postDelayed(this, (60000L / rhythmBpm).coerceAtLeast(100L))
+                            beat.text = if (strong) "1 · TAKT" else "${beatInBar + 1}"
+                            rhythmBeat++; rhythmHandler?.postDelayed(this, pulseInterval.coerceAtLeast(100L))
                         }
                     }
                     rhythmHandler?.post(task)
