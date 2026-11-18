@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove the redundant stop control from Lernstudio > Song-Praxis."""
+"""Remove the redundant Song-Praxis stop button; tolerate already-updated source."""
 from pathlib import Path
 import os
 
@@ -18,15 +18,16 @@ blocks = [
             }
 ''',
 ]
+if 'a.button("■ Wiedergabe stoppen")' not in s and "stopProgression.setOnClickListener" not in s:
+    print("SONGPRAXIS: Separater Stoppbutton bereits entfernt; nichts zu tun.")
+    raise SystemExit(0)
+
 for block in blocks:
     if block not in s:
-        raise SystemExit("FEHLER: Erwarteter Stoppbutton-Abschnitt nicht gefunden; Änderung abgebrochen.")
-
+        raise SystemExit("FEHLER: Erwarteter Stoppbutton-Abschnitt nicht vollständig gefunden; Änderung abgebrochen.")
 for block in blocks:
     s = s.replace(block, "", 1)
-
 if 'a.button("■ Wiedergabe stoppen")' in s or "stopProgression.setOnClickListener" in s:
     raise SystemExit("FEHLER: Stoppbutton wurde nicht vollständig entfernt.")
-
 main.write_text(s, encoding="utf-8")
-print("Redundanter Wiedergabe-stoppen-Button aus Song-Praxis entfernt; Anhören-Funktion bleibt erhalten.")
+print("Redundanter Wiedergabe-stoppen-Button aus Song-Praxis entfernt.")
