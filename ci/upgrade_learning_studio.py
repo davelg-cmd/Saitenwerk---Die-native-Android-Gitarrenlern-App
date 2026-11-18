@@ -380,6 +380,8 @@ replacements = [
     ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
 ]
 for old, new in replacements:
+    if old == "    private val next = TextView(host)\\n" and "private val fretboard = ChordDiagramView(host)" in s:
+        continue
     if new in s:
         continue
     if old in s:
@@ -557,7 +559,7 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
 }
 '''
 shared_diagram_class = shared_diagram_class.replace(r"\$", "$")
-diagram_start = s.find("class ChordDiagramView(context: android.content.Context, private val shape: ChordShape) : View(context) {")
+diagram_start = s.find("open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null) : View(context) {")
 diagram_end = s.find("\n/** Spielt den ausgewählten Griff", diagram_start)
 if diagram_start >= 0 and diagram_end > diagram_start:
     s = s[:diagram_start] + shared_diagram_class.rstrip() + s[diagram_end:]
