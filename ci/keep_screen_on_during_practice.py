@@ -51,17 +51,17 @@ def keep_awake_in_fragment(source: str, class_name: str, end_marker: str) -> str
         raise SystemExit(f"FEHLER: Display-Wachhalten in {class_name} unvollständig")
     return source[:start] + fragment + source[end:]
 
-source = keep_awake_in_fragment(source, "TunerFragment", "\\nclass TunerGaugeView")
-source = keep_awake_in_fragment(source, "LearnFragment", "\\nclass PathFragment")
+source = keep_awake_in_fragment(source, "TunerFragment", "\nclass TunerGaugeView")
+source = keep_awake_in_fragment(source, "LearnFragment", "\nclass PathFragment")
 
 # Keep the tuner audio engine free of a hard attack; protect against regressions.
 tuner_start = source.index("class TunerFragment : Fragment() {")
-tuner_end = source.index("\\nclass TunerGaugeView", tuner_start)
+tuner_end = source.index("\nclass TunerGaugeView", tuner_start)
 tuner = source[tuner_start:tuner_end]
 if "FLAG_KEEP_SCREEN_ON" not in tuner:
     raise SystemExit("FEHLER: Display-Flag im Stimmgerät fehlt")
 learn_start = source.index("class LearnFragment : Fragment() {")
-learn_end = source.index("\\nclass PathFragment", learn_start)
+learn_end = source.index("\nclass PathFragment", learn_start)
 learn = source[learn_start:learn_end]
 if "FLAG_KEEP_SCREEN_ON" not in learn:
     raise SystemExit("FEHLER: Display-Flag im Lernstudio fehlt")
