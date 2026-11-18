@@ -431,6 +431,14 @@ for old, new in finger_data:
         continue
     if old in s:
         s = s.replace(old, new, 1)
+    elif old.startswith('ChordShape("Bm", "Moll", intArrayOf(-1,2,4,4,3,2), 2)'):
+        # The source backup may already use German H notation.
+        german_old = 'ChordShape("Hm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, note="Deutscher H-Moll-Barrégriff")'
+        german_new = 'ChordShape("Hm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, note="Deutscher H-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1))'
+        if german_new not in s and german_old in s:
+            s = s.replace(german_old, german_new, 1)
+        elif german_new not in s:
+            raise SystemExit("FEHLER: Weder Bm- noch Hm-Fingersatz-Anker gefunden.")
     else:
         raise SystemExit("FEHLER: Fingersatz-Anker fehlt: " + old[:70])
 
