@@ -317,7 +317,7 @@ replacement = r'''class LearnFragment : Fragment() {
                 if (!strumRunning || selected.isEmpty()) return
                 val expected = selected[step]
                 if (direction == expected) { hits++; status.text = "✓ $direction richtig" } else { mistakes++; status.text = "✕ Erwartet: $expected" }
-                stats.text = "Treffer: $hits · Fehler: $mistakes · Genauigkeit: " + if (hits + mistakes > 0) (hits * 100 / (hits + mistakes)) else 0 + "%"
+                stats.text = "Treffer: $hits · Fehler: $mistakes · Genauigkeit: " + (if (hits + mistakes > 0) (hits * 100 / (hits + mistakes)) else 0) + "%"
                 step = (step + 1) % selected.size
                 markBeat()
             }
