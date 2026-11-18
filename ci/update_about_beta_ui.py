@@ -30,6 +30,29 @@ quick_block = learn[quick_start:quick_end]
 quick_pos = quick_start
 xp_pos = learn.find("            val xp = prefs.getInt", overview_start)
 
+# Die Schnellstart-Karte verwendet das Wochenziel. Dessen Werte müssen vor
+# dem Kartenaufbau initialisiert sein, auch wenn die Karte vor dem Wochenziel-Panel steht.
+import re
+week_decl = re.search(
+    r'            val cal = java\\.util\\.Calendar\\.getInstance\\(\\)\\n'
+    r'            val weekKey = .*?\\n'
+    r'            val weekSeconds = .*?\\n'
+    r'            val weekGoal = .*?\\n',
+    learn,
+    re.DOTALL,
+)
+if week_decl:
+    week_values = week_decl.group(0)
+    learn = learn[:week_decl.start()] + learn[week_decl.end():]
+    quick_start = learn.find("            val quick = roundedCard()", overview_start)
+    if quick_start < 0:
+        raise SystemExit("FEHLER: Schnellstart-Karte für Wochenziel-Initialisierung nicht gefunden.")
+    learn = learn[:quick_start] + week_values + learn[quick_start:]
+else:
+    # Bereits korrekt vorgezogene Initialisierung nicht erneut einfügen.
+    if "val weekSeconds" not in learn[:learn.find("val quick = roundedCard()")]:
+        raise SystemExit("FEHLER: Wochenziel-Initialisierung nicht gefunden.")
+
 # Nur verschieben, wenn Schnellstart nicht bereits direkt nach der Einleitung steht.
 if quick_pos > intro_pos and (xp_pos < 0 or quick_pos > xp_pos):
     learn = learn[:quick_start] + learn[quick_end:]
