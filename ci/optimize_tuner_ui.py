@@ -85,7 +85,7 @@ if tuner_hint in t:
 if tuner_hint in t:
     raise SystemExit("TUNER UI: explanatory paragraph was not removed")
 
-required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','links = zu tief, rechts = zu hoch','android.graphics.Color.rgb(92, 175, 142)','Referenztöne · Saite antippen zum Anhören']
+required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:,'android.graphics.Color.rgb(92, 175, 142)','Referenztöne · Saite antippen zum Anhören']
 missing = [x for x in required if x not in t]
 if missing: raise SystemExit("Tuner UI validation failed: " + ", ".join(missing))
 main.write_text(s[:start] + t + s[end:], encoding="utf-8")
