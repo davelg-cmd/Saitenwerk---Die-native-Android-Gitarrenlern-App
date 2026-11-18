@@ -101,15 +101,21 @@ if "private fun removeReferenceToneHints(view: android.view.ViewGroup)" not in t
         raise SystemExit("TUNER UI: onCreateView insertion point not unique")
     t = t.replace(marker, cleanup + "\\n" + marker, 1)
 
-if "removeReferenceToneHints(root)" not in t:
-    marker = "\\n        return root"
-    position = t.rfind(marker)
-    if position < 0:
-        raise SystemExit("TUNER UI: final root return not found")
-    t = t[:position] + "\\n        removeReferenceToneHints(root)" + t[position:]
+if "override fun onViewCreated(view: View, savedInstanceState: Bundle?)" not in t:
+    marker = "    override fun onCreateView"
+    if t.count(marker) != 1:
+        raise SystemExit("TUNER UI: onCreateView insertion point not unique")
+    on_view_created = '''
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (view is android.view.ViewGroup) removeReferenceToneHints(view)
+    }
 
-if t.count("removeReferenceToneHints(root)") != 1:
-    raise SystemExit("TUNER UI: cleanup call must occur exactly once")
+'''
+    t = t.replace(marker, on_view_created + marker, 1)
+
+if t.count("removeReferenceToneHints(view)") < 2:
+    raise SystemExit("TUNER UI: runtime cleanup hook missing")
 
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)']
 missing = [x for x in required if x not in t]
