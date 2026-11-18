@@ -294,11 +294,15 @@ jobs:
               'chord_training_best_streak',
               'Reihenfolge mischen',
               'Als Nächstes',
-              'class GuitarFretboardView(context: android.content.Context) : View(context)',
+              'class GuitarFretboardView(context: android.content.Context) : ChordDiagramView(context)',
               'private val fretboard = GuitarFretboardView(host)',
               'fretboard.setChord(ChordLibrary.all.firstOrNull',
               'stage.addView(fretboard, LayoutParams(-1, host.dp(154)))',
-              'Gitarrengriffbrett für Akkord',
+              'val fingers: IntArray = IntArray(6)',
+              'fingers=intArrayOf(0,3,2,0,1,0)',
+              'open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)',
+              'canvas.drawText(finger.toString(), x, baseline, fingerPaint)',
+              '1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein',
           ]
           missing = [x for x in required if x not in s]
           if missing:
