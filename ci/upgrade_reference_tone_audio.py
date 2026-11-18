@@ -2,6 +2,11 @@ from pathlib import Path
 import os
 p=Path(os.environ["PROJECT_DIR"])/"app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s=p.read_text(encoding="utf-8")
+# Newer builds use the shared GuitarAudioEngine; the legacy tuner SoundPool
+# state is intentionally absent in that architecture.
+if "object GuitarAudioEngine" in s and "playTunedString" in s:
+    print("SAITENBUTTONS UND ORIGINAL-REFERENZTON: SHARED ENGINE BEREITS AKTIV")
+    raise SystemExit(0)
 a=s.index("class TunerFragment : Fragment() {"); b=s.index("\nclass TunerGaugeView",a); t=s[a:b]
 if "private var referenceSoundPool: SoundPool? = null" in t and "playRecordedReference" in t:
     print("SAITENBUTTONS UND ORIGINAL-REFERENZTON: BEREITS AKTIV")
