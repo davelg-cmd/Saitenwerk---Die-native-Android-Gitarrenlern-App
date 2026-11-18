@@ -17,9 +17,16 @@ if credits_start < 0 or return_start < 0:
     settings_end = s.find("\\nclass ", settings_pos + 10)
     settings_context = s[settings_pos:settings_end if settings_end >= 0 else len(s)]
     print("SETTINGS_SOURCE_DIAGNOSTIC:")
-    for line_no, line in enumerate(settings_context.splitlines(), 1):
-        if any(term in line for term in ("Über", "credits", "card()", "ScrollView", "addView(content)", "return ")):
-            print(f"{line_no}: {line[:240]}")
+    print("\\n".join(settings_context.splitlines()[:100]))
+    learn_pos = s.find("class LearnFragment : Fragment() {")
+    learn_end = s.find("\\nclass PathFragment : Fragment() {", learn_pos)
+    learn_context = s[learn_pos:learn_end if learn_end >= 0 else len(s)]
+    for term in ("Schnellstart", "quickStart", "quickstart", "Quickstart"):
+        pos = learn_context.find(term)
+        if pos >= 0:
+            print("QUICKSTART_SOURCE_CONTEXT:")
+            print(learn_context[max(0, pos - 1800):pos + 2600])
+            break
     raise SystemExit("FEHLER: Über-Karte oder Rückgabe des Einstellungsbildschirms nicht gefunden.")
 
 replacement = r'''        val appInfo = a.packageManager.getPackageInfo(a.packageName, 0)
