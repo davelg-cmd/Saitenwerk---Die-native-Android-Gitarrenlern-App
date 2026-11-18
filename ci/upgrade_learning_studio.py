@@ -632,5 +632,41 @@ if 'val resultCount = TextView(a)' not in s:
     s = s.replace('matches.forEach { chord ->', 'resultCount.text = matches.size.toString() + " Akkorde gefunden"\n            matches.forEach { chord ->', 1)
     s = s.replace('content.addView(detailCard); content.addView(grid)', 'content.addView(detailCard); content.addView(resultCount); content.addView(grid)', 1)
 
+
+# Buchstaben-Dropdowns: jeder Grundton öffnet seine komplette Akkordauswahl.
+letter_dropdown_code = """        val letterScroll = HorizontalScrollView(a).apply { isHorizontalScrollBarEnabled = false }
+        val letterRow = LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(a.dp(10), a.dp(4), a.dp(10), a.dp(8))
+        }
+        letterScroll.addView(letterRow)
+        listOf("A", "B", "C", "D", "E", "F", "G", "H").forEach { letter ->
+            val letterChords = ChordLibrary.all.filter { it.name.startsWith(letter, ignoreCase = true) }.sortedBy { it.name }
+            val menuButton = a.button(letter + "  ▾").apply { textSize = 13f }
+            menuButton.isEnabled = letterChords.isNotEmpty()
+            menuButton.alpha = if (letterChords.isNotEmpty()) 1f else .45f
+            menuButton.setOnClickListener { anchor ->
+                val popup = android.widget.PopupMenu(a, anchor)
+                letterChords.forEachIndexed { index, chord -> popup.menu.add(android.view.Menu.NONE, index, index, chord.name) }
+                popup.setOnMenuItemClickListener { item ->
+                    letterChords.getOrNull(item.itemId)?.let { chord ->
+                        category = "Alle"
+                        showChord(chord)
+                        resultCount.text = "Ausgewählt: " + chord.name
+                    }
+                    true
+                }
+                popup.show()
+            }
+            letterRow.addView(menuButton, LinearLayout.LayoutParams(a.dp(62), a.dp(42)).apply { rightMargin = a.dp(5) })
+        }
+        root.addView(letterScroll, LinearLayout.LayoutParams(-1, a.dp(52)))
+"""
+letter_render_anchor = '        fun render() {\\n            grid.removeAllViews(); val q = search.text.toString().trim().lowercase()'
+if letter_render_anchor in s and 'val letterScroll = HorizontalScrollView(a)' not in s:
+    s = s.replace(letter_render_anchor, letter_dropdown_code + "\\n" + letter_render_anchor, 1)
+elif 'val letterScroll = HorizontalScrollView(a)' not in s:
+    raise SystemExit("FEHLER: Akkorddatenbank-Renderanker für Buchstaben-Dropdowns fehlt.")
+
 p.write_text(s, encoding="utf-8")
 print("LERNSTUDIO-OPTIMIERUNG: PASS")
