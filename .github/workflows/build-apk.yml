@@ -227,6 +227,13 @@ jobs:
           set -euo pipefail
           python3 ci/optimize_tuner_ui.py
 
+      - name: Alternative Stimmungen als Dropdown-Menü optimieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/alternative_tuning_dropdown.py
+
       - name: Saitenbuttons und Referenzton-Soundengine optimieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
