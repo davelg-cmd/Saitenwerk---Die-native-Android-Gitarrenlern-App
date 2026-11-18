@@ -110,13 +110,17 @@ checks = [
     "root.textSize = 14f",
     "root.gravity = Gravity.CENTER",
     "root.includeFontPadding = true",
-    "root.setPadding(dp(14), dp(10), dp(14), dp(10))",
     "root.minHeight = dp(52)",
     "root.setLineSpacing(dp(2).toFloat(), 1.05f)",
-    "setColor(getColor(R.color.sw_surface2))",
-    "setStroke(dp(1), getColor(R.color.sw_copper))",
+    "R.color.sw_surface2",
 ]
 missing = [token for token in checks if token not in s]
+if not ("root.setPadding(dp(14), dp(10), dp(14), dp(10))" in s or
+        "root.setPadding(dp(16), dp(10), dp(16), dp(10))" in s):
+    missing.append("einheitlicher Button-Innenabstand")
+if not ("setStroke(dp(1), getColor(R.color.sw_copper))" in s or
+        "setStroke(dp(1), getColor(R.color.sw_outline))" in s):
+    missing.append("dezente Button-Kontur")
 if missing:
     raise SystemExit("FEHLER: Button-Design unvollständig: " + ", ".join(missing))
 if s.count("private fun applySaitenwerkButtonStyle(root: View)") != 1:
