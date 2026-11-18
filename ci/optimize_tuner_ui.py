@@ -81,6 +81,24 @@ if tuner_hint in t:
 # view tree. The old implementation added one identical TextView per string.
 # Runtime tree cleanup also catches nested and loop-created views.
 cleanup = '''
+    private fun containsKammertonControl(view: android.view.View): Boolean {
+        if (view is android.widget.TextView &&
+            view.text?.toString()?.contains("Kammerton", ignoreCase = true) == true) return true
+        if (view is android.view.ViewGroup) {
+            for (index in 0 until view.childCount) {
+                if (containsKammertonControl(view.getChildAt(index))) return true
+            }
+        }
+        return false
+    }
+
+    private fun removeKammertonSection(root: android.view.ViewGroup) {
+        for (index in root.childCount - 1 downTo 0) {
+            val child = root.getChildAt(index)
+            if (containsKammertonControl(child)) root.removeViewAt(index)
+        }
+    }
+
     private fun removeReferenceToneHints(view: android.view.ViewGroup) {
         for (index in view.childCount - 1 downTo 0) {
             val child = view.getChildAt(index)
@@ -102,12 +120,13 @@ if "private fun removeReferenceToneHints(view: android.view.ViewGroup)" not in t
     t = t.replace(marker, cleanup + "\n" + marker, 1)
 
 hook_call = "if (view is android.view.ViewGroup) removeReferenceToneHints(view)"
+hook_call_kammerton = "if (view is android.view.ViewGroup) removeKammertonSection(view)"
 if hook_call not in t:
     import re
     method = re.search(r"    override fun onViewCreated\\s*\\([^)]*\\)\\s*\\{", t)
     if method:
         insert_at = method.end()
-        t = t[:insert_at] + "\n        " + hook_call + t[insert_at:]
+        t = t[:insert_at] + "\n        " + hook_call + "\n        " + hook_call_kammerton + t[insert_at:]
     else:
         marker = "    override fun onCreateView"
         if t.count(marker) != 1:
@@ -123,6 +142,8 @@ if hook_call not in t:
 
 if hook_call not in t:
     raise SystemExit("TUNER UI: runtime cleanup hook missing")
+if hook_call_kammerton not in t:
+    raise SystemExit("TUNER UI: Kammerton removal hook missing")
 
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)']
 missing = [x for x in required if x not in t]
