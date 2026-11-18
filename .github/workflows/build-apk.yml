@@ -276,6 +276,13 @@ jobs:
           set -euo pipefail
           python3 ci/update_about_beta_ui.py
 
+      - name: Songpraxis-Stoppbutton vertikal zentrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_songpractice_stop_button.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
