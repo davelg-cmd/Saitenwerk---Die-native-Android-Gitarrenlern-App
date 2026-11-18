@@ -5,6 +5,11 @@ import os
 root = Path(os.environ["PROJECT_DIR"])
 p = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = p.read_text(encoding="utf-8")
+# Remove the redundant orientation hint from the chord detail; keep the symbol legend.
+s = s.replace(
+    r"Hochkant: tiefe E-Saite links · hohe e-Saite rechts\n× = nicht anschlagen · ○ = leere Saite",
+    "× = nicht anschlagen · ○ = leere Saite",
+)
 
 start = s.find("class LearnFragment : Fragment() {")
 end = s.find("\nclass PathFragment : Fragment() {", start)
