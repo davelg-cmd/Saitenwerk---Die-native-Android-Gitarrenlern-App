@@ -380,9 +380,11 @@ replacements = [
     ("        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        addView(stage, LayoutParams(-1, host.dp(104)).apply {", "        stage.addView(next, LayoutParams(-1, host.dp(28)))\n        stage.addView(fretboard, LayoutParams(-1, host.dp(154)))\n        addView(stage, LayoutParams(-1, -2).apply {")
 ]
 for old, new in replacements:
+    if new in s:
+        continue
     if old in s:
         s = s.replace(old, new, 1)
-    elif new not in s:
+    else:
         raise SystemExit("FEHLER: Griffbrett-Patchanker nicht gefunden: " + old[:80])
 s = s.replace("private val fretboard = GuitarFretboardView(host)", "private val fretboard = ChordDiagramView(host)")
 
@@ -413,9 +415,11 @@ finger_data = [
 ('ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0))','ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0), fingers=intArrayOf(0,0,1,2,3,0))')
 ]
 for old, new in finger_data:
+    if new in s:
+        continue
     if old in s:
         s = s.replace(old, new, 1)
-    elif new not in s:
+    else:
         raise SystemExit("FEHLER: Fingersatz-Anker fehlt: " + old[:70])
 
 shared_diagram_class = r'''
@@ -533,10 +537,11 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
 }
 '''
 shared_diagram_class = shared_diagram_class.replace(r"\$", "$")
-import re
-diagram_pattern = r'class ChordDiagramView\(context: android\.content\.Context, private val shape: ChordShape\) : View\(context\) \{.*?(?=\n/\*\* Spielt den ausgewählten Griff)'
-s, diagram_count = re.subn(diagram_pattern, lambda _: shared_diagram_class.rstrip(), s, count=1, flags=re.S)
-if diagram_count != 1 and "open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)" not in s:
+diagram_start = s.find("class ChordDiagramView(context: android.content.Context, private val shape: ChordShape) : View(context) {")
+diagram_end = s.find("\n/** Spielt den ausgewählten Griff", diagram_start)
+if diagram_start >= 0 and diagram_end > diagram_start:
+    s = s[:diagram_start] + shared_diagram_class.rstrip() + s[diagram_end:]
+elif "open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)" not in s:
     raise SystemExit("FEHLER: Gemeinsame Akkorddiagramm-Ansicht konnte nicht ersetzt werden.")
 
 # Neue Sekunden-Erfassung muss beim Zurücksetzen des Lernstands ebenfalls gelöscht werden.
