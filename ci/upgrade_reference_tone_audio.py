@@ -122,6 +122,10 @@ if old in t: t=t.replace(old,"        stopReferenceTone()",1)
 elif "stopReferenceTone()" not in t[t.index("private fun stopTuner"):]: raise SystemExit("Tuner-Cleanup fehlt")
 for q in ["private fun stopReferenceTone()","AudioTrack.MODE_STATIC","selectedReferenceName == target.name","referenceAudioHandler.postDelayed",'contentDescription = "Referenzton Saite']:
     if q not in t: raise SystemExit("Validierung fehlt: "+q)
+t = t.replace('selector.addView(stringPanel, LinearLayout.LayoutParams(-1, a.dp(48)))',
+              'selector.addView(stringPanel, LinearLayout.LayoutParams(-1, a.dp(60)))')
+if "selector.addView(stringPanel, LinearLayout.LayoutParams(-1, a.dp(60)))" not in t:
+    raise SystemExit("Saitenbutton-Zeilenhöhe konnte nicht angepasst werden")
 if "exp(-3.8 * t)" in t: raise SystemExit("Alte Soundengine bleibt aktiv")
 p.write_text(s[:a]+t+s[b:],encoding="utf-8")
 print("SAITENBUTTONS UND REFERENZTON-ENGINE: PASS")
