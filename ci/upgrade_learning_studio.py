@@ -428,7 +428,7 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
     private var shape: ChordShape? = initialShape
     private val gridPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(142, 151, 163)
-        strokeWidth = dp(1.4f)
+        strokeWidth = dp(1.35f)
         style = android.graphics.Paint.Style.STROKE
     }
     private val nutPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
@@ -443,82 +443,98 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
     private val fingerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.WHITE
         textAlign = android.graphics.Paint.Align.CENTER
-        textSize = dp(11f)
+        textSize = dp(10f)
         typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
     }
     private val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.LTGRAY
         textAlign = android.graphics.Paint.Align.CENTER
-        textSize = dp(12f)
+        textSize = dp(11f)
         typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
     }
     private val titlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(217, 154, 112)
         textAlign = android.graphics.Paint.Align.LEFT
-        textSize = dp(12f)
+        textSize = dp(11f)
         typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
     }
 
     fun setChord(value: ChordShape?) {
         shape = value
-        contentDescription = value?.let { "Akkord \${it.name}, Griffbild mit Fingerzahlen" } ?: "Gitarrengriffbild"
+        contentDescription = value?.let { "Akkord ${it.name}, sechs Saiten, Griffbild mit Fingerzahlen und Barré" } ?: "Gitarrengriffbild"
         invalidate()
     }
 
     override fun onDraw(canvas: android.graphics.Canvas) {
         super.onDraw(canvas)
         val chord = shape ?: return
-        val top = dp(42f)
-        val bottom = height - dp(55f)
-        val left = width * .16f
-        val right = width * .84f
-        if (bottom <= top || right <= left) return
-        val dx = (right - left) / 5f
-        val dy = (bottom - top) / 4f
-        val radius = dp(11f)
-        val stringLabels = arrayOf("E", "A", "D", "G", "H", "e")
+        val left = dp(51f)
+        val right = width - dp(13f)
+        val top = dp(39f)
+        val bottom = height - dp(31f)
+        if (right <= left || bottom <= top) return
+        val fretWidth = (right - left) / 4f
+        val stringGap = (bottom - top) / 5f
+        val radius = dp(8.5f)
+        val strings = arrayOf("E", "A", "D", "G", "H", "e")
 
-        canvas.drawText(if (chord.baseFret == 1) "Sattel" else "\${chord.baseFret}. Bund", left, dp(19f), titlePaint)
+        canvas.drawText(if (chord.baseFret <= 1) "Sattel" else "Bund ${chord.baseFret}", left, dp(15f), titlePaint)
+        // Sechs waagerechte Saiten, von der tiefen E- bis zur hohen e-Saite.
         for (i in 0..5) {
-            val x = left + i * dx
+            val y = top + i * stringGap
             gridPaint.strokeWidth = dp(if (i == 0 || i == 5) 1.8f else 1.25f)
+            canvas.drawLine(left, y, right, y, gridPaint)
+            canvas.drawText(strings[i], dp(10f), y + dp(4f), labelPaint)
+        }
+        // Senkrechte Bundlinien; am ersten Bund ersetzt der kräftige Sattel die Linie.
+        for (i in 0..4) {
+            val x = left + i * fretWidth
+            gridPaint.strokeWidth = dp(1.25f)
             canvas.drawLine(x, top, x, bottom, gridPaint)
         }
-        for (i in 0..4) canvas.drawLine(left, top + i * dy, right, top + i * dy, gridPaint)
-        if (chord.baseFret == 1) canvas.drawLine(left, top, right, top, nutPaint)
+        if (chord.baseFret <= 1) canvas.drawLine(left, top, left, bottom, nutPaint)
+        else {
+            for (i in 0..3) {
+                val x = left + (i + .5f) * fretWidth
+                labelPaint.textSize = dp(9f)
+                canvas.drawText((chord.baseFret + i).toString(), x, dp(28f), labelPaint)
+            }
+            labelPaint.textSize = dp(11f)
+        }
 
-        val fingerGroups = (0..5).mapNotNull { i ->
-            val fret = chord.frets.getOrElse(i) { -1 }
-            val finger = chord.fingers.getOrElse(i) { 0 }
-            if (fret > 0 && finger in 1..4) Triple(i, fret, finger) else null
+        // Gleicher Finger auf gleichem Bund über mehrere Saiten = Barré.
+        val fingerGroups = (0..5).mapNotNull { string ->
+            val fret = chord.frets.getOrElse(string) { -1 }
+            val finger = chord.fingers.getOrElse(string) { 0 }
+            if (fret > 0 && finger in 1..4) Triple(string, fret, finger) else null
         }.groupBy { Pair(it.second, it.third) }
         fingerGroups.values.filter { it.size > 1 }.forEach { group ->
             val fret = group.first().second
             val relative = fret - chord.baseFret
             if (relative in 0..3) {
-                val y = top + (relative + .5f) * dy
-                val firstX = left + group.minOf { it.first } * dx
-                val lastX = left + group.maxOf { it.first } * dx
-                val barre = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                val x = left + (relative + .5f) * fretWidth
+                val firstY = top + group.minOf { it.first } * stringGap
+                val lastY = top + group.maxOf { it.first } * stringGap
+                val barrePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                     color = dotPaint.color
-                    strokeWidth = dp(17f)
+                    strokeWidth = dp(16f)
                     strokeCap = android.graphics.Paint.Cap.ROUND
                 }
-                canvas.drawLine(firstX, y, lastX, y, barre)
+                canvas.drawLine(x, firstY, x, lastY, barrePaint)
             }
         }
 
         for (i in 0..5) {
-            val x = left + i * dx
+            val y = top + i * stringGap
             val fret = chord.frets.getOrElse(i) { -1 }
             val finger = chord.fingers.getOrElse(i) { 0 }
             when {
-                fret < 0 -> canvas.drawText("×", x, top - dp(12f), labelPaint)
-                fret == 0 -> canvas.drawText("○", x, top - dp(12f), labelPaint)
+                fret < 0 -> canvas.drawText("×", dp(32f), y + dp(4f), labelPaint)
+                fret == 0 -> canvas.drawText("○", dp(32f), y + dp(4f), labelPaint)
                 else -> {
                     val relative = fret - chord.baseFret
                     if (relative in 0..3) {
-                        val y = top + (relative + .5f) * dy
+                        val x = left + (relative + .5f) * fretWidth
                         canvas.drawCircle(x, y, radius, dotPaint)
                         if (finger in 1..4) {
                             val baseline = y - (fingerPaint.ascent() + fingerPaint.descent()) / 2f
@@ -527,11 +543,10 @@ open class ChordDiagramView(context: android.content.Context, initialShape: Chor
                     }
                 }
             }
-            canvas.drawText(stringLabels[i], x, height - dp(30f), labelPaint)
         }
         labelPaint.textSize = dp(9f)
-        canvas.drawText("1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein", width / 2f, height - dp(8f), labelPaint)
-        labelPaint.textSize = dp(12f)
+        canvas.drawText("1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein", width / 2f, height - dp(7f), labelPaint)
+        labelPaint.textSize = dp(11f)
     }
 
     private fun dp(value: Float) = value * resources.displayMetrics.density
