@@ -131,7 +131,7 @@ jobs:
           main = Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
           s = main.read_text(encoding="utf-8")
           start = s.find("class LearnFragment : Fragment() {")
-          end = s.find("\\nclass PathFragment : Fragment() {", start)
+          end = s.find("\nclass PathFragment : Fragment() {", start)
           if start < 0 or end < 0:
               raise SystemExit("FEHLER: Lernstudio-Klasse nicht gefunden.")
           learn = s[start:end]
