@@ -203,7 +203,7 @@ replacement = r'''class LearnFragment : Fragment() {
                             if (!rhythmRunning) return
                             val strong = rhythmBeat % beatsPerBar == 0
                             rhythmTone?.startTone(if (strong) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP, if (strong) 80 else 55)
-                            beat.text = if (strong) "1 · TAKT" else "\${rhythmBeat % beatsPerBar + 1}"
+                            beat.text = if (strong) "1 · TAKT" else "${rhythmBeat % beatsPerBar + 1}"
                             rhythmBeat++; rhythmHandler?.postDelayed(this, (60000L / rhythmBpm).coerceAtLeast(100L))
                         }
                     }
@@ -224,7 +224,7 @@ replacement = r'''class LearnFragment : Fragment() {
             box.addView(progressLabel); box.addView(progress, LinearLayout.LayoutParams(-1, a.dp(10)).apply { bottomMargin = a.dp(8) })
             fun update(mask: Int) {
                 val n = Integer.bitCount(mask); progress.progress = n
-                progressLabel.text = if (n == tasks.size) "Heute komplett · 10 Minuten geschafft" else "Heute erledigt: $n von \${tasks.size}"
+                progressLabel.text = if (n == tasks.size) "Heute komplett · 10 Minuten geschafft" else "Heute erledigt: $n von ${tasks.size}"
                 prefs.edit().putInt("learn_routine_done", mask).apply(); updatePracticeStats()
             }
             tasks.forEachIndexed { index, task ->
