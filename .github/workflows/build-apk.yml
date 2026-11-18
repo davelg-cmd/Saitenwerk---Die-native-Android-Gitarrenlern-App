@@ -220,6 +220,13 @@ jobs:
 
           PY
 
+      - name: Stimmgerät-Design und Bedienung optimieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/optimize_tuner_ui.py
+
       - name: Update, Stimmungen und Premium-Oberfläche validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
