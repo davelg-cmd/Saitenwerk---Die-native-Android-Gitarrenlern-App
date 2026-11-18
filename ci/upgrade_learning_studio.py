@@ -593,11 +593,11 @@ if reset_anchor in s and '.remove("learn_daily_seconds")' not in s:
 # Erweiterte Akkordauswahl mit praxisnahen Dur-, Moll-, Sept-, Add- und Power-Voicings.
 library_anchor = '        ChordShape("Asus4", "Sus-Akkord", intArrayOf(-1,0,2,2,3,0), fingers=intArrayOf(0,0,1,2,3,0))'
 library_additions = [
-        ChordShape("H", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="Deutscher H-Dur-Barrégriff", fingers=intArrayOf(0,1,3,3,3,1)),
-        ChordShape("Hm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, note="Deutscher H-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),
-        ChordShape("H7", "Septakkord", intArrayOf(-1,2,1,2,0,2), note="Dominantischer H-Septakkord", fingers=intArrayOf(0,2,1,3,0,4)),
-        ChordShape("Hm7", "Septakkord", intArrayOf(-1,2,0,2,0,2), note="H-Moll-Septakkord", fingers=intArrayOf(0,2,0,1,0,3)),
-        ChordShape("Hsus4", "Sus-Akkord", intArrayOf(-1,2,4,4,5,2), 2, note="H-Sus4-Barrégriff", fingers=intArrayOf(0,1,3,3,4,1)),
+        '        ChordShape("H", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="Deutscher H-Dur-Barrégriff", fingers=intArrayOf(0,1,3,3,3,1)),'
+        '        ChordShape("Hm", "Moll", intArrayOf(-1,2,4,4,3,2), 2, note="Deutscher H-Moll-Barrégriff", fingers=intArrayOf(0,1,3,4,2,1)),'
+        '        ChordShape("H7", "Septakkord", intArrayOf(-1,2,1,2,0,2), note="Dominantischer H-Septakkord", fingers=intArrayOf(0,2,1,3,0,4)),'
+        '        ChordShape("Hm7", "Septakkord", intArrayOf(-1,2,0,2,0,2), note="H-Moll-Septakkord", fingers=intArrayOf(0,2,0,1,0,3)),'
+        '        ChordShape("Hsus4", "Sus-Akkord", intArrayOf(-1,2,4,4,5,2), 2, note="H-Sus4-Barrégriff", fingers=intArrayOf(0,1,3,3,4,1)),'
 '        ChordShape("B", "Dur", intArrayOf(-1,2,4,4,4,2), 2, note="Barré-Durgriff", fingers=intArrayOf(0,1,3,3,3,1)),',
 '        ChordShape("Bb", "Dur", intArrayOf(-1,1,3,3,3,1), note="Barré-Durgriff", fingers=intArrayOf(0,1,3,3,3,1)),',
 '        ChordShape("F#m", "Moll", intArrayOf(2,4,4,2,2,2), 2, note="Barré-Mollgriff", fingers=intArrayOf(1,3,4,1,1,1)),',
