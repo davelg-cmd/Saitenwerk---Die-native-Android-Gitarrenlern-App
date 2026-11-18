@@ -45,6 +45,9 @@ s = main.read_text(encoding="utf-8")
 start = s.index("class TunerFragment : Fragment() {")
 end = s.index("\nclass TunerGaugeView", start)
 t = s[start:end]
+if "private fun prepareReferenceSamples()" in t and "private fun playRecordedReference" in t:
+    print("ORIGINAL-GITARRENKLÄNGE: BEREITS VORHANDEN")
+    raise SystemExit(0)
 
 if "import android.media.SoundPool" not in s:
     s = s.replace("import android.media.AudioTrack\n", "import android.media.AudioTrack\nimport android.media.SoundPool\n", 1)
