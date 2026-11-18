@@ -24,17 +24,22 @@ if end < 0:
 end += len(end_marker)
 
 replacement = """        alternativeSpinner = TextView(a).apply {
-            textSize = 15f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            // Match the instrument Spinner's selected-value row exactly:
+            // 14sp medium, 52dp, 14dp radius, surface2 + outline, same insets.
+            textSize = 14f
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
             setTextColor(a.getColor(R.color.sw_text))
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(a.dp(14), a.dp(10), a.dp(42), a.dp(10))
+            includeFontPadding = true
+            maxLines = 2
+            setPadding(a.dp(16), a.dp(8), a.dp(42), a.dp(8))
             background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = a.dp(14).toFloat()
                 setColor(a.getColor(R.color.sw_surface2))
-                cornerRadius = a.dp(12).toFloat()
-                setStroke(a.dp(1), a.getColor(R.color.sw_copper))
+                setStroke(a.dp(1), a.getColor(R.color.sw_outline))
             }
             minHeight = a.dp(52)
+            minimumHeight = a.dp(52)
             isClickable = true
             isFocusable = true
             contentDescription = "Alternative Stimmung auswählen"
