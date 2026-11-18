@@ -117,7 +117,7 @@ replacement = r'''class LearnFragment : Fragment() {
 
         fun showQuiz() {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
-            quizStartedAt = SystemClock.elapsedRealtime()
+            quizStartedAt = android.os.SystemClock.elapsedRealtime()
             val (card, box) = panel("Akkord-Blitztrainer", "Erkenne Griffbilder. Die Serie steigt nur bei richtigen Antworten – so siehst du sofort, wie sicher du bist.")
             val header = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
             val score = TextView(a).apply { textSize = 13f; setTextColor(a.getColor(R.color.sw_muted)) }
@@ -133,7 +133,7 @@ replacement = r'''class LearnFragment : Fragment() {
             actions.addView(next, LinearLayout.LayoutParams(0, a.dp(46), 1f))
             actions.addView(finish, LinearLayout.LayoutParams(0, a.dp(46), 1f).apply { leftMargin = a.dp(6) })
             box.addView(actions)
-            var answer = ""; var locked = false; var localStreak = 0; var sessionRecorded = false
+            var answer = ""; var locked = false; var localStreak = 0
 
             fun updateHeader() {
                 val total = prefs.getInt("learn_quiz_total", 0); val correct = prefs.getInt("learn_quiz_correct", 0)
@@ -152,7 +152,6 @@ replacement = r'''class LearnFragment : Fragment() {
                     b.setOnClickListener {
                         if (locked) return@setOnClickListener
                         locked = true
-                        sessionRecorded = true
                         val correctAnswer = option == answer
                         if (correctAnswer) localStreak++ else localStreak = 0
                         val total = prefs.getInt("learn_quiz_total", 0) + 1
@@ -208,7 +207,7 @@ replacement = r'''class LearnFragment : Fragment() {
             start.setOnClickListener {
                 if (rhythmRunning) { stopRhythm(); start.text = "Metronom starten"; beat.text = "Pausiert" }
                 else {
-                    rhythmRunning = true; rhythmStartedAt = SystemClock.elapsedRealtime(); rhythmBeat = 0; rhythmTone = ToneGenerator(AudioManager.STREAM_MUSIC, 65); rhythmHandler = Handler(Looper.getMainLooper()); start.text = "Metronom stoppen"
+                    rhythmRunning = true; rhythmStartedAt = android.os.SystemClock.elapsedRealtime(); rhythmBeat = 0; rhythmTone = ToneGenerator(AudioManager.STREAM_MUSIC, 65); rhythmHandler = Handler(Looper.getMainLooper()); start.text = "Metronom stoppen"
                     val beatsPerBar = rhythmMeter.substringBefore("/").toIntOrNull() ?: 4
                     val task = object : Runnable {
                         override fun run() {
@@ -349,19 +348,24 @@ replacement = r'''class LearnFragment : Fragment() {
     private fun finishQuizSession() {
         val started = quizStartedAt
         quizStartedAt = 0L
-        if (started > 0L) onSessionElapsed?.invoke(((SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
+        if (started > 0L) onSessionElapsed?.invoke(((android.os.SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
     }
 
     private fun stopRhythm() {
         val started = rhythmStartedAt
         rhythmStartedAt = 0L
         rhythmRunning = false; rhythmHandler?.removeCallbacksAndMessages(null); rhythmHandler = null
-        if (started > 0L) onSessionElapsed?.invoke(((SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
+        if (started > 0L) onSessionElapsed?.invoke(((android.os.SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
         try { rhythmTone?.stopTone(); rhythmTone?.release() } catch (_: Exception) {}
         rhythmTone = null
     }
 }'''
 
 s = s[:start] + replacement + s[end:]
+
+# Neue Sekunden-Erfassung muss beim Zurücksetzen des Lernstands ebenfalls gelöscht werden.
+reset_anchor = '.remove("learn_quiz_correct")'
+if reset_anchor in s and '.remove("learn_daily_seconds")' not in s:
+    s = s.replace(reset_anchor, reset_anchor + '.remove("learn_daily_seconds")', 1)
 p.write_text(s, encoding="utf-8")
 print("LERNSTUDIO-OPTIMIERUNG: PASS")
