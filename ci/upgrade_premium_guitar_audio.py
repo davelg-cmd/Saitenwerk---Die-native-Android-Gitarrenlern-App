@@ -15,7 +15,7 @@ required_resources = [
 missing = [p for p in required_resources if not (root / p).is_file()]
 if missing:
     raise SystemExit("FEHLER: Original-Gitarrenaufnahmen fehlen: " + ", ".join(missing))
-if "object GuitarAudioEngine {" in s and "GuitarAudioEngine.playProgression" in s:
+if "object GuitarAudioEngine {" in s and "GuitarAudioEngine.playTunedString" in s:
     print("PREMIUM-GITARRENKLANG: BEREITS VOLLSTÄNDIG INTEGRIERT")
     raise SystemExit(0)
 
