@@ -158,5 +158,58 @@ if hook_call not in t:
 required = ['root.addView(displayCard','root.addView(selectorCard','contentDescription = "Erkannter Ton"','contentDescription = "Stimmungsanzeige:','android.graphics.Color.rgb(92, 175, 142)']
 missing = [x for x in required if x not in t]
 if missing: raise SystemExit("Tuner UI validation failed: " + ", ".join(missing))
+# Remove the old destructive runtime cleanup completely. It matched a child
+# containing "Kammerton" and could remove the entire ScrollView content.
+import re
+t, n = re.subn(
+    r'    private fun containsKammertonControl\(view: android\.view\.View\): Boolean \{.*?'
+    r'    private fun removeReferenceToneHints\(view: android\.view\.ViewGroup\) \{.*?'
+    r'    \}\n(?=\s*override fun onViewCreated)',
+    '',
+    t,
+    count=1,
+    flags=re.S
+)
+if n != 1:
+    raise SystemExit("TUNER UI: legacy destructive cleanup block not found")
+t, n = re.subn(
+    r'    override fun onViewCreated\(view: View, savedInstanceState: Bundle\?\) \{.*?'
+    r'    \}\n(?=\s*override fun onCreateView)',
+    '',
+    t,
+    count=1,
+    flags=re.S
+)
+if n != 1:
+    raise SystemExit("TUNER UI: legacy destructive onViewCreated hook not found")
+
+# Remove only the Kammerton header/reset/slider and the duplicated reference-tone
+# helper labels. Keep the instrument/tuning selectors and string buttons intact.
+kammerton_start = '        val referenceHeader = LinearLayout(a).apply {'
+string_panel_start = '        stringPanel = LinearLayout(a).apply {'
+if t.count(kammerton_start) != 1 or t.count(string_panel_start) != 1:
+    raise SystemExit("TUNER UI: precise Kammerton section boundaries not unique")
+left = t.index(kammerton_start)
+right = t.index(string_panel_start, left)
+t = t[:left] + t[right:]
+t = re.sub(
+    r'^\s*selector\.addView\(TextView\(a\)\.apply \{\n'
+    r'\s*text = "Referenztöne · Saite antippen zum Anhören".*?'
+    r'\s*\}\)\n',
+    '',
+    t,
+    flags=re.M | re.S
+)
+if "removeKammertonSection" in t or "containsKammertonControl" in t:
+    raise SystemExit("TUNER UI: destructive Kammerton cleanup still present")
+if "referenceHeader" in t or "Kammerton A4" in t or "referenceSeek" in t:
+    raise SystemExit("TUNER UI: Kammerton slider section still present")
+if "Referenztöne · Saite antippen zum Anhören" in t:
+    raise SystemExit("TUNER UI: repeated reference-tone label still present")
+required += ['root.addView(displayCard', 'root.addView(selectorCard', 'stringPanel = LinearLayout(a).apply {']
+missing = [x for x in required if x not in t]
+if missing:
+    raise SystemExit("Tuner UI validation failed after precise cleanup: " + ", ".join(missing))
+
 main.write_text(s[:start] + t + s[end:], encoding="utf-8")
 print("STIMMGERÄT UI: PASS")
