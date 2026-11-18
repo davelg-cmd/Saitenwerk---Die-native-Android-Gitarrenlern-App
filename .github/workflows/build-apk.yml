@@ -297,6 +297,13 @@ jobs:
           set -euo pipefail
           python3 ci/premium_visual_system.py
 
+      - name: Akkordwechsel-Auswahlrahmen vollständig darstellen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_chord_training_dropdown_clipping.py
+
       - name: Songpraxis-Stoppbutton vertikal zentrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
