@@ -234,6 +234,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_reference_tone_audio.py
 
+      - name: Echte Gitarrenaufnahmen als Referenztöne integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/use_original_guitar_samples.py
+
       - name: Display während Stimmgerät und Übungen eingeschaltet lassen
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
