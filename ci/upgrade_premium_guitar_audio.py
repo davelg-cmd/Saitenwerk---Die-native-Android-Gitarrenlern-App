@@ -71,7 +71,8 @@ object GuitarAudioEngine {
             if (fadeMs > 0L) {
                 val steps = 5
                 for (step in 1..steps) {
-                    val task = Runnable {
+                    lateinit var task: Runnable
+                    task = Runnable {
                         val level = safeVolume * (1f - step.toFloat() / steps)
                         try {
                             player.setVolume(stream, level, level)
@@ -80,7 +81,7 @@ object GuitarAudioEngine {
                                 activeStreams.remove(stream)
                             }
                         } catch (_: Exception) { }
-                        scheduled.removeIf { it === this }
+                        scheduled.remove(task)
                     }
                     scheduled.add(task)
                     handler.postDelayed(task, fadeMs * step / steps)
@@ -125,9 +126,10 @@ object GuitarAudioEngine {
             order.forEachIndexed { position, stringIndex ->
                 val fret = shape.frets.getOrNull(stringIndex) ?: -1
                 if (fret >= 0) {
-                    val task = Runnable {
+                    lateinit var task: Runnable
+                    task = Runnable {
                         playStringNow(stringIndex, fret, volume * if (stringIndex == 0 || stringIndex == 5) 0.88f else 1f)
-                        scheduled.removeIf { it === this }
+                        scheduled.remove(task)
                     }
                     scheduled.add(task)
                     handler.postDelayed(task, position * 15L)
