@@ -27,12 +27,18 @@ replacement = r'''class LearnFragment : Fragment() {
     private var rhythmStartedAt = 0L
     private var quizStartedAt = 0L
     private var onSessionElapsed: ((Int) -> Unit)? = null
+    private var strumTone: ToneGenerator? = null
+    private var strumHandler: Handler? = null
+    private var strumRunning = false
+    private var strumStep = 0
+    private var strumStartedAt = 0L
 
     override fun onDestroyView() {
         chordTraining?.stop()
         chordTraining = null
         finishQuizSession()
         stopRhythm()
+        stopStrumming()
         onSessionElapsed = null
         super.onDestroyView()
     }
@@ -121,7 +127,7 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         fun showQuiz() {
-            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming(); content.removeAllViews()
             quizStartedAt = android.os.SystemClock.elapsedRealtime()
             val (card, box) = panel("Akkord-Blitztrainer", "Erkenne Griffbilder. Die Serie steigt nur bei richtigen Antworten – so siehst du sofort, wie sicher du bist.")
             val header = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -236,6 +242,112 @@ replacement = r'''class LearnFragment : Fragment() {
             content.addView(card)
         }
 
+        fun showStrumming() {
+            finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming(); content.removeAllViews()
+            val (card, box) = panel("Schlagmuster-Trainer", "Übe typische Gitarren-Schlagmuster im Takt. Der aktuelle Schlag wird hervorgehoben – danach spielst du ihn selbst.")
+            val patterns = linkedMapOf(
+                "Basis · ↓ ↑ ↓ ↑" to listOf("↓","↑","↓","↑"),
+                "Pop · ↓ ↓ ↑ ↑ ↓ ↑" to listOf("↓","↓","↑","↑","↓","↑"),
+                "Achtel · ↓ ↑ ↓ ↑ ↓ ↑ ↓ ↑" to listOf("↓","↑","↓","↑","↓","↑","↓","↑"),
+                "Akustik · ↓ ↓ ↑ ↓ ↑" to listOf("↓","↓","↑","↓","↑"),
+                "Flow · ↓ ↑ ↑ ↓ ↑ ↓" to listOf("↓","↑","↑","↓","↑","↓")
+            )
+            var selectedName = prefs.getString("learn_strum_pattern", patterns.keys.first()) ?: patterns.keys.first()
+            var selected = patterns[selectedName] ?: patterns.values.first()
+            var bpm = prefs.getInt("learn_strum_bpm", 80).coerceIn(50, 160)
+            var step = 0
+            var hits = 0
+            var mistakes = 0
+            val patternButton = a.button(selectedName)
+            val patternHint = TextView(a).apply { text = "Pattern: " + selected.joinToString("  "); textSize = 16f; gravity = Gravity.CENTER; setTextColor(a.getColor(R.color.sw_text)); setPadding(0, a.dp(10), 0, a.dp(10)) }
+            val beatRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+            val status = TextView(a).apply { text = "Bereit · spiele die hervorgehobenen Schläge"; textSize = 13f; gravity = Gravity.CENTER; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(6), 0, a.dp(8)) }
+            val tempoLabel = TextView(a).apply { text = "Tempo: $bpm BPM"; textSize = 15f; setTextColor(a.getColor(R.color.sw_text)) }
+            val slider = SeekBar(a).apply { max = 110; progress = bpm - 50 }
+            val stats = TextView(a).apply { text = "Treffer: 0 · Fehler: 0"; textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); gravity = Gravity.CENTER }
+            val start = a.button("Training starten")
+            val down = a.button("↓ Abschlag")
+            val up = a.button("↑ Aufschlag")
+            val actionRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+            actionRow.addView(down, LinearLayout.LayoutParams(0, a.dp(50), 1f).apply { rightMargin = a.dp(4) })
+            actionRow.addView(up, LinearLayout.LayoutParams(0, a.dp(50), 1f).apply { leftMargin = a.dp(4) })
+            box.addView(patternButton, LinearLayout.LayoutParams(-1, a.dp(46)))
+            box.addView(patternHint)
+            box.addView(beatRow, LinearLayout.LayoutParams(-1, a.dp(58)))
+            box.addView(status)
+            box.addView(tempoLabel)
+            box.addView(slider, LinearLayout.LayoutParams(-1, a.dp(42)))
+            box.addView(stats)
+            box.addView(start, LinearLayout.LayoutParams(-1, a.dp(48)))
+            box.addView(actionRow, LinearLayout.LayoutParams(-1, a.dp(54)).apply { topMargin = a.dp(6) })
+
+            fun rebuildBeats() {
+                beatRow.removeAllViews()
+                selected.forEach { dir ->
+                    beatRow.addView(TextView(a).apply {
+                        text = dir; textSize = 22f; gravity = Gravity.CENTER; setTypeface(typeface, 1)
+                        setTextColor(a.getColor(R.color.sw_muted))
+                    }, LinearLayout.LayoutParams(0, a.dp(52), 1f))
+                }
+            }
+            fun markBeat() {
+                for (i in 0 until beatRow.childCount) {
+                    val v = beatRow.getChildAt(i) as TextView
+                    v.setTextColor(a.getColor(if (i == step) R.color.sw_copper else R.color.sw_muted))
+                    v.textSize = if (i == step) 28f else 22f
+                }
+            }
+            slider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(v: SeekBar?, p: Int, from: Boolean) { bpm = 50 + p; tempoLabel.text = "Tempo: $bpm BPM"; prefs.edit().putInt("learn_strum_bpm", bpm).apply() }
+                override fun onStartTrackingTouch(v: SeekBar?) {}
+                override fun onStopTrackingTouch(v: SeekBar?) {}
+            })
+            patternButton.setOnClickListener {
+                val names = patterns.keys.toTypedArray()
+                androidx.appcompat.app.AlertDialog.Builder(a).setTitle("Schlagmuster auswählen")
+                    .setSingleChoiceItems(names, names.indexOf(selectedName).coerceAtLeast(0)) { d, which ->
+                        selectedName = names[which]; selected = patterns[selectedName] ?: selected
+                        prefs.edit().putString("learn_strum_pattern", selectedName).apply()
+                        step = 0; hits = 0; mistakes = 0; patternButton.text = selectedName
+                        patternHint.text = "Pattern: " + selected.joinToString("  "); status.text = "Neues Muster gewählt · bereit"
+                        rebuildBeats(); markBeat(); d.dismiss()
+                    }.setNegativeButton("Abbrechen", null).show()
+            }
+            fun userHit(direction: String) {
+                if (!strumRunning || selected.isEmpty()) return
+                val expected = selected[step]
+                if (direction == expected) { hits++; status.text = "✓ $direction richtig" } else { mistakes++; status.text = "✕ Erwartet: $expected" }
+                stats.text = "Treffer: $hits · Fehler: $mistakes · Genauigkeit: " + if (hits + mistakes > 0) (hits * 100 / (hits + mistakes)) else 0 + "%"
+                step = (step + 1) % selected.size
+                markBeat()
+            }
+            down.setOnClickListener { userHit("↓") }
+            up.setOnClickListener { userHit("↑") }
+            start.setOnClickListener {
+                if (strumRunning) {
+                    stopStrumming(); start.text = "Training starten"; status.text = "Pausiert"
+                } else {
+                    strumRunning = true; strumStartedAt = android.os.SystemClock.elapsedRealtime(); strumStep = 0
+                    start.text = "Training stoppen"; step = 0; hits = 0; mistakes = 0
+                    strumTone = ToneGenerator(AudioManager.STREAM_MUSIC, 60); strumHandler = Handler(Looper.getMainLooper())
+                    val interval = (60000L / bpm / 2).coerceAtLeast(100L)
+                    val task = object : Runnable {
+                        override fun run() {
+                            if (!strumRunning) return
+                            step = strumStep % selected.size
+                            val strong = step == 0
+                            strumTone?.startTone(if (strong) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP, if (strong) 75 else 45)
+                            markBeat(); strumStep++
+                            strumHandler?.postDelayed(this, interval)
+                        }
+                    }
+                    strumHandler?.post(task); markBeat()
+                }
+            }
+            rebuildBeats(); markBeat()
+            content.addView(card)
+        }
+
         fun showRoutine() {
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             val (card, box) = panel("Deine tägliche 10-Minuten-Routine", "Fünf kurze Einheiten statt einer langen Session. Hake ab, was du heute erledigt hast.")
@@ -318,8 +430,8 @@ replacement = r'''class LearnFragment : Fragment() {
                     { showChanges() }
                 }
                 else -> {
-                    focusText.text = "Deine Basis sitzt. Fordere jetzt dein Timing mit dem Rhythmustrainer heraus."
-                    { showRhythm() }
+                    focusText.text = "Deine Basis sitzt. Trainiere jetzt Timing und Anschlag mit einem Schlagmuster."
+                    { showStrumming() }
                 }
             }
             focusButton.setOnClickListener { focusAction() }
@@ -340,7 +452,9 @@ replacement = r'''class LearnFragment : Fragment() {
             row1.addView(quickButton("↔ Wechsel üben") { showChanges() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5) })
             row2.addView(quickButton("♩ Rhythmus") { showRhythm() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { rightMargin = a.dp(5); topMargin = a.dp(8) })
             row2.addView(quickButton("✓ Tagesroutine") { showRoutine() }, LinearLayout.LayoutParams(0, a.dp(48), 1f).apply { leftMargin = a.dp(5); topMargin = a.dp(8) })
-            quickBox.addView(row1); quickBox.addView(row2); quick.addView(quickBox); content.addView(quick); addGap(10)
+            val row3 = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+            row3.addView(quickButton("↘ Schlagmuster") { showStrumming() }, LinearLayout.LayoutParams(-1, a.dp(48)).apply { topMargin = a.dp(8) })
+            quickBox.addView(row1); quickBox.addView(row2); quickBox.addView(row3); quick.addView(quickBox); content.addView(quick); addGap(10)
 
             val path = roundedCard()
             val pathBox = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(a.dp(14), a.dp(12), a.dp(12), a.dp(12)) }
@@ -361,6 +475,17 @@ replacement = r'''class LearnFragment : Fragment() {
         val started = quizStartedAt
         quizStartedAt = 0L
         if (started > 0L) onSessionElapsed?.invoke(((android.os.SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
+    }
+
+    private fun stopStrumming() {
+        val started = strumStartedAt
+        strumStartedAt = 0L
+        strumRunning = false
+        strumHandler?.removeCallbacksAndMessages(null)
+        strumHandler = null
+        if (started > 0L) onSessionElapsed?.invoke(((android.os.SystemClock.elapsedRealtime() - started) / 1000L).toInt().coerceAtLeast(1))
+        try { strumTone?.stopTone(); strumTone?.release() } catch (_: Exception) {}
+        strumTone = null
     }
 
     private fun stopRhythm() {
