@@ -42,6 +42,14 @@ assets.mkdir(parents=True, exist_ok=True)
 )
 
 s = main.read_text(encoding="utf-8")
+# The shared premium engine already uses the six bundled original samples.
+# In that architecture the old fragment-local SoundPool fields no longer exist.
+if "object GuitarAudioEngine" in s and "R.raw.guitar_string_6e" in s:
+    missing = [name for name in samples if not (raw / (name + ".ogg")).is_file()]
+    if missing:
+        raise SystemExit("Originale Gitarren-Samples fehlen: " + ", ".join(missing))
+    print("ORIGINAL-GITARRENKLÄNGE: SHARED ENGINE UND SECHS AUFNAHMEN BEREITS AKTIV")
+    raise SystemExit(0)
 start = s.index("class TunerFragment : Fragment() {")
 end = s.index("\nclass TunerGaugeView", start)
 t = s[start:end]
