@@ -138,8 +138,13 @@ jobs:
 
           required = [
               'fun recordPracticeDay()',
-              'fun recordSession(minutes: Int)',
-              'if (!sessionRecorded) { recordSession(2); sessionRecorded = true }',
+              'fun recordSession(seconds: Int)',
+              'onSessionElapsed = { seconds -> recordSession(seconds) }',
+              'private var rhythmStartedAt = 0L',
+              'private var quizStartedAt = 0L',
+              'SystemClock.elapsedRealtime()',
+              'learn_daily_seconds',
+              'if (started > 0L) onSessionElapsed?.invoke',
               'if (checked && previous == 0) recordPracticeDay()',
               'learn_daily_minutes',
               'learn_quiz_correct',
@@ -315,6 +320,7 @@ jobs:
               '"Lernfortschritt zurücksetzen"',
               '"Lernfortschritt zurücksetzen?"',
               '.remove("learn_quiz_correct")',
+              '.remove("learn_daily_seconds")',
               '.remove("learn_quiz_total")',
               '.remove("learn_routine_day")',
               '.remove("learn_routine_done")',
