@@ -6,6 +6,16 @@ import os
 root = Path(os.environ["PROJECT_DIR"])
 p = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s = p.read_text(encoding="utf-8")
+# Keep the already-upgraded learning studio intact. Replacing it with the legacy
+# template would reintroduce ToneGenerator references and overwrite chord audio.
+if (
+    "object GuitarAudioEngine {" in s
+    and "learn_strum_chord" in s
+    and "GuitarAudioEngine.playTick(a, strong)" in s
+    and "GuitarAudioEngine.playProgression" in s
+):
+    print("LERNSTUDIO: PREMIUM-VERSION MIT SHARED GUITAR AUDIO BEREITS AKTIV")
+    raise SystemExit(0)
 # Remove the redundant orientation hint from the chord detail; keep the symbol legend.
 s = s.replace(
     r"Hochkant: tiefe E-Saite links · hohe e-Saite rechts\n× = nicht anschlagen · ○ = leere Saite",
