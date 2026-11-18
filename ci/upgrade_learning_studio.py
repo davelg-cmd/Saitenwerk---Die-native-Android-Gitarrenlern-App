@@ -107,8 +107,13 @@ replacement = r'''class LearnFragment : Fragment() {
             recordPracticeDay()
             val oldSeconds = if (prefs.getString("learn_daily_day", "") == day) prefs.getInt("learn_daily_seconds", prefs.getInt("learn_daily_minutes", 0) * 60) else 0
             val totalSeconds = oldSeconds + seconds.coerceAtLeast(1)
+            val cal = java.util.Calendar.getInstance()
+            val weekKey = cal.get(java.util.Calendar.YEAR).toString() + "-" + cal.get(java.util.Calendar.WEEK_OF_YEAR).toString()
+            val oldWeekSeconds = if (prefs.getString("learn_week_key", "") == weekKey) prefs.getInt("learn_week_seconds", 0) else 0
             prefs.edit().putString("learn_daily_day", day).putInt("learn_daily_seconds", totalSeconds)
                 .putInt("learn_daily_minutes", totalSeconds / 60)
+                .putString("learn_week_key", weekKey)
+                .putInt("learn_week_seconds", oldWeekSeconds + seconds.coerceAtLeast(1))
                 .putInt("learn_sessions", prefs.getInt("learn_sessions", 0) + 1).apply()
             updatePracticeStats()
         }
@@ -186,12 +191,14 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         fun showChanges() {
+            prefs.edit().putInt("learn_skill_changes", prefs.getInt("learn_skill_changes", 0) + 1).apply()
             finishQuizSession(); stopRhythm(); content.removeAllViews()
             content.addView(a.body("Dein Haupttraining für saubere Akkordwechsel. Wähle Akkorde, Takt und Tempo direkt im Trainer und steigere dich erst, wenn die Wechsel sicher sitzen."))
             chordTraining = ChordTrainingPanel(a); content.addView(chordTraining, LinearLayout.LayoutParams(-1, -2))
         }
 
         fun showRhythm() {
+            prefs.edit().putInt("learn_skill_rhythm", prefs.getInt("learn_skill_rhythm", 0) + 1).apply()
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); content.removeAllViews()
             val (card, box) = panel("Rhythmus & Timing", "Trainiere Puls, Taktgefühl und Geschwindigkeit. Im 6/8-Takt hörst du zwei große Pulse pro Takt.")
             rhythmBpm = prefs.getInt("learn_rhythm_bpm", 80).coerceIn(50, 160)
@@ -245,6 +252,7 @@ replacement = r'''class LearnFragment : Fragment() {
         }
 
         fun showStrumming() {
+            prefs.edit().putInt("learn_skill_strum", prefs.getInt("learn_skill_strum", 0) + 1).apply()
             finishQuizSession(); chordTraining?.stop(); chordTraining = null; stopRhythm(); stopStrumming(); content.removeAllViews()
             val (card, box) = panel("Schlagmuster-Trainer", "Übe typische Gitarren-Schlagmuster im Takt. Der aktuelle Schlag wird hervorgehoben – danach spielst du ihn selbst.")
             val patterns = linkedMapOf(
@@ -517,6 +525,45 @@ replacement = r'''class LearnFragment : Fragment() {
             val stats = LinearLayout(a).apply { tag = "learnStats"; orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(a.dp(4), a.dp(2), a.dp(4), a.dp(2)) }
             val statsCard = roundedCard(); statsCard.addView(stats); content.addView(statsCard); addGap(10)
 
+            val weekCard = roundedCard()
+            val weekBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(14), a.dp(13), a.dp(14), a.dp(13)) }
+            val cal = java.util.Calendar.getInstance()
+            val weekKey = cal.get(java.util.Calendar.YEAR).toString() + "-" + cal.get(java.util.Calendar.WEEK_OF_YEAR).toString()
+            val weekSeconds = if (prefs.getString("learn_week_key", "") == weekKey) prefs.getInt("learn_week_seconds", 0) else 0
+            val weekGoal = 60 * 60
+            val weekLabel = TextView(a).apply {
+                text = (weekSeconds / 60).coerceAtMost(60).toString() + "/60 Minuten · " + if (weekSeconds >= weekGoal) "Ziel erreicht 🎉" else ((weekGoal - weekSeconds).coerceAtLeast(0) / 60).toString() + " Min. übrig"
+                textSize = 12f; setTextColor(a.getColor(R.color.sw_muted)); setPadding(0, a.dp(3), 0, a.dp(7))
+            }
+            weekBox.addView(TextView(a).apply { text = "📅 Wochenziel"; textSize = 17f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text)) })
+            weekBox.addView(weekLabel)
+            weekBox.addView(ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progress = ((weekSeconds.toFloat() / weekGoal).coerceIn(0f, 1f) * 100).toInt() }, LinearLayout.LayoutParams(-1, a.dp(10)))
+            weekBox.addView(a.body("60 Minuten pro Woche · kleine Einheiten zählen genauso.", 11f))
+            weekCard.addView(weekBox); content.addView(weekCard); addGap(10)
+
+            val skillCard = roundedCard()
+            val skillBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(14), a.dp(13), a.dp(14), a.dp(13)) }
+            skillBox.addView(TextView(a).apply { text = "🏆 Deine Skills"; textSize = 17f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text)) })
+            skillBox.addView(a.body("Jede Trainingseinheit stärkt deinen persönlichen Lernpfad.", 12f))
+            fun skillRow(name: String, value: Int, detail: String) {
+                val row = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(0, a.dp(5), 0, a.dp(3)) }
+                val head = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+                head.addView(TextView(a).apply { text = name; textSize = 13f; setTextColor(a.getColor(R.color.sw_text)) }, LinearLayout.LayoutParams(0, -2, 1f))
+                head.addView(TextView(a).apply { text = "Level " + value; textSize = 12f; setTextColor(a.getColor(R.color.sw_copper)) })
+                row.addView(head)
+                row.addView(TextView(a).apply { text = detail; textSize = 10f; setTextColor(a.getColor(R.color.sw_muted)) })
+                skillBox.addView(row)
+            }
+            val chordLevel = (1 + prefs.getInt("learn_quiz_correct", 0) / 5).coerceAtMost(5)
+            val changeLevel = (1 + prefs.getInt("learn_skill_changes", 0) / 3).coerceAtMost(5)
+            val rhythmLevel = (1 + prefs.getInt("learn_skill_rhythm", 0) / 3).coerceAtMost(5)
+            val strumLevel = (1 + prefs.getInt("learn_strum_best_score", 0) / 300).coerceAtMost(5)
+            skillRow("Akkorde", chordLevel, "Treffer: " + prefs.getInt("learn_quiz_correct", 0))
+            skillRow("Akkordwechsel", changeLevel, "Trainerstarts: " + prefs.getInt("learn_skill_changes", 0))
+            skillRow("Rhythmus", rhythmLevel, "Metronom-Sessions: " + prefs.getInt("learn_skill_rhythm", 0))
+            skillRow("Schlagmuster", strumLevel, "Bestscore: " + prefs.getInt("learn_strum_best_score", 0))
+            skillCard.addView(skillBox); content.addView(skillCard); addGap(10)
+
             // Adaptive Tagesfokus: Die Startseite schlägt anhand des bisherigen Lernstands
             // automatisch den sinnvollsten nächsten Schwerpunkt vor.
             val focusCard = roundedCard()
@@ -552,6 +599,14 @@ replacement = r'''class LearnFragment : Fragment() {
                 }
                 prefs.getString("learn_daily_day", "") != today || minutesToday < 5 -> {
                     focusText.text = "Du hast heute noch wenig Übungszeit gesammelt. Ein kurzer Wechselblock reicht."
+                    { showChanges() }
+                }
+                prefs.getInt("learn_strum_best_score", 0) < 250 -> {
+                    focusText.text = "Dein Schlagmuster-Score ist noch ausbaufähig. Trainiere Timing und Anschlag mit kurzen, präzisen Serien."
+                    { showStrumming() }
+                }
+                weekSeconds < 20 * 60 -> {
+                    focusText.text = "Dein Wochenziel ist noch nicht halb voll. Ein kurzer Wechsel- oder Rhythmusblock bringt dich direkt weiter."
                     { showChanges() }
                 }
                 else -> {
