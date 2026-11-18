@@ -249,6 +249,54 @@ replacement = r'''class LearnFragment : Fragment() {
             val stats = LinearLayout(a).apply { tag = "learnStats"; orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(a.dp(4), a.dp(2), a.dp(4), a.dp(2)) }
             val statsCard = roundedCard(); statsCard.addView(stats); content.addView(statsCard); addGap(10)
 
+            // Adaptive Tagesfokus: Die Startseite schlägt anhand des bisherigen Lernstands
+            // automatisch den sinnvollsten nächsten Schwerpunkt vor.
+            val focusCard = roundedCard()
+            val focusBox = LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(a.dp(14), a.dp(13), a.dp(14), a.dp(13))
+            }
+            val focusTitle = TextView(a).apply {
+                text = "🎯 Dein Fokus heute"
+                textSize = 17f
+                setTypeface(typeface, 1)
+                setTextColor(a.getColor(R.color.sw_text))
+            }
+            val focusText = TextView(a).apply {
+                textSize = 13f
+                setTextColor(a.getColor(R.color.sw_muted))
+                setPadding(0, a.dp(3), 0, a.dp(8))
+            }
+            val focusButton = a.button("Jetzt trainieren").apply { minHeight = a.dp(44) }
+            val quizTotal = prefs.getInt("learn_quiz_total", 0)
+            val quizCorrect = prefs.getInt("learn_quiz_correct", 0)
+            val quizRate = if (quizTotal > 0) quizCorrect * 100 / quizTotal else 0
+            val focusAction: () -> Unit = when {
+                quizTotal < 5 -> {
+                    focusText.text = "Starte mit dem Akkord-Blitztrainer und sammle deine ersten sicheren Treffer."
+                    { showQuiz() }
+                }
+                quizRate < 70 -> {
+                    focusText.text = "Deine Akkorderkennung ist noch ausbaufähig. Kurze, häufige Wiederholungen bringen dich weiter."
+                    { showQuiz() }
+                }
+                prefs.getString("learn_daily_day", "") != day || minutes < 5 -> {
+                    focusText.text = "Du hast heute noch wenig Übungszeit gesammelt. Ein kurzer Wechselblock reicht."
+                    { showChanges() }
+                }
+                else -> {
+                    focusText.text = "Deine Basis sitzt. Fordere jetzt dein Timing mit dem Rhythmustrainer heraus."
+                    { showRhythm() }
+                }
+            }
+            focusButton.setOnClickListener { focusAction() }
+            focusBox.addView(focusTitle)
+            focusBox.addView(focusText)
+            focusBox.addView(focusButton, LinearLayout.LayoutParams(-1, a.dp(44)))
+            focusCard.addView(focusBox)
+            content.addView(focusCard)
+            addGap(10)
+
             val quick = roundedCard()
             val quickBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(14), a.dp(14), a.dp(14), a.dp(14)) }
             quickBox.addView(TextView(a).apply { text = "Schnellstart"; textSize = 18f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text)) })
