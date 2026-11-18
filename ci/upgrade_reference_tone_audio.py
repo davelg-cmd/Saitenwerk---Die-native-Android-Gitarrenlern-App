@@ -3,6 +3,9 @@ import os
 p=Path(os.environ["PROJECT_DIR"])/"app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 s=p.read_text(encoding="utf-8")
 a=s.index("class TunerFragment : Fragment() {"); b=s.index("\nclass TunerGaugeView",a); t=s[a:b]
+if "private var referenceSoundPool: SoundPool? = null" in t and "playRecordedReference" in t:
+    print("SAITENBUTTONS UND ORIGINAL-REFERENZTON: BEREITS AKTIV")
+    raise SystemExit(0)
 needle="    private var referenceTrack: AudioTrack? = null"
 fields="""    private var referenceTrack: AudioTrack? = null
     private val referenceAudioHandler = Handler(Looper.getMainLooper())
