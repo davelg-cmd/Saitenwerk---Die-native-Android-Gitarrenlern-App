@@ -187,11 +187,17 @@ if n != 1:
 # helper labels. Keep the instrument/tuning selectors and string buttons intact.
 kammerton_start = '        val referenceHeader = LinearLayout(a).apply {'
 string_panel_start = '        stringPanel = LinearLayout(a).apply {'
-if t.count(kammerton_start) != 1 or t.count(string_panel_start) != 1:
-    raise SystemExit("TUNER UI: precise Kammerton section boundaries not unique")
-left = t.index(kammerton_start)
-right = t.index(string_panel_start, left)
-t = t[:left] + t[right:]
+if t.count(string_panel_start) != 1:
+    raise SystemExit("TUNER UI: string panel boundary not unique")
+if t.count(kammerton_start) == 1:
+    left = t.index(kammerton_start)
+    right = t.index(string_panel_start, left)
+    t = t[:left] + t[right:]
+elif t.count(kammerton_start) == 0:
+    # Idempotent: the Kammerton section was already removed in the source backup.
+    pass
+else:
+    raise SystemExit("TUNER UI: Kammerton section boundary is ambiguous")
 t = re.sub(
     r'^\s*selector\.addView\(TextView\(a\)\.apply \{\n'
     r'\s*text = "Referenztöne · Saite antippen zum Anhören".*?'
