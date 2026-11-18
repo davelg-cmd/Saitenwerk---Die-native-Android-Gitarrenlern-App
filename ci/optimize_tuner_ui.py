@@ -34,8 +34,10 @@ new = '''        noteView = TextView(a).apply {
             contentDescription = "Stimmungsanzeige: links zu tief, Mitte gestimmt, rechts zu hoch"
         }
         display.addView(gauge, LinearLayout.LayoutParams(-1, a.dp(190)))'''
-if old not in t: raise SystemExit("Note/gauge layout not found")
-t = t.replace(old,new)
+if old in t:
+    t = t.replace(old,new)
+elif 'contentDescription = "Erkannter Ton"' not in t or 'a.dp(190)' not in t:
+    raise SystemExit("Note/gauge layout neither original nor optimized")
 old = '''            statusView?.setTextColor(requireContext().getColor(when (tone) {
                 -1 -> R.color.sw_copper
                 1 -> R.color.sw_copper
@@ -48,8 +50,10 @@ new = '''            val statusColor = when (tone) {
             }
             statusView?.setTextColor(statusColor)
             noteView?.setTextColor(if (tone == 0) statusColor else requireContext().getColor(R.color.sw_text))'''
-if old not in t: raise SystemExit("Status color block not found")
-t = t.replace(old,new)
+if old in t:
+    t = t.replace(old,new)
+elif "android.graphics.Color.rgb(92, 175, 142)" not in t:
+    raise SystemExit("Status color block neither original nor optimized")
 t = t.replace('text = "Instrument & Stimmung"','text = "INSTRUMENT"').replace('text = "Alternative Stimmungen"','text = "STIMMUNG"')
 t = t.replace('text = "0 Cent"','text = "0 Cent · möglichst nahe an 0 stimmen"')
 t = t.replace('text = "Warte auf einen Ton"','text = "— Hz"')
