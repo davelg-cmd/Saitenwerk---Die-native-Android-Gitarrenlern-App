@@ -156,7 +156,7 @@ replacement = r'''class LearnFragment : Fragment() {
                 }
                 updateHeader()
             }
-            next.setOnClickListener { sessionRecorded = false; newQuestion() }
+            next.setOnClickListener { newQuestion() }
             finish.setOnClickListener { overviewAction?.invoke() }
             newQuestion(); content.addView(card)
         }
