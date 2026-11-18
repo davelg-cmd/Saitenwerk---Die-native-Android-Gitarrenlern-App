@@ -602,6 +602,56 @@ replacement = r'''class LearnFragment : Fragment() {
             skillRow("Schlagmuster", strumLevel, "Bestscore: " + prefs.getInt("learn_strum_best_score", 0))
             skillCard.addView(skillBox); content.addView(skillCard); addGap(10)
 
+            // Kleine, nachvollziehbare Meilensteine motivieren ohne künstliche Trainerstarts zu belohnen.
+            val quizAttempts = prefs.getInt("learn_quiz_total", 0)
+            val quizHits = prefs.getInt("learn_quiz_correct", 0)
+            val quizAccuracy = if (quizAttempts > 0) quizHits * 100 / quizAttempts else 0
+            val sessions = prefs.getInt("learn_sessions", 0)
+            val strumBest = prefs.getInt("learn_strum_best_score", 0)
+            val achievements = listOf(
+                Triple("Erster Schritt", sessions >= 1, "Erste Übungszeit gesammelt"),
+                Triple("Dranbleiber", sessions >= 10, "$sessions von 10 Übungseinheiten"),
+                Triple("Wochenprofi", weekSeconds >= weekGoal, (weekSeconds / 60).coerceAtMost(60).toString() + " von 60 Wochenminuten"),
+                Triple("Lernserie", prefs.getInt("learn_streak", 0) >= 5, prefs.getInt("learn_streak", 0).toString() + " von 5 Tagen in Folge"),
+                Triple("Akkord-Sicherheit", quizAttempts >= 10 && quizAccuracy >= 80, quizAccuracy.toString() + "% Treffer · mindestens 80% bei 10 Fragen"),
+                Triple("Timing-Meister", strumBest >= 500, strumBest.toString() + " von 500 Schlagmuster-Punkten")
+            )
+            val earned = achievements.count { it.second }
+            val achievementCard = roundedCard()
+            val achievementBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(a.dp(14), a.dp(13), a.dp(14), a.dp(13)) }
+            achievementBox.addView(TextView(a).apply {
+                text = "🏅 Erfolge · $earned/${achievements.size}"
+                textSize = 17f; setTypeface(typeface, 1); setTextColor(a.getColor(R.color.sw_text))
+            })
+            achievementBox.addView(a.body("Echte Lernfortschritte schalten diese Meilensteine frei.", 11f))
+            val achievementGrid = GridLayout(a).apply { columnCount = 2; useDefaultMargins = false }
+            achievements.forEach { achievement ->
+                val cell = LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(a.dp(8), a.dp(8), a.dp(6), a.dp(8))
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(a.getColor(if (achievement.second) R.color.sw_surface else R.color.sw_surface_alt))
+                        cornerRadius = a.dp(10).toFloat()
+                    }
+                }
+                cell.addView(TextView(a).apply {
+                    text = (if (achievement.second) "✓  " else "○  ") + achievement.first
+                    textSize = 12f; setTypeface(typeface, 1)
+                    setTextColor(a.getColor(if (achievement.second) R.color.sw_copper else R.color.sw_text))
+                })
+                cell.addView(TextView(a).apply {
+                    text = achievement.third; textSize = 10f
+                    setTextColor(a.getColor(R.color.sw_muted))
+                })
+                achievementGrid.addView(cell, GridLayout.LayoutParams().apply {
+                    width = 0; height = -2
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    setMargins(a.dp(3), a.dp(3), a.dp(3), a.dp(3))
+                })
+            }
+            achievementBox.addView(achievementGrid)
+            achievementCard.addView(achievementBox); content.addView(achievementCard); addGap(10)
+
             // Adaptive Tagesfokus: Die Startseite schlägt anhand des bisherigen Lernstands
             // automatisch den sinnvollsten nächsten Schwerpunkt vor.
             val focusCard = roundedCard()
@@ -1232,4 +1282,6 @@ chords_replacement = r'''class ChordsFragment : Fragment() {
 s = s[:chords_start] + chords_replacement + s[chords_end:]
 
 p.write_text(s, encoding="utf-8")
+if "Timing-Meister" not in s or "Akkord-Sicherheit" not in s or "Erfolge · $earned" not in s:
+    raise SystemExit("LERNSTUDIO: achievement milestones missing")
 print("LERNSTUDIO-OPTIMIERUNG: PASS")
