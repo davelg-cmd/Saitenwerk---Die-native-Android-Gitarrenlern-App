@@ -153,6 +153,10 @@ jobs:
               'Heute erledigt: $n von ${tasks.size}',
               'private fun stopRhythm()',
               'rhythmHandler?.removeCallbacksAndMessages(null)',
+              'val compoundSixEight = rhythmMeter == "6/8"',
+              'val beatsPerBar = if (compoundSixEight) 2',
+              '90000L / rhythmBpm',
+              'Zwei große Pulse pro Takt (1–2), jeweils über drei Achtel.',
           ]
           missing = [item for item in required if item not in learn]
           if missing:
