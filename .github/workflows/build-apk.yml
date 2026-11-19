@@ -675,7 +675,7 @@ jobs:
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
           start = s.find("    private fun openChordPicker() {")
-          end = s.find("\\n    private fun openMeterPicker()", start)
+          end = s.find("\n    private fun openMeterPicker()", start)
           if start < 0 or end < 0:
               raise SystemExit("FEHLER: Akkordauswahl-Dialog fehlt.")
           picker = s[start:end]
@@ -683,7 +683,7 @@ jobs:
               if required not in picker:
                   raise SystemExit("FEHLER: Akkordauswahl-Übernahme nicht vollständig: " + required)
           start = s.find("        fun showStrumming() {")
-          end = s.find("\\n        fun showSongPractice() {", start)
+          end = s.find("\n        fun showSongPractice() {", start)
           trainer = s[start:end] if start >= 0 and end >= 0 else ""
           if not trainer or "patternHint" in trainer:
               raise SystemExit("FEHLER: Doppelte Pattern-Textzeile ist noch vorhanden.")
