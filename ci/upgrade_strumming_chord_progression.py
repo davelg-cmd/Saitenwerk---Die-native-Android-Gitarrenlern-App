@@ -67,11 +67,22 @@ new = '''            chordButton.setOnClickListener {
                 if (phase == "play" || phase == "preview") return@setOnClickListener
                 val names = ChordLibrary.all.map { it.name }.toTypedArray()
                 val checked = BooleanArray(names.size) { names[it] in selectedChordNames }
+                val selectionOrder = selectedChordNames.toMutableList()
                 androidx.appcompat.app.AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)
                     .setTitle("Akkordfolge für den Gitarrenklang")
-                    .setMultiChoiceItems(names, checked) { _, which, isChecked -> checked[which] = isChecked }
+                    .setMultiChoiceItems(names, checked) { _, which, isChecked ->
+                        checked[which] = isChecked
+                        if (isChecked) {
+                            if (names[which] !in selectionOrder) selectionOrder.add(names[which])
+                        } else {
+                            selectionOrder.remove(names[which])
+                        }
+                    }
                     .setPositiveButton("Übernehmen") { dialog, _ ->
-                        val chosen = names.indices.filter { checked[it] }.map { names[it] }
+                        val chosen = selectionOrder.filter { name ->
+                            val index = names.indexOf(name)
+                            index >= 0 && checked[index]
+                        }
                         if (chosen.isNotEmpty()) {
                             selectedChordNames.clear()
                             selectedChordNames.addAll(chosen)
