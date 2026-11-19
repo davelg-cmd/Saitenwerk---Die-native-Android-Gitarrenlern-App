@@ -665,6 +665,50 @@ jobs:
           set -euo pipefail
           python3 ci/fix_training_selection_and_strumming_layout.py
 
+      - name: Akkordfolgen, Taktarten und Taktanzahl im Schlagmuster-Trainer integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_strumming_chord_progression.py
+
+      - name: Schlagmuster-Akkordfolge validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          start = s.find("        fun showStrumming() {")
+          end = s.find("\\n        fun showSongPractice() {", start)
+          if start < 0 or end < 0:
+              raise SystemExit("FEHLER: Schlagmuster-Trainer nicht gefunden.")
+          t = s[start:end]
+          required = [
+              'setMultiChoiceItems(names, checked)',
+              'setPositiveButton("Übernehmen")',
+              'putStringSet("learn_strum_chords"',
+              'Taktart auswählen',
+              'learn_strum_meter',
+              'Anzahl der Takte',
+              'learn_strum_bars',
+              'selectedBars * stepsPerBar',
+              'selectedChords[barIndex % selectedChords.size]',
+              'GuitarAudioEngine.playChord(a, chord',
+              'currentPracticeChord()',
+          ]
+          missing = [item for item in required if item not in t]
+          if missing:
+              raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
+          if 'setSingleChoiceItems(names' in t:
+              raise SystemExit("FEHLER: Akkordauswahl ist noch eine Einzel-Auswahl.")
+          if 'selectedChord,' in t or 'selectedChord)' in t:
+              raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
+          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, 3/4–4/4–6/8, 1–8 Takte und Akkordwechsel pro Takt geprüft.")
+          PY
+
       - name: Trainingsoberflächen validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
