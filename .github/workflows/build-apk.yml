@@ -200,6 +200,59 @@ jobs:
           print("12 Bünde, sechs Saiten, Tonausgabe, 10er-Runde, Serienbestwert und Lernstudio-Einstieg geprüft.")
           PY
 
+      - name: Vollständigen Lernfortschritt-Reset integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_complete_learning_reset.py
+
+      - name: Vollständigen Lernfortschritt-Reset validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          required = [
+              'section("Lernfortschritt"',
+              '"Alles zurücksetzen"',
+              '"Gesamten Lernfortschritt zurücksetzen?"',
+              'learn_daily_seconds',
+              'learn_week_seconds',
+              'learn_xp',
+              'learn_quiz_correct',
+              'learn_quiz_total',
+              'learn_streak',
+              'learn_guided_done',
+              'learning_path_done',
+              'learn_skill_changes',
+              'learn_skill_rhythm',
+              'learn_skill_strum',
+              'learn_strum_best_score',
+              'learn_strum_best_rounds',
+              'learn_strum_best_combo',
+              'chord_training_best_streak',
+              'chord_training_sessions',
+              'chord_training_mastered',
+              'learn_fretboard_best_streak',
+              'learn_fretboard_best_score',
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Vollständiger Lernreset unvollständig: " + ", ".join(missing))
+          if s.count('section("Lernfortschritt"') != 1:
+              raise SystemExit("FEHLER: Lernfortschritt-Abschnitt mehrfach vorhanden.")
+          if '.remove("chord_training_selected_chords")' in s:
+              raise SystemExit("FEHLER: Gespeicherte Akkordauswahl darf beim Lernreset nicht gelöscht werden.")
+          if '.remove("learn_rhythm_bpm")' in s or '.remove("learn_rhythm_meter")' in s:
+              raise SystemExit("FEHLER: Rhythmus-Tempo/Taktart sind Einstellungen und bleiben erhalten.")
+          print("VOLLSTÄNDIGER-LERNRESET: PASS")
+          print("Zeit, Punkte, XP, Serien, Bestwerte, Lernpfad und Trainingsstatistiken werden zurückgesetzt; Einstellungen bleiben erhalten.")
+          PY
+
       - name: Persönliches Heute-üben-Dashboard integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
