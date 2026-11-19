@@ -164,6 +164,42 @@ jobs:
           print("8 Muster, 4 Stufen, Vorhörmodus, Eigenphase, Timingfenster, Serien und Bestwerte geprüft.")
           PY
 
+      - name: Interaktiven Griffbrett-Notentrainer integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_fretboard_note_trainer.py
+
+      - name: Griffbrett-Notentrainer validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          required = [
+              "class FretboardNoteView(context: android.content.Context)",
+              "fun showFretboard()",
+              "Griffbrett entdecken",
+              "Interaktives Gitarrengriffbrett, zwölf Bünde",
+              "GuitarAudioEngine.playString(a, string, fret, 0.68f)",
+              "learn_fretboard_best_streak",
+              "Gesucht:  $targetName",
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Griffbrett-Notentrainer unvollständig: " + ", ".join(missing))
+          if s.count("fun showFretboard()") != 1:
+              raise SystemExit("FEHLER: showFretboard() mehrfach vorhanden.")
+          if s.count("class FretboardNoteView(context: android.content.Context)") != 1:
+              raise SystemExit("FEHLER: FretboardNoteView mehrfach vorhanden.")
+          print("GRIFFBRETT-NOTENTRAINER: PASS")
+          print("12 Bünde, sechs Saiten, Tonausgabe, 10er-Runde, Serienbestwert und Lernstudio-Einstieg geprüft.")
+          PY
+
       - name: Persönliches Heute-üben-Dashboard integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
