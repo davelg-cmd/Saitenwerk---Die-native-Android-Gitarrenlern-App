@@ -13,7 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
-            "19.11.2026 · Build $buildNumber" to "Akkordwechsel-Training: Akkordauswahl-Dialog überarbeitet, damit Übernehmen auch bei langen Listen sichtbar bleibt. Schlagmuster-Trainer: Mehrfachauswahl von Gitarrenakkorden, Taktarten 3/4, 4/4 und 6/8 sowie Auswahl von 1 bis 8 Takten. Die Vorschau spielt das gewählte Schlagmuster mit der Akkordfolge und wechselt den Akkord taktweise. Redundante Pattern-Textzeile entfernt und Schlagpfeile vergrößert.",
+            "19.11.2026 · Build $buildNumber" to "Akkordwechsel-Training: Akkordauswahl-Dialog überarbeitet, damit Übernehmen auch bei langen Listen sichtbar bleibt. Schlagmuster-Trainer: Mehrfachauswahl von Gitarrenakkorden und Taktarten 3/4, 4/4 und 6/8; Akkordwechsel pro Takt. Bedienoberfläche vereinfacht: Muster-vorhören-Button, Takte-Button sowie Abschlag- und Aufschlag-Buttons entfernt. Startbutton heißt jetzt Training starten. Redundante Pattern-Textzeile entfernt und Schlagpfeile vergrößert.",
             "18.11.2026 · Build 399" to "Vollständiger Lernfortschritt-Reset unter Einstellungen → Lernfortschritt. Übungszeiten, Tages- und Wochenwerte, XP, Level, Serien, Quizstatistiken, Lernpfad-Fortschritt und Trainings-Bestwerte werden gemeinsam zurückgesetzt. Persönliche App-Einstellungen und Trainingskonfigurationen bleiben erhalten.",
             "18.11.2026 · Build 394" to "Interaktiver Griffbrett-Notentrainer mit sechs Saiten und zwölf Bünden, zufälligen Notenaufgaben, Gitarrenton-Wiedergabe, direkter Richtig/Falsch-Rückmeldung und 10-Runden-Training. Bestserie und persönliche Bestleistung werden gespeichert.",
             "18.11.2026 · Build 392" to "Intelligenter Schlagmuster-Trainer mit acht Rhythmen in vier Schwierigkeitsstufen. Muster können vorgehört und anschließend selbst gespielt werden. Timing-Fenster, Rückmeldung und persönliche Bestwerte unterstützen das Training.",
@@ -31,6 +31,10 @@ required = [
     "Heute-üben-Dashboard",
     "Akkordauswahl-Dialog überarbeitet",
     "Pattern-Textzeile entfernt",
+    "Muster-vorhören-Button",
+    "Takte-Button",
+    "Abschlag- und Aufschlag-Buttons entfernt",
+    "Training starten",
     "Mehrfachauswahl von Gitarrenakkorden",
     "Taktarten 3/4, 4/4 und 6/8",
     "Akkordfolge",
