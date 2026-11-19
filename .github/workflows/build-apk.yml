@@ -738,9 +738,22 @@ jobs:
               raise SystemExit("FEHLER: Doppelte Pattern-Textzeile ist noch vorhanden.")
           if "a.dp(76)" not in trainer or "38f else 30f" not in trainer:
               raise SystemExit("FEHLER: Schlagpfeile sind nicht ausreichend vergrößert.")
-          if 'box.addView(previewButton' not in trainer or 'box.addView(beatRow' not in trainer:
-              raise SystemExit("FEHLER: Vorhör-Button oder Schlagpfeile fehlen.")
-          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung und größere Schlagpfeile geprüft.")
+          if 'box.addView(beatRow' not in trainer:
+              raise SystemExit("FEHLER: Schlagpfeile fehlen.")
+          forbidden_controls = [
+              'previewButton',
+              'barsButton',
+              'val down =',
+              'val up =',
+              'actionRow',
+              'Jetzt du · Training starten',
+          ]
+          present = [item for item in forbidden_controls if item in trainer]
+          if present:
+              raise SystemExit("FEHLER: Entfernte Schlagmuster-Bedienelemente wieder vorhanden: " + ", ".join(present))
+          if 'val start = a.button("Training starten")' not in trainer:
+              raise SystemExit("FEHLER: Startbutton-Beschriftung nicht korrekt.")
+          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung, größere Schlagpfeile und reduzierte Trainer-Bedienung geprüft.")
           PY
 
       - name: In-App-Changelog mit den letzten Änderungen aktualisieren
