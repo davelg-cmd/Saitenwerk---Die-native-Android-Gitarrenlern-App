@@ -230,7 +230,13 @@ if "selectedChord" in t and "selectedChordNames" not in t:
 
 
 # Nicht mehr benötigte Bedienelemente aus dem finalen Trainer entfernen.
-# Der separate Takte-Wähler entfällt; der Trainer arbeitet mit einem festen Übungsumfang.
+def remove_once(old, label):
+    global t
+    if old not in t:
+        raise SystemExit("FEHLER: Entfernen nicht möglich, Element nicht gefunden: " + label)
+    t = t.replace(old, "", 1)
+
+# Der separate Takte-Wähler und die nur dafür benötigte Hilfsfunktion entfallen.
 remove_once('''            var selectedBars = prefs.getInt("learn_strum_bars", 4).coerceIn(1, 8)
 ''', "Taktanzahl-Status")
 remove_once('''            fun currentPracticeChord(): ChordShape {
@@ -240,11 +246,6 @@ remove_once('''            fun currentPracticeChord(): ChordShape {
                 return selectedChords[barIndex % selectedChords.size]
             }
 ''', "Hilfsfunktion für entfernte Abschlag-/Aufschlag-Buttons")
-def remove_once(old, label):
-    global t
-    if old not in t:
-        raise SystemExit("FEHLER: Entfernen nicht möglich, Element nicht gefunden: " + label)
-    t = t.replace(old, "", 1)
 
 remove_once('''            val previewButton = a.button("▶ Muster vorhören")
 ''', "Muster-vorhören-Button")
