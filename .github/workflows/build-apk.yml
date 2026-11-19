@@ -694,12 +694,8 @@ jobs:
               'putStringSet("learn_strum_chords"',
               'Taktart auswählen',
               'learn_strum_meter',
-              'Anzahl der Takte',
-              'learn_strum_bars',
-              'selectedBars * stepsPerBar',
               'selectedChords[barIndex % selectedChords.size]',
               'GuitarAudioEngine.playChord(a, chord',
-              'currentPracticeChord()',
           ]
           missing = [item for item in required if item not in t]
           if missing:
@@ -711,7 +707,7 @@ jobs:
               raise SystemExit("FEHLER: Gitarrenklang-Auswahl muss eine echte Mehrfachauswahl sein.")
           if 'selectedChord,' in t or 'selectedChord)' in t:
               raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
-          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, 3/4–4/4–6/8, 1–8 Takte und Akkordwechsel pro Takt geprüft.")
+          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, 3/4–4/4–6/8 und Akkordwechsel im Training geprüft.")
           PY
 
       - name: Trainingsoberflächen validieren
@@ -753,7 +749,7 @@ jobs:
               raise SystemExit("FEHLER: Entfernte Schlagmuster-Bedienelemente wieder vorhanden: " + ", ".join(present))
           if 'val start = a.button("Training starten")' not in trainer:
               raise SystemExit("FEHLER: Startbutton-Beschriftung nicht korrekt.")
-          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung, größere Schlagpfeile und reduzierte Trainer-Bedienung geprüft.")
+          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung, größere Schlagpfeile und entfernte Vorschau-/Takt-/Schlagbuttons geprüft.")
           PY
 
       - name: In-App-Changelog mit den letzten Änderungen aktualisieren
