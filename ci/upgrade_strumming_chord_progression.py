@@ -230,6 +230,16 @@ if "selectedChord" in t and "selectedChordNames" not in t:
 
 
 # Nicht mehr benötigte Bedienelemente aus dem finalen Trainer entfernen.
+# Der separate Takte-Wähler entfällt; der Trainer arbeitet mit einem festen Übungsumfang.
+remove_once('''            var selectedBars = prefs.getInt("learn_strum_bars", 4).coerceIn(1, 8)
+''', "Taktanzahl-Status")
+remove_once('''            fun currentPracticeChord(): ChordShape {
+                val beatsPerBar = when (selectedMeter) { "3/4" -> 3; "6/8" -> 6; else -> 4 }
+                val stepsPerBar = if (selected.size >= 6) beatsPerBar * 2 else beatsPerBar
+                val barIndex = round.coerceAtLeast(0)
+                return selectedChords[barIndex % selectedChords.size]
+            }
+''', "Hilfsfunktion für entfernte Abschlag-/Aufschlag-Buttons")
 def remove_once(old, label):
     global t
     if old not in t:
@@ -309,10 +319,6 @@ required = [
     'putStringSet("learn_strum_chords"',
     'Taktart auswählen',
     'learn_strum_meter',
-    'Anzahl der Takte',
-    'learn_strum_bars',
-    'selectedBars * stepsPerBar',
-    'selectedChords[barIndex % selectedChords.size]',
     'GuitarAudioEngine.playChord(a, chord',
 ]
 missing = [item for item in required if item not in t]
