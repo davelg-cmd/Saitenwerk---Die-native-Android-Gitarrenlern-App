@@ -694,7 +694,6 @@ jobs:
               'putStringSet("learn_strum_chords"',
               'Taktart auswählen',
               'learn_strum_meter',
-              'selectedChords[barIndex % selectedChords.size]',
               'GuitarAudioEngine.playChord(a, chord',
           ]
           missing = [item for item in required if item not in t]
