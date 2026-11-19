@@ -306,7 +306,13 @@ t = t.replace('''            val start = a.button("Jetzt du · Training starten"
 t = t.replace('''                status.text = "Jetzt du · spiele passend zur Markierung"
 ''', '''                status.text = "Spiele passend zur Markierung"
 ''')
-# Keep the selected number of bars as a persisted/default training parameter, without a separate button.
+# Ohne Vorhörmodus darf der Status keine nicht mehr vorhandene Vorhör-Aktion ankündigen.
+t = t.replace('''                text = "Bereit · zuerst Muster vorhören"
+''', '''                text = "Bereit · Training starten"
+''')
+t = t.replace('''                        status.text = "Muster gewählt · jetzt vorhören"
+''', '''                        status.text = "Muster gewählt · bereit zum Training"
+''')
 if "previewButton" in t or "barsButton" in t or "actionRow" in t or "val down =" in t or "val up =" in t:
     raise SystemExit("FEHLER: Entfernte Bedienelemente sind noch im Trainer enthalten.")
 if 'val start = a.button("Training starten")' not in t:
@@ -327,4 +333,4 @@ if missing:
     raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
 if "selectedChord," in t or "selectedChord)" in t:
     raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
-print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, Taktart, Taktanzahl und Akkordwechsel pro Takt integriert.")
+print("SCHLAGMUSTER-TRAINER: PASS – Mehrfachauswahl, Taktarten und Akkordwechsel im Training integriert; überflüssige Bedienelemente entfernt.")
