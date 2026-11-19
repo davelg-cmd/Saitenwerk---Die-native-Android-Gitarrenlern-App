@@ -710,7 +710,7 @@ jobs:
               raise SystemExit("FEHLER: Lokale showChanges-Funktion steht vor showStrumming.")
           if 'Akkordwechsel & Schlagmuster trainieren' not in s or 'Zum Lernstudio' not in s:
               raise SystemExit("FEHLER: Gemeinsamer Trainer ist nicht an Song-Praxis und Akkordbibliothek angebunden.")
-          for old in ['Muster vorhören', 'Jetzt du · Training starten', 'Takte · ', '↓ Abschlag', '↑ Aufschlag', 'previewButton', 'barsButton', 'ChordTrainingPanel']:
+          for old in ['Muster vorhören', 'Jetzt du · Training starten', '↓ Abschlag', '↑ Aufschlag', 'previewButton', 'barsButton', 'ChordTrainingPanel']:
               if old in trainer or old == 'ChordTrainingPanel' and old in s:
                   raise SystemExit("FEHLER: Entferntes Trainer-Element/Altklasse wieder vorhanden: " + old)
           if 'learn_training_chords_ordered' not in trainer or 'putString("learn_training_chords_ordered", ordered)' not in trainer:
