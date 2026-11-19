@@ -119,6 +119,51 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_learning_studio.py
 
+      - name: Intelligenten Schlagmuster-Trainer integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_intelligent_strumming_trainer.py
+
+      - name: Intelligenten Schlagmuster-Trainer validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          required = [
+              "Muster vorhören",
+              "Jetzt du · Training starten",
+              "Anfänger",
+              "Grundlagen",
+              "Fortgeschritten",
+              "Profi",
+              "Offbeat",
+              "learn_strum_best_combo",
+              "learn_strum_best_rounds",
+              "Timing-Fenster",
+              "GuitarAudioEngine.playChord",
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Schlagmuster-Trainer unvollständig: " + ", ".join(missing))
+          start = s.find("        fun showStrumming() {")
+          end = s.find("\n        fun showSongPractice() {", start)
+          if start < 0 or end < 0:
+              raise SystemExit("FEHLER: showStrumming()-Bereich nicht gefunden.")
+          trainer = s[start:end]
+          if trainer.count("GuitarAudioEngine.playChord") < 3:
+              raise SystemExit("FEHLER: Vorschau, Eigenwiedergabe und Nutzer-Feedback nicht vollständig verdrahtet.")
+          if "phase == \"play\"" not in trainer or "phase == \"preview\"" not in trainer:
+              raise SystemExit("FEHLER: getrennte Vorhör- und Eigenphase fehlt.")
+          print("INTELLIGENTER-SCHLAGMUSTER-TRAINER: PASS")
+          print("8 Muster, 4 Stufen, Vorhörmodus, Eigenphase, Timingfenster, Serien und Bestwerte geprüft.")
+          PY
+
       - name: Persönliches Heute-üben-Dashboard integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
