@@ -168,7 +168,7 @@ old = '''            down.setOnClickListener {
 new = '''            fun currentPracticeChord(): ChordShape {
                 val beatsPerBar = when (selectedMeter) { "3/4" -> 3; "6/8" -> 6; else -> 4 }
                 val stepsPerBar = if (selected.size >= 6) beatsPerBar * 2 else beatsPerBar
-                val barIndex = (round % selectedBars).coerceAtLeast(0)
+                val barIndex = round.coerceAtLeast(0)
                 return selectedChords[barIndex % selectedChords.size]
             }
             down.setOnClickListener {
@@ -202,7 +202,7 @@ new = '''                        val beatsPerBar = when (selectedMeter) { "3/4" 
                         markBeat(step % selected.size)
                         val patternIndex = step % selected.size
                         val dir = selected[patternIndex]
-                        val chord = selectedChords[((round - 1).coerceAtLeast(0)) % selectedChordNames.size]
+                        val chord = selectedChords[round % selectedChords.size]
                         if (dir != "·") {
                             GuitarAudioEngine.playChord(a, chord, downstroke = dir == "↓", volume = if (patternIndex == 0) 0.78f else 0.56f)
                         } else {
