@@ -599,7 +599,7 @@ jobs:
 
           required = [
               'section("Lernfortschritt"',
-              '"Lernfortschritt zurücksetzen"',
+              '"Alles zurücksetzen"',
               '"Lernfortschritt zurücksetzen?"',
               '.remove("learn_quiz_correct")',
               '.remove("learn_daily_seconds")',
