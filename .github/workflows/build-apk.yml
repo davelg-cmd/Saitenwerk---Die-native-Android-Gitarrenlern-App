@@ -665,7 +665,7 @@ jobs:
           set -euo pipefail
           python3 ci/fix_training_selection_and_strumming_layout.py
 
-      - name: Akkordfolgen, Taktarten und Taktanzahl im Schlagmuster-Trainer integrieren
+      - name: Akkordfolge, Taktarten und Eingabesteuerung im Schlagmuster-Trainer integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
@@ -692,9 +692,16 @@ jobs:
               'selectionOrder.add(names[which])',
               'setPositiveButton("Übernehmen")',
               'putStringSet("learn_strum_chords"',
+              'learn_strum_chords_ordered',
+              'org.json.JSONArray(selectedChordNames)',
               'Taktart auswählen',
               'learn_strum_meter',
               'GuitarAudioEngine.playChord(a, chord',
+              'beatRow.setOnTouchListener',
+              'userHit(direction)',
+              'gestureHint',
+              'step = -1;',
+              'step += 1',
           ]
           missing = [item for item in required if item not in t]
           if missing:
@@ -706,7 +713,12 @@ jobs:
               raise SystemExit("FEHLER: Gitarrenklang-Auswahl muss eine echte Mehrfachauswahl sein.")
           if 'selectedChord,' in t or 'selectedChord)' in t:
               raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
-          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, 3/4–4/4–6/8 und Akkordwechsel im Training geprüft.")
+          gesture_start = t.find("beatRow.setOnTouchListener")
+          gesture_end = t.find("start.setOnClickListener", gesture_start)
+          gesture_block = t[gesture_start:gesture_end] if gesture_start >= 0 and gesture_end >= 0 else ""
+          if not gesture_block or "userHit(direction)" not in gesture_block or "GuitarAudioEngine.playChord" not in gesture_block:
+              raise SystemExit("FEHLER: Wischgesten sind nicht mit Tonwiedergabe und Timing-Bewertung verbunden.")
+          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Akkordreihenfolge, Taktarten, Akkordwechsel, Wischgesten und Timing-Auswertung geprüft.")
           PY
 
       - name: Trainingsoberflächen validieren
@@ -736,19 +748,31 @@ jobs:
           if 'box.addView(beatRow' not in trainer:
               raise SystemExit("FEHLER: Schlagpfeile fehlen.")
           forbidden_controls = [
+              'preview',
               'previewButton',
               'barsButton',
               'val down =',
               'val up =',
+              'down.setOnClickListener',
+              'up.setOnClickListener',
               'actionRow',
+              'selectedBars',
+              'strumStep',
               'Jetzt du · Training starten',
+              'Muster vorhören',
           ]
           present = [item for item in forbidden_controls if item in trainer]
           if present:
               raise SystemExit("FEHLER: Entfernte Schlagmuster-Bedienelemente wieder vorhanden: " + ", ".join(present))
           if 'val start = a.button("Training starten")' not in trainer:
               raise SystemExit("FEHLER: Startbutton-Beschriftung nicht korrekt.")
-          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung, größere Schlagpfeile und entfernte Vorschau-/Takt-/Schlagbuttons geprüft.")
+          if trainer.count('remove("learn_strum_bars")') != 1 or 'getInt("learn_strum_bars"' in trainer or 'putInt("learn_strum_bars"' in trainer:
+              raise SystemExit("FEHLER: Veraltete Taktanzahl-Einstellung wurde nicht vollständig bereinigt.")
+          if 'step = -1;' not in trainer or 'step += 1' not in trainer:
+              raise SystemExit("FEHLER: Der erste Schlag wird nicht korrekt gestartet.")
+          if 'learn_strum_chords_ordered' not in trainer:
+              raise SystemExit("FEHLER: Akkordreihenfolge wird nicht dauerhaft gespeichert.")
+          print("TRAININGSOBERFLÄCHEN: PASS – Dialog, Layout, entfernte Bedienelemente, Wischsteuerung, verwaiste Zustände und erster Taktschlag geprüft.")
           PY
 
       - name: In-App-Changelog mit den letzten Änderungen aktualisieren
