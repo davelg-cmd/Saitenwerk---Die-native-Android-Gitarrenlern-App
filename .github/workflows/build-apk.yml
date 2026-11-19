@@ -106,11 +106,14 @@ jobs:
           python3 ci/fix_update_already_installed.py
 
       - name: BPM-Regler und Taktauswahl ausrichten
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/fix_chord_tempo_layout.py
+          MAIN="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          if grep -q 'fun showStrumming(initialMode: String = "strumming")' "$MAIN"; then
+            echo "BPM/Takt-Steuerung ist bereits Teil des gemeinsamen Trainers."
+          else
+            python3 ci/fix_chord_tempo_layout.py
+          fi
 
       - name: Lernstudio optimieren
         env:
@@ -120,48 +123,39 @@ jobs:
           python3 ci/upgrade_learning_studio.py
 
       - name: Intelligenten Schlagmuster-Trainer integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/upgrade_intelligent_strumming_trainer.py
+          MAIN="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          if grep -q 'Gemeinsamer Gitarrentrainer' "$MAIN"; then
+            echo "Gemeinsamer Trainer bereits vorhanden; alte Einzeltrainer-Vorlage wird nicht erneut angewendet."
+          else
+            python3 ci/upgrade_intelligent_strumming_trainer.py
+          fi
 
       - name: Intelligenten Schlagmuster-Trainer validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
-          required = [
-              "Muster vorhören",
-              "Jetzt du · Training starten",
-              "Anfänger",
-              "Grundlagen",
-              "Fortgeschritten",
-              "Profi",
-              "Offbeat",
-              "learn_strum_best_combo",
-              "learn_strum_best_rounds",
-              "Timing-Fenster",
-              "GuitarAudioEngine.playChord",
-          ]
-          missing = [x for x in required if x not in s]
-          if missing:
-              raise SystemExit("FEHLER: Schlagmuster-Trainer unvollständig: " + ", ".join(missing))
-          start = s.find("        fun showStrumming() {")
-          end = s.find("\n        fun showSongPractice() {", start)
-          if start < 0 or end < 0:
-              raise SystemExit("FEHLER: showStrumming()-Bereich nicht gefunden.")
-          trainer = s[start:end]
-          if trainer.count("GuitarAudioEngine.playChord") < 3:
-              raise SystemExit("FEHLER: Vorschau, Eigenwiedergabe und Nutzer-Feedback nicht vollständig verdrahtet.")
-          if "phase == \"play\"" not in trainer or "phase == \"preview\"" not in trainer:
-              raise SystemExit("FEHLER: getrennte Vorhör- und Eigenphase fehlt.")
-          print("INTELLIGENTER-SCHLAGMUSTER-TRAINER: PASS")
-          print("8 Muster, 4 Stufen, Vorhörmodus, Eigenphase, Timingfenster, Serien und Bestwerte geprüft.")
+          if 'fun showStrumming(initialMode: String = "strumming") {' in s:
+              required = ["Gemeinsamer Gitarrentrainer", "learn_training_chords_ordered", "learn_training_meter", "learn_training_bpm", "beatRow.setOnTouchListener", "userHit(direction)"]
+              missing = [x for x in required if x not in s]
+              if missing:
+                  raise SystemExit("FEHLER: Gemeinsamer Trainer unvollständig: " + ", ".join(missing))
+              print("INTELLIGENTER-SCHLAGMUSTER-TRAINER: PASS – bereits im gemeinsamen Trainer integriert.")
+          else:
+              required = ["Muster vorhören", "Jetzt du · Training starten", "Anfänger", "Grundlagen", "Fortgeschritten", "Profi", "Offbeat", "learn_strum_best_combo", "learn_strum_best_rounds", "Timing-Fenster", "GuitarAudioEngine.playChord"]
+              missing = [x for x in required if x not in s]
+              if missing:
+                  raise SystemExit("FEHLER: Schlagmuster-Trainer unvollständig: " + ", ".join(missing))
+              start = s.find("        fun showStrumming() {")
+              end = s.find("\n        fun showSongPractice() {", start)
+              trainer = s[start:end] if start >= 0 and end >= 0 else ""
+              if not trainer or trainer.count("GuitarAudioEngine.playChord") < 3 or 'phase == "preview"' not in trainer:
+                  raise SystemExit("FEHLER: Vorschau, Eigenphase und Nutzer-Feedback nicht vollständig verdrahtet.")
+              print("INTELLIGENTER-SCHLAGMUSTER-TRAINER: PASS – Legacy-Vorlage vollständig.")
           PY
 
       - name: Interaktiven Griffbrett-Notentrainer integrieren
@@ -462,11 +456,14 @@ jobs:
           python3 ci/premium_visual_system.py
 
       - name: Akkordwechsel-Auswahlrahmen vollständig darstellen
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/fix_chord_training_dropdown_clipping.py
+          MAIN="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          if grep -q 'class ChordTrainingPanel' "$MAIN"; then
+            python3 ci/fix_chord_training_dropdown_clipping.py
+          else
+            echo "Separater Akkordwechsel-Trainer entfernt; kein alter Auswahlrahmen mehr vorhanden."
+          fi
 
       - name: Songpraxis-Stoppbutton vertikal zentrieren
         env:
@@ -543,42 +540,26 @@ jobs:
           PY
 
       - name: Akkordwechsel-Training validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
-          required = [
-              'Akkordwechsel-Training',
-              'Trainingsakkorde auswählen',
-              'chord_training_selected_chords',
-              'chord_training_bpm',
-              'chord_training_meter',
-              'Taktart auswählen',
-              'meterTempoRow',
-              'contentDescription = chordName',
-              'chord_training_best_streak',
-              'Reihenfolge mischen',
-              'Als Nächstes',
-              'private val fretboard = ChordDiagramView(host)',
-              'open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)',
-              'fretboard.setChord(ChordLibrary.all.firstOrNull',
-              'stage.addView(fretboard, LayoutParams(-1, host.dp(210)))',
-              'val fingers: IntArray = IntArray(6)',
-              'fingers=intArrayOf(0,3,2,0,1,0)',
-              'open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)',
-              'canvas.drawText(finger.toString(), x, baseline, fingerPaint)',
-              '1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein',
-          ]
-          missing = [x for x in required if x not in s]
-          if missing:
-              raise SystemExit("FEHLER: Akkordwechsel-Training unvollständig: " + ", ".join(missing))
-          if 'remove("chord_training_selected_chords")' in s:
-              raise SystemExit("FEHLER: Trainingsakkord-Auswahl darf nicht gelöscht werden.")
-          print("AKKORDWECHSEL-TRAINING: PASS")
+          if "class ChordTrainingPanel" not in s:
+              required = ['fun showChanges() { showStrumming("changes") }', 'Gemeinsamer Gitarrentrainer', 'learn_training_chords_ordered', 'learn_training_meter', 'learn_training_bpm', 'ChordDiagramView(a, selectedChords.firstOrNull())', 'Zum Lernstudio']
+              missing = [x for x in required if x not in s]
+              if missing:
+                  raise SystemExit("FEHLER: Zusammengeführter Akkordwechsel-Trainer unvollständig: " + ", ".join(missing))
+              print("AKKORDWECHSEL-TRAINING: PASS – im gemeinsamen Trainer enthalten.")
+          else:
+              required = ['Akkordwechsel-Training', 'Trainingsakkorde auswählen', 'chord_training_selected_chords', 'chord_training_bpm', 'chord_training_meter', 'Taktart auswählen', 'meterTempoRow', 'contentDescription = chordName', 'chord_training_best_streak', 'Reihenfolge mischen', 'Als Nächstes', 'private val fretboard = ChordDiagramView(host)', 'open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)', 'fretboard.setChord(ChordLibrary.all.firstOrNull', 'stage.addView(fretboard, LayoutParams(-1, host.dp(210)))', 'val fingers: IntArray = IntArray(6)', 'fingers=intArrayOf(0,3,2,0,1,0)', 'canvas.drawText(finger.toString(), x, baseline, fingerPaint)', '1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein']
+              missing = [x for x in required if x not in s]
+              if missing:
+                  raise SystemExit("FEHLER: Akkordwechsel-Training unvollständig: " + ", ".join(missing))
+              if 'remove("chord_training_selected_chords")' in s:
+                  raise SystemExit("FEHLER: Trainingsakkord-Auswahl darf nicht gelöscht werden.")
+              print("AKKORDWECHSEL-TRAINING: PASS – Legacy-Vorlage vollständig.")
           PY
 
       # ------------------------------------------------------------
@@ -659,120 +640,107 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
 
       - name: Akkordauswahl und Schlagmuster-Layout reparieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/fix_training_selection_and_strumming_layout.py
+          MAIN="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          if grep -q 'Gemeinsamer Gitarrentrainer' "$MAIN"; then
+            echo "Auswahl und Pfeile sind bereits im gemeinsamen Trainer integriert."
+          else
+            python3 ci/fix_training_selection_and_strumming_layout.py
+          fi
 
       - name: Akkordfolge, Taktarten und Eingabesteuerung im Schlagmuster-Trainer integrieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/upgrade_strumming_chord_progression.py
+          MAIN="$PROJECT_DIR/app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          if grep -q 'Gemeinsamer Gitarrentrainer' "$MAIN"; then
+            echo "Akkordfolge, Taktarten und Wischsteuerung sind bereits integriert."
+          else
+            python3 ci/upgrade_strumming_chord_progression.py
+          fi
 
       - name: Schlagmuster-Akkordfolge validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
-          start = s.find("        fun showStrumming() {")
-          end = s.find("\n        fun showSongPractice() {", start)
-          if start < 0 or end < 0:
-              raise SystemExit("FEHLER: Schlagmuster-Trainer nicht gefunden.")
-          t = s[start:end]
-          required = [
-              'setMultiChoiceItems(names, checked)',
-              'val selectionOrder = selectedChordNames.toMutableList()',
-              'selectionOrder.add(names[which])',
-              'setPositiveButton("Übernehmen")',
-              'putStringSet("learn_strum_chords"',
-              'learn_strum_chords_ordered',
-              'org.json.JSONArray(selectedChordNames)',
-              'Taktart auswählen',
-              'learn_strum_meter',
-              'GuitarAudioEngine.playChord(a, chord',
-              'beatRow.setOnTouchListener',
-              'userHit(direction)',
-              'gestureHint',
-              'step = -1;',
-              'step += 1',
-          ]
-          missing = [item for item in required if item not in t]
+          if 'fun showStrumming(initialMode: String = "strumming") {' in s:
+              required = ['fun showChanges() { showStrumming("changes") }', 'learn_training_chords_ordered', 'learn_training_meter', 'learn_training_bpm', 'beatRow.setOnTouchListener', 'userHit(direction)', 'GuitarAudioEngine.playChord', 'step = -1;']
+              missing = [x for x in required if x not in s]
+              if missing:
+                  raise SystemExit("FEHLER: Gemeinsamer Trainer unvollständig: " + ", ".join(missing))
+              print("SCHLAGMUSTER-AKKORDFOLGE: PASS – gemeinsamer Trainer bereits integriert.")
+          else:
+              start = s.find("        fun showStrumming() {")
+              end = s.find("\n        fun showSongPractice() {", start)
+              t = s[start:end] if start >= 0 and end >= 0 else ""
+              required = ['setMultiChoiceItems(names, checked)', 'val selectionOrder = selectedChordNames.toMutableList()', 'selectionOrder.add(names[which])', 'setPositiveButton("Übernehmen")', 'learn_strum_chords_ordered', 'org.json.JSONArray(selectedChordNames)', 'Taktart auswählen', 'learn_strum_meter', 'GuitarAudioEngine.playChord(a, chord', 'beatRow.setOnTouchListener', 'userHit(direction)', 'gestureHint', 'step = -1;', 'step += 1']
+              missing = [x for x in required if x not in t]
+              if missing:
+                  raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
+              print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Legacy-Vorlage vollständig.")
+          PY
+
+      - name: Gemeinsamen Akkord- und Schlagmuster-Trainer integrieren
+        run: |
+          set -euo pipefail
+          python3 ci/merge_unified_trainer.py
+
+      - name: Gemeinsamen Trainer tiefgreifend validieren
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          start = s.find('fun showStrumming(initialMode: String = "strumming") {')
+          end = s.find("\n        fun showChanges() {", start)
+          trainer = s[start:end] if start >= 0 and end > start else ""
+          required = ['fun showChanges() { showStrumming("changes") }', 'Gemeinsamer Gitarrentrainer', 'Trainingsmodus · Akkordwechsel', 'Trainingsmodus · Schlagmuster', 'learn_training_chords_ordered', 'learn_training_meter', 'learn_training_bpm', 'ChordDiagramView(a, selectedChords.firstOrNull())', 'beatRow.setOnTouchListener', 'userHit(direction)', 'chord_training_best_streak', 'learn_strum_best_score', 'chord_training_sessions', 'learn_skill_changes', 'learn_skill_strum', '90000L / bpm', 'step = -1;']
+          missing = [x for x in required if x not in s]
           if missing:
-              raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
-          chord_start = t.find("chordButton.setOnClickListener")
-          meter_start = t.find("meterButton.setOnClickListener", chord_start)
-          chord_picker = t[chord_start:meter_start] if chord_start >= 0 and meter_start >= 0 else ""
-          if not chord_picker or '.setMultiChoiceItems(names, checked)' not in chord_picker or '.setSingleChoiceItems(' in chord_picker:
-              raise SystemExit("FEHLER: Gitarrenklang-Auswahl muss eine echte Mehrfachauswahl sein.")
-          if 'selectedChord,' in t or 'selectedChord)' in t:
-              raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
-          gesture_start = t.find("beatRow.setOnTouchListener")
-          gesture_end = t.find("start.setOnClickListener", gesture_start)
-          gesture_block = t[gesture_start:gesture_end] if gesture_start >= 0 and gesture_end >= 0 else ""
-          if not gesture_block or "userHit(direction)" not in gesture_block or "GuitarAudioEngine.playChord" not in gesture_block:
-              raise SystemExit("FEHLER: Wischgesten sind nicht mit Tonwiedergabe und Timing-Bewertung verbunden.")
-          print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Akkordreihenfolge, Taktarten, Akkordwechsel, Wischgesten und Timing-Auswertung geprüft.")
+              raise SystemExit("FEHLER: Gemeinsamer Trainer unvollständig: " + ", ".join(missing))
+          if "class ChordTrainingPanel" in s or "chordTraining" in s:
+              raise SystemExit("FEHLER: Alte separate Trainerklasse oder Referenzen sind noch vorhanden.")
+          if s.count('fun showStrumming(initialMode: String = "strumming") {') != 1 or s.count('fun showChanges() { showStrumming("changes") }') != 1:
+              raise SystemExit("FEHLER: Trainer-Einstiege sind doppelt oder nicht eindeutig.")
+          if s.find('fun showChanges() { showStrumming("changes") }') < s.find('fun showStrumming(initialMode: String = "strumming") {'):
+              raise SystemExit("FEHLER: Lokale showChanges-Funktion steht vor showStrumming.")
+          if 'Akkordwechsel & Schlagmuster trainieren' not in s or 'Zum Lernstudio' not in s:
+              raise SystemExit("FEHLER: Gemeinsamer Trainer ist nicht an Song-Praxis und Akkordbibliothek angebunden.")
+          for old in ['Muster vorhören', 'Jetzt du · Training starten', 'Takte · ', '↓ Abschlag', '↑ Aufschlag', 'previewButton', 'barsButton', 'ChordTrainingPanel']:
+              if old in trainer or old == 'ChordTrainingPanel' and old in s:
+                  raise SystemExit("FEHLER: Entferntes Trainer-Element/Altklasse wieder vorhanden: " + old)
+          if 'learn_training_chords_ordered' not in trainer or 'putString("learn_training_chords_ordered", ordered)' not in trainer:
+              raise SystemExit("FEHLER: Gemeinsame Akkordreihenfolge wird nicht dauerhaft gespeichert.")
+          print("GEMEINSAMER-TRAINER: PASS – gemeinsame Oberfläche, Modi, Einstellungen, Audio, Eingabe, Fortschritt, Migration und Altlasten geprüft.")
           PY
 
       - name: Trainingsoberflächen validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
-          start = s.find("    private fun openChordPicker() {")
-          end = s.find("\n    private fun openMeterPicker()", start)
-          if start < 0 or end < 0:
-              raise SystemExit("FEHLER: Akkordauswahl-Dialog fehlt.")
-          picker = s[start:end]
-          for required in ['.setPositiveButton("Übernehmen", null)', 'BUTTON_POSITIVE', 'pickerHeightDp', 'sequence = selected']:
-              if required not in picker:
-                  raise SystemExit("FEHLER: Akkordauswahl-Übernahme nicht vollständig: " + required)
-          start = s.find("        fun showStrumming() {")
-          end = s.find("\n        fun showSongPractice() {", start)
-          trainer = s[start:end] if start >= 0 and end >= 0 else ""
+          start = s.find('        fun showStrumming(initialMode: String = "strumming") {')
+          end = s.find("\n        fun showChanges() {", start)
+          trainer = s[start:end] if start >= 0 and end > start else ""
           if not trainer or "patternHint" in trainer:
-              raise SystemExit("FEHLER: Doppelte Pattern-Textzeile ist noch vorhanden.")
-          if "a.dp(76)" not in trainer or "38f else 30f" not in trainer:
-              raise SystemExit("FEHLER: Schlagpfeile sind nicht ausreichend vergrößert.")
-          if 'box.addView(beatRow' not in trainer:
-              raise SystemExit("FEHLER: Schlagpfeile fehlen.")
-          forbidden_controls = [
-              'preview',
-              'previewButton',
-              'barsButton',
-              'val down =',
-              'val up =',
-              'down.setOnClickListener',
-              'up.setOnClickListener',
-              'actionRow',
-              'selectedBars',
-              'strumStep',
-              'Jetzt du · Training starten',
-              'Muster vorhören',
-          ]
-          present = [item for item in forbidden_controls if item in trainer]
-          if present:
-              raise SystemExit("FEHLER: Entfernte Schlagmuster-Bedienelemente wieder vorhanden: " + ", ".join(present))
-          if 'val start = a.button("Training starten")' not in trainer:
-              raise SystemExit("FEHLER: Startbutton-Beschriftung nicht korrekt.")
+              raise SystemExit("FEHLER: Gemeinsamer Trainer fehlt oder enthält doppelte Pattern-Texte.")
+          required = ['a.dp(76)', '38f else 30f', 'box.addView(beatRow', 'val start = a.button("Training starten")', 'step = -1;', 'step += 1', 'beatRow.setOnTouchListener', 'userHit(direction)', 'remove("learn_strum_bars")', 'learn_strum_chords_ordered']
+          missing = [x for x in required if x not in trainer]
+          if missing:
+              raise SystemExit("FEHLER: Trainingsoberfläche unvollständig: " + ", ".join(missing))
           if trainer.count('remove("learn_strum_bars")') != 1 or 'getInt("learn_strum_bars"' in trainer or 'putInt("learn_strum_bars"' in trainer:
-              raise SystemExit("FEHLER: Veraltete Taktanzahl-Einstellung wurde nicht vollständig bereinigt.")
-          if 'step = -1;' not in trainer or 'step += 1' not in trainer:
-              raise SystemExit("FEHLER: Der erste Schlag wird nicht korrekt gestartet.")
-          if 'learn_strum_chords_ordered' not in trainer:
-              raise SystemExit("FEHLER: Akkordreihenfolge wird nicht dauerhaft gespeichert.")
-          print("TRAININGSOBERFLÄCHEN: PASS – Dialog, Layout, entfernte Bedienelemente, Wischsteuerung, verwaiste Zustände und erster Taktschlag geprüft.")
+              raise SystemExit("FEHLER: Veraltete Taktanzahl-Einstellung vorhanden.")
+          forbidden = ['previewButton', 'barsButton', 'selectedBars', 'strumStep', 'val down =', 'val up =', 'down.setOnClickListener', 'up.setOnClickListener', 'Muster vorhören', 'Jetzt du · Training starten']
+          found = [x for x in forbidden if x in trainer]
+          if found:
+              raise SystemExit("FEHLER: Entfernte Bedienelemente vorhanden: " + ", ".join(found))
+          print("TRAININGSOBERFLÄCHEN: PASS – gemeinsamer Trainer, Bedienung und Bereinigung geprüft.")
           PY
 
       - name: In-App-Changelog mit den letzten Änderungen aktualisieren
