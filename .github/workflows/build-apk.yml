@@ -688,6 +688,8 @@ jobs:
           t = s[start:end]
           required = [
               'setMultiChoiceItems(names, checked)',
+              'val selectionOrder = selectedChordNames.toMutableList()',
+              'selectionOrder.add(names[which])',
               'setPositiveButton("Übernehmen")',
               'putStringSet("learn_strum_chords"',
               'Taktart auswählen',
