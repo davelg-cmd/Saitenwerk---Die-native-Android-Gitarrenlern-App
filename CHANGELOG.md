@@ -1,0 +1,36 @@
+# Saitenwerk – Changelog
+
+Alle wesentlichen Änderungen, Erweiterungen, Reparaturen und Problembehebungen werden ab sofort hier dokumentiert. Neue Änderungen werden dem Changelog immer zusammen mit der jeweiligen Entwicklung eingetragen.
+
+## Build 399 – Lernfortschritt vollständig zurücksetzen
+- **Neu:** In **Einstellungen → Lernfortschritt** gibt es jetzt **„Alles zurücksetzen“**.
+- **Neu:** Sicherheitsabfrage vor dem Zurücksetzen des gesamten Lernfortschritts.
+- **Zurückgesetzt werden:** tägliche und wöchentliche Übungszeit, Trainingstage/Streak, XP und Level, Quiz-Statistiken, Quiz-Bestserie, Tagesroutine, geführte 10-Minuten-Einheit, Lernpfad-Fortschritt und die zugehörigen Lernwerte.
+- **Ebenfalls zurückgesetzt:** Bestwerte und Sitzungs-/Rundenwerte der Strumming- und Akkordwechsel-Übungen sowie der Bestwert des Griffbrett-Notentrainers.
+- **Wichtig:** Persönliche bzw. App-Konfigurationen wie gespeicherte Akkordauswahl, Tempo, Takt, Instrument, Stimmung, Song-Arrangements und sonstige Einstellungen bleiben erhalten.
+- **Reparatur:** Die bisherige, unvollständige Lernfortschritt-Zurücksetzung wurde durch eine vollständige Zurücksetzung der Lernmetriken ersetzt.
+- **Reparatur:** Veraltete CI-Prüfungen, die noch die frühere Bezeichnung des Zurücksetzen-Buttons erwarteten, wurden an die neue Funktion angepasst.
+- **Build-Qualität:** Der vollständige GitHub-Actions-Build einschließlich APK-Erstellung und Artefaktbereitstellung wurde erfolgreich geprüft.
+
+## Build 394 – Griffbrett-Notentrainer
+- **Neu:** Interaktiver Griffbrett-Notentrainer mit 6 Saiten und 12 Bünden.
+- **Neu:** Standardstimmung und zufällige natürliche Zielnoten.
+- **Neu:** Antippen eines Bundes spielt den zugehörigen Gitarrenton.
+- **Neu:** Rückmeldung bei richtigen und falschen Antworten.
+- **Neu:** 10-Runden-Training mit Bestserie und persönlicher Bestleistung.
+- **Neu:** Schnellstart **„🎸 Griffbrett entdecken“**.
+- **Integration:** Nutzung der Gitarren-Audio-Engine für die Tonwiedergabe.
+
+## Build 390 – Persönlicher Übungsbereich
+- **Neu:** Persönlicher Bereich **„Heute üben“** im Lernstudio.
+- **Neu/Erweitert:** Übungsübersicht und darauf aufbauende Lernstudio-Funktionen.
+- **Erweiterung:** Geführte 10-Minuten-Einheit, Tagesroutine, Wochenziel und weitere Lernfortschrittsfunktionen.
+
+## Build 387 – Referenzstand
+- Erfolgreicher Build und damaliger Ausgangspunkt für die weitere Entwicklung.
+- Dieser Stand wurde anschließend durch die erfolgreichen Builds 390, 394 und 399 weiterentwickelt.
+
+---
+
+## Dokumentationsregel
+Bei jeder weiteren Entwicklung an Saitenwerk werden **neue Funktionen, Änderungen, Verbesserungen, Reparaturen und behobene Fehler** im Changelog dokumentiert. Das gilt auch für kleinere UI-, Audio-, Funktions- und Build-/CI-Korrekturen.
