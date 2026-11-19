@@ -119,6 +119,36 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_learning_studio.py
 
+      - name: Persönliches Heute-üben-Dashboard integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_home_training_dashboard.py
+
+      - name: Heute-üben-Dashboard validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          source = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          start = source.find("class HomeFragment : Fragment() {")
+          end = source.find("\nclass SettingsFragment : Fragment() {", start)
+          if start < 0 or end < 0:
+              raise SystemExit("FEHLER: HomeFragment nicht gefunden")
+          home = source[start:end]
+          required = ["DEIN HEUTIGES TRAINING", "Training starten", "Diese Woche", "learning_path_done", "a.openSection(5)", "a.openSection(6)"]
+          missing = [item for item in required if item not in home]
+          if missing:
+              raise SystemExit("FEHLER: Tagesdashboard unvollständig: " + ", ".join(missing))
+          if home.count("DEIN HEUTIGES TRAINING") != 1:
+              raise SystemExit("FEHLER: Tagesdashboard ist mehrfach eingebaut")
+          print("HEUTE-ÜBEN-DASHBOARD: PASS")
+          PY
+
       - name: Lernstudio-Fortschritt und Quiz-Zeit validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
