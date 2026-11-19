@@ -11,7 +11,7 @@ permissions:
 # Serialize builds so backup commits and release uploads cannot race each other.
 concurrency:
   group: saitenwerk-beta-build
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
