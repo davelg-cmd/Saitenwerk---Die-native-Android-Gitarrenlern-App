@@ -10,7 +10,7 @@ s = main.read_text(encoding="utf-8")
 start = s.find('        section("Lernfortschritt"')
 if start < 0:
     raise SystemExit("FEHLER: Bestehender Lernfortschritt-Abschnitt nicht gefunden.")
-end = s.find('\n        section("Über Saitenwerk"', start)
+end = s.find('\n        val aboutText =', start)
 if end < 0:
     raise SystemExit("FEHLER: Ende des Lernfortschritt-Abschnitts nicht gefunden.")
 
