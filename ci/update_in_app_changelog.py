@@ -13,7 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
-            "19.11.2026 · Build $buildNumber" to "Changelog aktualisiert: Die jüngsten Funktionen, Verbesserungen und Fehlerbehebungen sind jetzt vollständig und nachvollziehbar aufgeführt.",
+            "19.11.2026 · Build $buildNumber" to "Akkordwechsel-Training: Akkordauswahl-Dialog überarbeitet, damit der Button Übernehmen auch bei langen Akkordlisten sichtbar und zuverlässig bedienbar bleibt. Schlagmuster-Trainer: redundante Pattern-Textzeile entfernt und die großen Schlagpfeile unter Muster vorhören hervorgehoben.",
             "18.11.2026 · Build 399" to "Vollständiger Lernfortschritt-Reset unter Einstellungen → Lernfortschritt. Übungszeiten, Tages- und Wochenwerte, XP, Level, Serien, Quizstatistiken, Lernpfad-Fortschritt und Trainings-Bestwerte werden gemeinsam zurückgesetzt. Persönliche App-Einstellungen und Trainingskonfigurationen bleiben erhalten.",
             "18.11.2026 · Build 394" to "Interaktiver Griffbrett-Notentrainer mit sechs Saiten und zwölf Bünden, zufälligen Notenaufgaben, Gitarrenton-Wiedergabe, direkter Richtig/Falsch-Rückmeldung und 10-Runden-Training. Bestserie und persönliche Bestleistung werden gespeichert.",
             "18.11.2026 · Build 392" to "Intelligenter Schlagmuster-Trainer mit acht Rhythmen in vier Schwierigkeitsstufen. Muster können vorgehört und anschließend selbst gespielt werden. Timing-Fenster, Rückmeldung und persönliche Bestwerte unterstützen das Training.",
@@ -29,9 +29,11 @@ required = [
     "Intelligenter Schlagmuster-Trainer",
     "Timing-Fenster",
     "Heute-üben-Dashboard",
+    "Akkordauswahl-Dialog überarbeitet",
+    "Pattern-Textzeile entfernt",
     "Build $buildNumber",
 ]
 missing = [item for item in required if item not in s]
 if missing:
     raise SystemExit("FEHLER: In-App-Changelog unvollständig: " + ", ".join(missing))
-print("IN-APP-CHANGELOG: PASS – Build 399, 394, 392, 390 und 387 dokumentiert.")
+print("IN-APP-CHANGELOG: PASS – aktuelle Reparaturen und die letzten wichtigen Funktionen dokumentiert.")
