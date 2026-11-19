@@ -403,8 +403,10 @@ t = t.replace('''                text = "Bereit · zuerst Muster vorhören"
 t = t.replace('''                        status.text = "Muster gewählt · jetzt vorhören"
 ''', '''                        status.text = "Muster gewählt · bereit zum Training"
 ''')
-if "preview" in t or "learn_strum_bars" in t or "selectedBars" in t:
+if "preview" in t or "selectedBars" in t:
     raise SystemExit("FEHLER: Verwaiste Vorschau- oder Taktanzahl-Referenz im finalen Trainer.")
+if t.count('remove("learn_strum_bars")') != 1 or 'getInt("learn_strum_bars"' in t or 'putInt("learn_strum_bars"' in t:
+    raise SystemExit("FEHLER: Veraltete Taktanzahl-Einstellung wurde nicht vollständig bereinigt.")
 if "previewButton" in t or "barsButton" in t or "actionRow" in t or "val down =" in t or "val up =" in t:
     raise SystemExit("FEHLER: Entfernte Bedienelemente sind noch im Trainer enthalten.")
 if 'val start = a.button("Training starten")' not in t:
