@@ -13,9 +13,18 @@ t = s[start:end]
 old = '''            var selectedChordName = prefs.getString("learn_strum_chord", "G") ?: "G"
             var selectedChord = ChordLibrary.all.firstOrNull { it.name == selectedChordName } ?: ChordLibrary.all.first()
 '''
-new = '''            val savedChordNames = prefs.getStringSet("learn_strum_chords", null)?.toList()
-                ?: listOf(prefs.getString("learn_strum_chord", "G") ?: "G")
-            val selectedChordNames = savedChordNames.filter { name -> ChordLibrary.all.any { it.name == name } }
+new = '''            val orderedChordJson = prefs.getString("learn_strum_chords_ordered", null)
+            val savedChordNames = if (!orderedChordJson.isNullOrBlank()) {
+                runCatching {
+                    val array = org.json.JSONArray(orderedChordJson)
+                    (0 until array.length()).map { array.getString(it) }
+                }.getOrElse { prefs.getStringSet("learn_strum_chords", null)?.toList().orEmpty() }
+            } else {
+                prefs.getStringSet("learn_strum_chords", null)?.toList()
+                    ?: listOf(prefs.getString("learn_strum_chord", "G") ?: "G")
+            }
+            val selectedChordNames = savedChordNames.distinct()
+                .filter { name -> ChordLibrary.all.any { it.name == name } }
                 .ifEmpty { listOf(ChordLibrary.all.first().name) }.toMutableList()
             var selectedChords = selectedChordNames.mapNotNull { name -> ChordLibrary.all.firstOrNull { it.name == name } }
             var selectedMeter = prefs.getString("learn_strum_meter", "4/4") ?: "4/4"
@@ -87,8 +96,11 @@ new = '''            chordButton.setOnClickListener {
                             selectedChordNames.clear()
                             selectedChordNames.addAll(chosen)
                             selectedChords = selectedChordNames.mapNotNull { name -> ChordLibrary.all.firstOrNull { it.name == name } }
-                            prefs.edit().putStringSet("learn_strum_chords", selectedChordNames.toSet())
-                                .putString("learn_strum_chord", selectedChordNames.first()).apply()
+                            prefs.edit()
+                                .putString("learn_strum_chords_ordered", org.json.JSONArray(selectedChordNames).toString())
+                                .putStringSet("learn_strum_chords", selectedChordNames.toSet())
+                                .putString("learn_strum_chord", selectedChordNames.first())
+                                .apply()
                             chordButton.text = "Gitarrenklang · " + selectedChordNames.joinToString(" – ")
                             status.text = selectedChordNames.size.toString() + " Akkorde ausgewählt · ein Akkord pro Takt"
                         } else {
@@ -306,6 +318,84 @@ t = t.replace('''            val start = a.button("Jetzt du · Training starten"
 t = t.replace('''                status.text = "Jetzt du · spiele passend zur Markierung"
 ''', '''                status.text = "Spiele passend zur Markierung"
 ''')
+# Finale Oberfläche und Laufzeitlogik nach dem Entfernen der Vorschau vollständig bereinigen.
+t = t.replace('''            prefs.edit().putInt("learn_skill_strum", prefs.getInt("learn_skill_strum", 0) + 1).apply()
+''', '''            prefs.edit().remove("learn_strum_bars")
+                .putInt("learn_skill_strum", prefs.getInt("learn_skill_strum", 0) + 1).apply()
+''')
+t = t.replace('''            val (card, box) = panel("Schlagmuster-Trainer", "Saitenwerk zeigt dir erst das Muster, dann spielst du selbst. Timing, Richtung und Serien werden direkt ausgewertet.")
+''', '''            val (card, box) = panel("Schlagmuster-Trainer", "Wähle ein Muster und übe den Rhythmus. Timing, Richtung und Serien werden direkt ausgewertet.")
+''')
+t = t.replace('''            val beatRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+''', '''            val beatRow = LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                isClickable = true
+                isFocusable = true
+            }
+            val gestureHint = TextView(a).apply {
+                text = "Im Training auf den Schlagpfeilen wischen: ↓ Abschlag · ↑ Aufschlag"
+                textSize = 12f
+                gravity = Gravity.CENTER
+                setTextColor(a.getColor(R.color.sw_muted))
+                setPadding(a.dp(4), a.dp(2), a.dp(4), a.dp(6))
+            }
+''')
+t = t.replace('''            box.addView(beatRow, LinearLayout.LayoutParams(-1, a.dp(76)))
+            box.addView(status)
+''', '''            box.addView(beatRow, LinearLayout.LayoutParams(-1, a.dp(76)))
+            box.addView(gestureHint)
+            box.addView(status)
+''')
+t = t.replace('''            start.setOnClickListener {
+                if (phase == "play") {
+''', '''            var gestureStartX = 0f
+            var gestureStartY = 0f
+            beatRow.setOnTouchListener { _, event ->
+                when (event.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        gestureStartX = event.x
+                        gestureStartY = event.y
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_UP -> {
+                        val deltaX = event.x - gestureStartX
+                        val deltaY = event.y - gestureStartY
+                        if (phase == "play" &&
+                            kotlin.math.abs(deltaY) >= a.dp(28).toFloat() &&
+                            kotlin.math.abs(deltaY) > kotlin.math.abs(deltaX)) {
+                            val direction = if (deltaY > 0f) "↓" else "↑"
+                            val chord = selectedChords[round.coerceAtLeast(0) % selectedChords.size]
+                            GuitarAudioEngine.playChord(
+                                a, chord, downstroke = direction == "↓", volume = 0.84f
+                            )
+                            userHit(direction)
+                        }
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_CANCEL -> true
+                    else -> true
+                }
+            }
+
+            start.setOnClickListener {
+                if (phase == "play") {
+''')
+t = t.replace('''                        step = (step + 1) % stepsPerBar
+                        if (step == 0) round++
+''', '''                        step += 1
+                        if (step >= stepsPerBar) {
+                            step = 0
+                            round++
+                        }
+''')
+t = t.replace('''                step = 0; hits = 0; misses = 0; score = 0; combo = 0; bestCombo = 0; round = 0; answered = false
+''', '''                step = -1; hits = 0; misses = 0; score = 0; combo = 0; bestCombo = 0; round = 0; answered = false
+''')
+t = t.replace('if (phase == "play" || phase == "preview") return@setOnClickListener',
+              'if (phase == "play") return@setOnClickListener')
+t = t.replace('''                if (phase == "preview") return@setOnClickListener
+''', "")
 # Ohne Vorhörmodus darf der Status keine nicht mehr vorhandene Vorhör-Aktion ankündigen.
 t = t.replace('''                text = "Bereit · zuerst Muster vorhören"
 ''', '''                text = "Bereit · Training starten"
@@ -313,17 +403,32 @@ t = t.replace('''                text = "Bereit · zuerst Muster vorhören"
 t = t.replace('''                        status.text = "Muster gewählt · jetzt vorhören"
 ''', '''                        status.text = "Muster gewählt · bereit zum Training"
 ''')
+if "preview" in t or "learn_strum_bars" in t or "selectedBars" in t:
+    raise SystemExit("FEHLER: Verwaiste Vorschau- oder Taktanzahl-Referenz im finalen Trainer.")
 if "previewButton" in t or "barsButton" in t or "actionRow" in t or "val down =" in t or "val up =" in t:
     raise SystemExit("FEHLER: Entfernte Bedienelemente sind noch im Trainer enthalten.")
 if 'val start = a.button("Training starten")' not in t:
     raise SystemExit("FEHLER: Startbutton-Beschriftung wurde nicht bereinigt.")
+if 'beatRow.setOnTouchListener' not in t or 'userHit(direction)' not in t:
+    raise SystemExit("FEHLER: Wischsteuerung ist nicht mit der Timing-Auswertung verbunden.")
+if 'learn_strum_chords_ordered' not in t or 'org.json.JSONArray(selectedChordNames)' not in t:
+    raise SystemExit("FEHLER: Akkordreihenfolge wird nicht dauerhaft und geordnet gespeichert.")
+if 'step = -1;' not in t:
+    raise SystemExit("FEHLER: Der erste Schlag wird beim Trainingsstart nicht korrekt initialisiert.")
 
 s = s[:start] + t + s[end:]
+if "    private var strumStep = 0\n" in s:
+    s = s.replace("    private var strumStep = 0\n", "", 1)
 main.write_text(s, encoding="utf-8")
 
 required = [
     'setMultiChoiceItems(names, checked)',
     'putStringSet("learn_strum_chords"',
+    'learn_strum_chords_ordered',
+    'org.json.JSONArray(selectedChordNames)',
+    'beatRow.setOnTouchListener',
+    'userHit(direction)',
+    'gestureHint',
     'Taktart auswählen',
     'learn_strum_meter',
     'GuitarAudioEngine.playChord(a, chord',
@@ -333,4 +438,4 @@ if missing:
     raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
 if "selectedChord," in t or "selectedChord)" in t:
     raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
-print("SCHLAGMUSTER-TRAINER: PASS – Mehrfachauswahl, Taktarten und Akkordwechsel im Training integriert; überflüssige Bedienelemente entfernt.")
+print("SCHLAGMUSTER-TRAINER: PASS – Vorschau- und Taktzustände entfernt, Wischsteuerung an Timing-Auswertung gekoppelt, Akkordreihenfolge dauerhaft gesichert.")
