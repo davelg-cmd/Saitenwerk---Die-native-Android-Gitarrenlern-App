@@ -228,6 +228,79 @@ t = t.replace('''                val expected = selected[step]
 if "selectedChord" in t and "selectedChordNames" not in t:
     raise SystemExit("FEHLER: Alte Einzelakkord-Referenz ist noch vorhanden.")
 
+
+# Nicht mehr benötigte Bedienelemente aus dem finalen Trainer entfernen.
+def remove_once(old, label):
+    global t
+    if old not in t:
+        raise SystemExit("FEHLER: Entfernen nicht möglich, Element nicht gefunden: " + label)
+    t = t.replace(old, "", 1)
+
+remove_once('''            val previewButton = a.button("▶ Muster vorhören")
+''', "Muster-vorhören-Button")
+remove_once('''            val barsButton = a.button("Takte · " + selectedBars)
+''', "Takte-Button")
+remove_once('''            val down = a.button("↓ Abschlag")
+            val up = a.button("↑ Aufschlag")
+            val actionRow = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+''', "Abschlag-/Aufschlag-Buttons")
+remove_once('''            box.addView(barsButton, LinearLayout.LayoutParams(-1, a.dp(42)).apply { bottomMargin = a.dp(5) })
+''', "Takte-Button-Layout")
+remove_once('''            box.addView(previewButton, LinearLayout.LayoutParams(-1, a.dp(46)).apply { topMargin = a.dp(2) })
+''', "Muster-vorhören-Layout")
+remove_once('''            actionRow.addView(down, LinearLayout.LayoutParams(0, a.dp(52), 1f).apply { rightMargin = a.dp(4) })
+            actionRow.addView(up, LinearLayout.LayoutParams(0, a.dp(52), 1f).apply { leftMargin = a.dp(4) })
+            box.addView(actionRow, LinearLayout.LayoutParams(-1, a.dp(56)).apply { topMargin = a.dp(6) })
+''', "Abschlag-/Aufschlag-Layout")
+remove_once('''            barsButton.setOnClickListener {
+                if (phase == "play" || phase == "preview") return@setOnClickListener
+                val bars = (1..8).map { it.toString() + (if (it == 1) " Takt" else " Takte") }.toTypedArray()
+                androidx.appcompat.app.AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)
+                    .setTitle("Anzahl der Takte")
+                    .setSingleChoiceItems(bars, selectedBars - 1) { dialog, which ->
+                        selectedBars = which + 1
+                        barsButton.text = "Takte · " + selectedBars
+                        prefs.edit().putInt("learn_strum_bars", selectedBars).apply()
+                        dialog.dismiss()
+                    }.setNegativeButton("Abbrechen", null).show()
+            }
+''', "Takte-Auswahldialog")
+remove_once('''            down.setOnClickListener {
+                if (phase == "play") GuitarAudioEngine.playChord(a, currentPracticeChord(), downstroke = true, volume = 0.84f)
+                userHit("↓")
+            }
+            up.setOnClickListener {
+                if (phase == "play") GuitarAudioEngine.playChord(a, currentPracticeChord(), downstroke = false, volume = 0.84f)
+                userHit("↑")
+            }
+''', "Abschlag-/Aufschlag-Listener")
+# The preview routine is no longer reachable and is removed with its button.
+preview_start = t.find("            fun playPreview() {")
+preview_end = t.find("            fun userHit(direction: String) {", preview_start)
+if preview_start < 0 or preview_end < 0:
+    raise SystemExit("FEHLER: Vorhörfunktion nicht eindeutig gefunden.")
+t = t[:preview_start] + t[preview_end:]
+t = t.replace('''                previewButton.text = "▶ Muster vorhören"
+''', "")
+t = t.replace('''                previewButton.text = "▶ Läuft …"
+''', "")
+t = t.replace('''            previewButton.setOnClickListener { playPreview() }
+''', "")
+t = t.replace('''            start.text = "Jetzt du · Training starten"
+''', '''            start.text = "Training starten"
+''')
+t = t.replace('''            val start = a.button("Jetzt du · Training starten")
+''', '''            val start = a.button("Training starten")
+''')
+t = t.replace('''                status.text = "Jetzt du · spiele passend zur Markierung"
+''', '''                status.text = "Spiele passend zur Markierung"
+''')
+# Keep the selected number of bars as a persisted/default training parameter, without a separate button.
+if "previewButton" in t or "barsButton" in t or "actionRow" in t or "val down =" in t or "val up =" in t:
+    raise SystemExit("FEHLER: Entfernte Bedienelemente sind noch im Trainer enthalten.")
+if 'val start = a.button("Training starten")' not in t:
+    raise SystemExit("FEHLER: Startbutton-Beschriftung wurde nicht bereinigt.")
+
 s = s[:start] + t + s[end:]
 main.write_text(s, encoding="utf-8")
 
