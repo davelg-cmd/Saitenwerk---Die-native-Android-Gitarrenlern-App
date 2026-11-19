@@ -22,6 +22,14 @@ changes = """        val changes = listOf(
             "18.11.2026 · Build 387" to "Ausgangsbasis für die anschließenden Lernstudio-, Trainings- und Fortschrittsverbesserungen."
         )"""
 s = s[:start] + changes + s[end:]
+# Keep this merge build in the visible history on every later release without duplicating it in Build 427 itself.
+current_build = int(os.environ.get("VERSION_CODE", "0")) - 1000
+if current_build != 427:
+    build_427 = '            "19.11.2026 · Build 427" to "Gemeinsamer Gitarrentrainer: Akkordwechsel- und Schlagmuster-Modus in einer einzigen Trainingsoberfläche zusammengeführt. Akkordauswahl, geordnete Akkordfolge, Taktart und Tempo werden gemeinsam verwaltet; Modusumschaltung, ein Start-/Stopp-Steuerelement und ein gemeinsamer Trainingsablauf. Im Akkordwechsel-Modus werden Akkorddiagramm, Akkordfolge und Gitarrenwiedergabe pro Takt angezeigt; im Schlagmuster-Modus bleiben Wischgesten, Tonwiedergabe und Timing-Auswertung aktiv. Bestehende Akkordfolgen, Taktarten, Tempi und Trainingsfortschritte aus beiden bisherigen Trainern werden migriert und die Statistikwerte getrennt fortgeführt. Die separate Trainerklasse und doppelte Traineroberfläche in der Akkordbibliothek entfernt; Song-Praxis besitzt nur noch einen gemeinsamen Trainer-Einstieg.",\\n'
+    anchor = '            "19.11.2026 · Build 426" to'
+    if anchor not in changes:
+        raise SystemExit("FEHLER: Build-426-Historieneintrag zum Ergänzen des Build-427-Verlaufs nicht gefunden.")
+    changes = changes.replace(anchor, build_427 + anchor, 1)
 main.write_text(s, encoding="utf-8")
 
 required = [
