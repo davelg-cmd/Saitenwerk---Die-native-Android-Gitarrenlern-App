@@ -682,7 +682,7 @@ jobs:
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
           start = s.find("        fun showStrumming() {")
-          end = s.find("\\n        fun showSongPractice() {", start)
+          end = s.find("\n        fun showSongPractice() {", start)
           if start < 0 or end < 0:
               raise SystemExit("FEHLER: Schlagmuster-Trainer nicht gefunden.")
           t = s[start:end]
