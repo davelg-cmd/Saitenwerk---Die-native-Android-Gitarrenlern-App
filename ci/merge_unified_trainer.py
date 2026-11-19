@@ -241,12 +241,12 @@ new_tick = '''                        val beatsPerBar = when (selectedMeter) { "
                         expectedAt = android.os.SystemClock.elapsedRealtime()
                         val chord = selectedChords[round % selectedChords.size]
                         if (trainingMode == "changes") {
-                            chordSequenceLabel.text = "Jetzt: \${chord.name}    →    Danach: \${selectedChords[(round + 1) % selectedChords.size].name}"
+                            chordSequenceLabel.text = "Jetzt: ${chord.name}    →    Danach: ${selectedChords[(round + 1) % selectedChords.size].name}"
                             chordDiagram.setChord(chord)
-                            status.text = "Akkordwechsel · Takt \${round + 1} · \${step + 1}/\${beatsPerBar}"
+                            status.text = "Akkordwechsel · Takt ${round + 1} · ${step + 1}/${beatsPerBar}"
                             GuitarAudioEngine.playChord(a, chord, downstroke = step % 2 == 0, volume = if (step == 0) 0.80f else 0.56f)
-                            roundLabel.text = "Takt \${round + 1} · \${chord.name} · \${selectedChords.size} Akkorde in Folge"
-                            stats.text = "Akkordwechsel · \${round} abgeschlossene Takte · Tempo \${bpm} BPM"
+                            roundLabel.text = "Takt ${round + 1} · ${chord.name} · ${selectedChords.size} Akkorde in Folge"
+                            stats.text = "Akkordwechsel · ${round} abgeschlossene Takte · Tempo ${bpm} BPM"
                         } else {
                             markBeat(step % selected.size)
                             val patternIndex = step % selected.size
