@@ -658,6 +658,42 @@ jobs:
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
 
+      - name: Akkordauswahl und Schlagmuster-Layout reparieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_training_selection_and_strumming_layout.py
+
+      - name: Trainingsoberflächen validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          start = s.find("    private fun openChordPicker() {")
+          end = s.find("\\n    private fun openMeterPicker()", start)
+          if start < 0 or end < 0:
+              raise SystemExit("FEHLER: Akkordauswahl-Dialog fehlt.")
+          picker = s[start:end]
+          for required in ['.setPositiveButton("Übernehmen", null)', 'BUTTON_POSITIVE', 'pickerHeightDp', 'sequence = selected']:
+              if required not in picker:
+                  raise SystemExit("FEHLER: Akkordauswahl-Übernahme nicht vollständig: " + required)
+          start = s.find("        fun showStrumming() {")
+          end = s.find("\\n        fun showSongPractice() {", start)
+          trainer = s[start:end] if start >= 0 and end >= 0 else ""
+          if not trainer or "patternHint" in trainer:
+              raise SystemExit("FEHLER: Doppelte Pattern-Textzeile ist noch vorhanden.")
+          if "a.dp(76)" not in trainer or "38f else 30f" not in trainer:
+              raise SystemExit("FEHLER: Schlagpfeile sind nicht ausreichend vergrößert.")
+          if 'box.addView(previewButton' not in trainer or 'box.addView(beatRow' not in trainer:
+              raise SystemExit("FEHLER: Vorhör-Button oder Schlagpfeile fehlen.")
+          print("TRAININGSOBERFLÄCHEN: PASS – Übernehmen-Button, Dialoghöhe, einzelne Pfeildarstellung und größere Schlagpfeile geprüft.")
+          PY
+
       - name: In-App-Changelog mit den letzten Änderungen aktualisieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
