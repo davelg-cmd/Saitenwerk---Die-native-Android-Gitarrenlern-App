@@ -702,8 +702,11 @@ jobs:
           missing = [item for item in required if item not in t]
           if missing:
               raise SystemExit("FEHLER: Akkordfolge/Takt-Auswahl unvollständig: " + ", ".join(missing))
-          if 'setSingleChoiceItems(names' in t:
-              raise SystemExit("FEHLER: Akkordauswahl ist noch eine Einzel-Auswahl.")
+          chord_start = t.find("chordButton.setOnClickListener")
+          meter_start = t.find("meterButton.setOnClickListener", chord_start)
+          chord_picker = t[chord_start:meter_start] if chord_start >= 0 and meter_start >= 0 else ""
+          if not chord_picker or '.setMultiChoiceItems(names, checked)' not in chord_picker or '.setSingleChoiceItems(' in chord_picker:
+              raise SystemExit("FEHLER: Gitarrenklang-Auswahl muss eine echte Mehrfachauswahl sein.")
           if 'selectedChord,' in t or 'selectedChord)' in t:
               raise SystemExit("FEHLER: Einzelakkord-Wiedergabe ist noch vorhanden.")
           print("SCHLAGMUSTER-AKKORDFOLGE: PASS – Mehrfachauswahl, 3/4–4/4–6/8, 1–8 Takte und Akkordwechsel pro Takt geprüft.")
