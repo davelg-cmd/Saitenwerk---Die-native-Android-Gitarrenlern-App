@@ -42,9 +42,9 @@ s = replace_once(s, '''        training = ChordTrainingPanel(a)
         })
 ''', "Akkordbibliothek-Trainerlink")
 class_start = s.find('\nclass ChordTrainingPanel(private val host: MainActivity) : LinearLayout(host) {')
-class_end = s.find('\nobject SongRepository {', class_start)
+class_end = s.find('\ndata class Song(', class_start)
 if class_start < 0 or class_end < 0:
-    raise SystemExit("FEHLER: Alte ChordTrainingPanel-Klasse nicht gefunden.")
+    raise SystemExit("FEHLER: Alte ChordTrainingPanel-Klasse oder Song-Modell nicht gefunden.")
 s = s[:class_start] + s[class_end:]
 
 # The former Akkordwechsel entry now opens the shared trainer in its chord mode.
