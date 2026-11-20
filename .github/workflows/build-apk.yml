@@ -710,9 +710,12 @@ jobs:
               raise SystemExit("FEHLER: Lokale showChanges-Funktion steht vor showStrumming.")
           if 'Akkordwechsel & Schlagmuster trainieren' not in s or 'Zum Lernstudio' not in s:
               raise SystemExit("FEHLER: Gemeinsamer Trainer ist nicht an Song-Praxis und Akkordbibliothek angebunden.")
-          for old in ['Muster vorhören', 'Jetzt du · Training starten', '↓ Abschlag', '↑ Aufschlag', 'previewButton', 'barsButton', 'ChordTrainingPanel']:
-              if old in trainer or old == 'ChordTrainingPanel' and old in s:
-                  raise SystemExit("FEHLER: Entferntes Trainer-Element/Altklasse wieder vorhanden: " + old)
+          forbidden_ui = ['val previewButton', 'val barsButton', 'val down = a.button("↓ Abschlag")', 'val up = a.button("↑ Aufschlag")', 'previewButton.setOnClickListener', 'down.setOnClickListener', 'up.setOnClickListener', 'Muster vorhören', 'Jetzt du · Training starten']
+          found = [x for x in forbidden_ui if x in trainer]
+          if found:
+              raise SystemExit("FEHLER: Entferntes Trainer-Element/Altklasse wieder vorhanden: " + ", ".join(found))
+          if "class ChordTrainingPanel" in s:
+              raise SystemExit("FEHLER: Alte separate Trainerklasse ist noch vorhanden.")
           if 'learn_training_chords_ordered' not in trainer or 'putString("learn_training_chords_ordered", ordered)' not in trainer:
               raise SystemExit("FEHLER: Gemeinsame Akkordreihenfolge wird nicht dauerhaft gespeichert.")
           print("GEMEINSAMER-TRAINER: PASS – gemeinsame Oberfläche, Modi, Einstellungen, Audio, Eingabe, Fortschritt, Migration und Altlasten geprüft.")
