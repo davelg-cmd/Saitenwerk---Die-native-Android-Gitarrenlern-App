@@ -380,7 +380,6 @@ jobs:
               'PDFTextStripper()',
               'PDDocument.load(pdf)',
               'sourcePageEnd',
-              'filesDir',
               'noBackupFilesDir',
               'saveCatalog(context, imported)',
           ]
