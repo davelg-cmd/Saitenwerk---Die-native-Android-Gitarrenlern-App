@@ -61,6 +61,15 @@ if '"♫  Liederbuch"' not in s:
         raise SystemExit("FEHLER: Startseiten-Einstiegspunkt für das Liederbuch nicht gefunden.")
     s = s.replace(marker, replacement, 1)
 
+# Keep the in-app changelog synchronized with the repository changelog.
+if 'Liederbuch wiederhergestellt' not in s:
+    marker = 'val changelog = listOf(\\n'
+    entry = '            "23.11.2026 · Build $buildNumber" to "Liederbuch vollständig wiederhergestellt: Bottom-Navigation und Startseiten-Einstieg reaktiviert; vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Funktionen wieder erreichbar; Songdaten und Songreader-Assets aus dem archivierten Alpha-7-Quellstand wieder eingebunden.",\\n'
+    if marker in s:
+        s = s.replace(marker, marker + entry, 1)
+    else:
+        print("WARNUNG: In-App-Changelog-Liste nicht gefunden; Repository-CHANGELOG wurde aktualisiert.")
+
 main.write_text(s, encoding="utf-8")
 print("LIEDERBUCH-WIEDERHERSTELLUNG: PASS")
 print("Bottom-Navigation, Startseiten-Einstieg, SongRepository-Daten und Songreader-Assets wiederhergestellt.")
