@@ -73,7 +73,7 @@ jobs:
             exit 1
           fi
 
-          LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f \\( -name source-project.tar.gz -o -name source-project.zip \\) -print | sort -V | tail -n 1)"
+          LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f \( -name source-project.tar.gz -o -name source-project.zip \) -print | sort -V | tail -n 1)"
           if [ -z "$LATEST_ARCHIVE" ]; then
             echo "FEHLER: Kein vollständiges Projekt-Backup (source-project.tar.gz oder source-project.zip) gefunden."
             exit 1
