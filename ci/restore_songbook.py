@@ -52,10 +52,11 @@ if "is SongsFragment -> 4" not in s:
 if "4 -> current is SongsFragment" not in s:
     once(r'(3 -> current is ChordsFragment\n)', r'\1            4 -> current is SongsFragment\n', "Navigation-Zustand")
 if "4 -> show(SongsFragment())" not in s:
-    marker = '            3 -> show(ChordsFragment())\\n'
-    if marker not in s:
+    pos = s.find("3 -> show(ChordsFragment())")
+    if pos < 0:
         raise SystemExit("FEHLER: Navigation-Ziel für Akkorde nicht gefunden.")
-    s = s.replace(marker, marker + '            4 -> show(SongsFragment())\\n', 1)
+    line_end = s.find("\n", pos)
+    s = s[:line_end + 1] + "            4 -> show(SongsFragment())\n" + s[line_end + 1:]
 if '"♫  Liederbuch"' not in s:
     marker = '        page.addView(top)\n'
     replacement = marker + '        page.addView(a.button("♫  Liederbuch").apply { setOnClickListener { a.openSection(4) } }, LinearLayout.LayoutParams(-1, a.dp(50)).apply { topMargin = a.dp(10) })\n'
