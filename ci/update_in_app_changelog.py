@@ -13,6 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
+            "23.11.2026 · Build $buildNumber" to "Persönliches Premium-Songbook: alte gemeinfreie/Legacy-Datenquelle und HTML-Liederbuch entfernt. Vollständiger privater PDF-Import mit Prüfung aller 452 Inhaltsverzeichnis-Einträge, vollständigen Songseitenbereichen, Text-/Akkordaufbereitung und Offline-Katalog ergänzt. Das Original-PDF bleibt ausschließlich im privaten App-Speicher; jede Songansicht bietet eine layoutgetreue Originalseiten-Ansicht mit Seitennavigation. Suche berücksichtigt Titel, Künstler, Songtext und Akkorde. Favoriten, Setlisten, Songpraxis, Transponierung, Kapodaster und Player bleiben an den neuen Katalog angebunden.",
             "20.11.2026 · Build $buildNumber" to "Gemeinsamer Gitarrentrainer: Akkordwechsel- und Schlagmuster-Training zu einem Trainer zusammengeführt. Beide Modi teilen Akkordauswahl, geordnete Akkordfolge, Taktart und Tempo; vorhandene Einstellungen werden übernommen. Akkordwechsel zeigt den aktuellen und nächsten Griff samt Griffbild, Schlagmuster nutzt die bestehende Wischsteuerung mit Tonwiedergabe und Timing-Auswertung. Separate ChordTrainingPanel-Implementierung und doppelte Traineroberfläche entfernt; Einstiege aus Song-Praxis und Akkordbibliothek auf den gemeinsamen Trainer umgestellt.",
             "19.11.2026 · Build $buildNumber" to "Gemeinsamer Gitarrentrainer: Akkordwechsel- und Schlagmuster-Modus in einer einzigen Trainingsoberfläche zusammengeführt. Akkordauswahl, geordnete Akkordfolge, Taktart und Tempo werden gemeinsam verwaltet; Modusumschaltung, ein Start-/Stopp-Steuerelement und ein gemeinsamer Trainingsablauf. Im Akkordwechsel-Modus werden Akkorddiagramm, Akkordfolge und Gitarrenwiedergabe pro Takt angezeigt; im Schlagmuster-Modus bleiben Wischgesten, Tonwiedergabe und Timing-Auswertung aktiv. Bestehende Akkordfolgen, Taktarten, Tempi und Trainingsfortschritte aus beiden bisherigen Trainern werden migriert und die Statistikwerte getrennt fortgeführt. Die separate Trainerklasse und doppelte Traineroberfläche in der Akkordbibliothek entfernt; Song-Praxis besitzt nur noch einen gemeinsamen Trainer-Einstieg.",
             "19.11.2026 · Build 426" to "Akkordwechsel-Training: Akkordauswahl-Dialog überarbeitet, damit Übernehmen auch bei langen Listen sichtbar bleibt. Schlagmuster-Trainer: Mehrfachauswahl von Gitarrenakkorden und Taktarten 3/4, 4/4 und 6/8; Akkordwechsel pro Takt. Bedienoberfläche vereinfacht: Muster-vorhören-Button, Takte-Button sowie Abschlag- und Aufschlag-Buttons entfernt. Schlag-Eingabe durch vertikale Wischgesten direkt auf den Schlagpfeilen ersetzt und mit Tonwiedergabe sowie Timing-Auswertung verbunden. Verwaiste Vorschau- und Taktanzahl-Zustände entfernt, erster Taktschlag korrigiert und Akkordreihenfolge dauerhaft geordnet gespeichert. Startbutton heißt jetzt Training starten. Redundante Pattern-Textzeile entfernt und Schlagpfeile vergrößert.",
@@ -34,6 +35,9 @@ if current_build != 427:
 main.write_text(s, encoding="utf-8")
 
 required = [
+    "Persönliches Premium-Songbook",
+    "452 Inhaltsverzeichnis-Einträge",
+    "Original-PDF",
     "Gemeinsamer Gitarrentrainer",
     "Akkordwechsel- und Schlagmuster-Modus",
     "gemeinsam verwaltet",
