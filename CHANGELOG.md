@@ -1,3 +1,11 @@
+## Persönliches Premium-Songbook – 23.11.2026
+- Alte gemeinfreie/Legacy-Liederbuch-Datenquelle und veraltete HTML-Songbook-Implementierung aus dem App-Projekt entfernt.
+- Vollständigen privaten PDF-Import für 452 Songs mit Prüfung der fortlaufenden Inhaltsverzeichnis-Einträge und Erfassung der jeweiligen vollständigen Songseitenbereiche vorbereitet.
+- Original-PDF und extrahierter Katalog werden ausschließlich im nicht automatisch gesicherten privaten App-Speicher abgelegt; keine PDF- oder Songtextdatei wird in öffentliche App-Assets eingebettet.
+- Songsterr-orientierte Songansicht mit Text-/Akkordaufbereitung, Suche über Titel/Künstler/Text/Akkorde, Favoriten, Setlisten, Transponierung, Kapodaster und Songplayer-Anbindung ergänzt.
+- Layoutgetreue Original-PDF-Ansicht pro Song sowie Zugriff auf das vollständige 477-seitige Originaldokument ergänzt.
+- GitHub-Buildworkflow auf private Songbook-Architektur umgestellt; alte Wiederherstellung aus dem Alpha-7-Liederbucharchiv wird nicht mehr ausgeführt.
+
 ## Liederbuch wiederhergestellt – 23.11.2026
 - **Liederbuch wieder aktiviert:** Der vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Code wird wieder über die aktive Bottom-Navigation und einen Startseiten-Einstieg erreichbar gemacht.
 - **Songdaten wiederhergestellt:** Die zuvor entfernten Songbook-Assets werden aus dem archivierten Alpha-7-Quellstand in den aktuellen Build-Prozess übernommen.
