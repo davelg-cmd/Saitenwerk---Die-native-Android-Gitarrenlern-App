@@ -1,0 +1,33 @@
+# Android / Gradle build outputs
+.gradle/
+**/.gradle/
+build/
+**/build/
+out/
+**/out/
+
+# Android generated artifacts
+*.apk
+*.aab
+*.apks
+
+# Backup archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Local Android / IDE configuration
+local.properties
+.idea/
+*.iml
+.externalNativeBuild/
+.cxx/
+
+# Local environment / secrets
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pem

@@ -2,6 +2,13 @@
 
 Alle wesentlichen Änderungen, Erweiterungen, Reparaturen und Problembehebungen werden ab sofort hier dokumentiert. Neue Änderungen werden dem Changelog immer zusammen mit der jeweiligen Entwicklung eingetragen.
 
+## Repository-Aufräumung – 23.11.2026
+- **Repository bereinigt:** Nicht vom aktuellen GitHub-Actions-Build benötigte historische Alpha-7-Backups und das ursprüngliche Alpha-7-ZIP wurden aus dem aktiven Repository-Pfad nach `archiv/` verschoben.
+- **Unverändert:** Der aktuell vom Build-Workflow verwendete Bereich `build-backups/beta` bleibt vollständig erhalten.
+- **Neu:** `.gitignore` ergänzt für Gradle-/Android-Buildausgaben, APK/AAB-Dateien, Backup-Archive und lokale Konfigurations-/Schlüsseldateien.
+- **Sicherheitsprüfung:** Im Repository wurden keine versionierten Keystore-, JKS-, P12-, PEM-, Secret- oder lokalen Konfigurationsdateien gefunden.
+- **Funktionalität:** Keine App-Quellcodes, CI-Skripte oder Workflow-Logik wurden verändert.
+
 ## Build 399 – Lernfortschritt vollständig zurücksetzen
 - **Neu:** In **Einstellungen → Lernfortschritt** gibt es jetzt **„Alles zurücksetzen“**.
 - **Neu:** Sicherheitsabfrage vor dem Zurücksetzen des gesamten Lernfortschritts.
