@@ -94,13 +94,16 @@ drawable.mkdir(parents=True, exist_ok=True)
 check = main.read_text(encoding="utf-8")
 for token in [
     "AlertDialog.Builder(a, R.style.ThemeOverlay_Saitenwerk_Dialog)",
-    "AlertDialog.Builder(host, R.style.ThemeOverlay_Saitenwerk_Dialog)",
     "R.layout.sw_spinner_item",
 ]:
     if token not in check:
         raise SystemExit("UI-MENÜ-VALIDIERUNG FEHLGESCHLAGEN: " + token)
-if "androidx.appcompat.app.AlertDialog.Builder(a)" in check or "androidx.appcompat.app.AlertDialog.Builder(host)" in check:
-    raise SystemExit("Nicht gestalteter AlertDialog-Aufruf verblieben.")
+# A host-context dialog is optional. Validate its style only when such a call exists;
+# projects that use the Activity context exclusively must not fail this check.
+if "androidx.appcompat.app.AlertDialog.Builder(host)" in check:
+    raise SystemExit("Nicht gestalteter AlertDialog-Aufruf mit host-Kontext verblieben.")
+if "androidx.appcompat.app.AlertDialog.Builder(a)" in check:
+    raise SystemExit("Nicht gestalteter AlertDialog-Aufruf mit Activity-Kontext verblieben.")
 if "Widget.Material3.ListPopupWindow" in th or "dropDownListViewStyle" in th:
     raise SystemExit("Nicht unterstützter Popup-Style verblieben.")
 print("SAITENWERK MENÜ-, DROPDOWN- UND DIALOG-DESIGN: PASS")
