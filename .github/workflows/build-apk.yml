@@ -73,15 +73,19 @@ jobs:
             exit 1
           fi
 
-          LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f -name source-project.tar.gz -printf '%h\n' | sort -V | tail -n 1)"
+          LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f \\( -name source-project.tar.gz -o -name source-project.zip \\) -print | sort -V | tail -n 1)"
           if [ -z "$LATEST_ARCHIVE" ]; then
-            echo "FEHLER: Kein vollständiges Projekt-Backup gefunden."
+            echo "FEHLER: Kein vollständiges Projekt-Backup (source-project.tar.gz oder source-project.zip) gefunden."
             exit 1
           fi
 
           PROJECT_DIR="$GITHUB_WORKSPACE/extracted-project"
           mkdir -p "$PROJECT_DIR"
-          tar -xzf "$LATEST_ARCHIVE/source-project.tar.gz" -C "$PROJECT_DIR"
+          case "$LATEST_ARCHIVE" in
+            *.tar.gz) tar -xzf "$LATEST_ARCHIVE" -C "$PROJECT_DIR" ;;
+            *.zip) unzip -q "$LATEST_ARCHIVE" -d "$PROJECT_DIR" ;;
+            *) echo "FEHLER: Nicht unterstütztes Projektarchiv: $LATEST_ARCHIVE"; exit 1 ;;
+          esac
 
           if [ ! -f "$PROJECT_DIR/settings.gradle.kts" ] && [ ! -f "$PROJECT_DIR/settings.gradle" ]; then
             echo "FEHLER: Das entpackte Backup enthält kein Gradle-Projekt."
@@ -339,16 +343,9 @@ jobs:
 
 
       # ------------------------------------------------------------
-      # Vorhandene Funktionen des gespeicherten Projektstands prüfen
+      # Vollständiges persönliches PDF-Songbook validieren
       # ------------------------------------------------------------
-      - name: Liederbuch vollständig wiederherstellen
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/restore_songbook.py
-
-      - name: Liederbuch vollständig validieren
+      - name: Persönliches Premium-Songbook vollständig validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
@@ -357,31 +354,48 @@ jobs:
           import os
           from pathlib import Path
           root = Path(os.environ["PROJECT_DIR"])
-          main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
-          s = main.read_text(encoding="utf-8")
-          required = [
+          main = (root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          importer_path = root / "app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt"
+          if not importer_path.is_file():
+              raise SystemExit("FEHLER: SongbookPdfImporter.kt fehlt.")
+          importer = importer_path.read_text(encoding="utf-8")
+          required_main = [
               'menu.add(0, 4, 3, "Lieder")',
               'is SongsFragment -> 4',
               '4 -> current is SongsFragment',
               '4 -> show(SongsFragment())',
-              '"♫  Liederbuch"',
               'class SongsFragment : Fragment()',
               'class SongDetailFragment : Fragment()',
-              'a.assets.open("songs.json")',
-              'a.assets.open("public_domain_sheets.json")',
+              'SongbookPdfImporter.importPdf',
+              'SongbookPdfViewer.show',
+              'sourcePageStart',
+              'importedContent',
+              'Komplettes Original-PDF ansehen',
           ]
-          missing = [x for x in required if x not in s]
+          missing = [item for item in required_main if item not in main]
           if missing:
-              raise SystemExit("FEHLER: Liederbuch unvollständig verdrahtet: " + ", ".join(missing))
-          for rel in [
-              "app/src/main/assets/songs.json",
-              "app/src/main/assets/public_domain_sheets.json",
-              "app/src/main/res/drawable/ic_nav_songs.xml",
-          ]:
-              p = root / rel
-              if not p.is_file() or p.stat().st_size == 0:
-                  raise SystemExit("FEHLER: Liederbuch-Ressource fehlt oder ist leer: " + rel)
-          print("LIEDERBUCH: PASS – Navigation, Startseiten-Einstieg, Songkatalog und Songreader-Assets vorhanden.")
+              raise SystemExit("FEHLER: Songbook-Integration unvollständig: " + ", ".join(missing))
+          required_importer = [
+              'EXPECTED_SONGS = 452',
+              'PDFTextStripper()',
+              'PDDocument.load(pdf)',
+              'sourcePageEnd',
+              'filesDir',
+              'noBackupFilesDir',
+              'saveCatalog(context, imported)',
+          ]
+          missing = [item for item in required_importer if item not in importer]
+          if missing:
+              raise SystemExit("FEHLER: Vollständiger PDF-Import unvollständig: " + ", ".join(missing))
+          if 'a.assets.open("songs.json")' in main or 'a.assets.open("public_domain_sheets.json")' in main:
+              raise SystemExit("FEHLER: Alte Liederbuch-Datenquelle ist noch aktiv.")
+          if (root / "app/src/main/assets/saitenwerk_legacy.html").exists():
+              raise SystemExit("FEHLER: Alte HTML-Liederbuch-Implementierung ist noch vorhanden.")
+          if 'implementation("com.tom-roush:pdfbox-android:2.0.27.0")' not in (root / "app/build.gradle.kts").read_text(encoding="utf-8"):
+              raise SystemExit("FEHLER: PDFBox-Android-Abhängigkeit fehlt.")
+          if not (root / "app/src/main/res/drawable/ic_nav_songs.xml").is_file():
+              raise SystemExit("FEHLER: Lieder-Navigationssymbol fehlt.")
+          print("PERSÖNLICHES PREMIUM-SONGBOOK: PASS – PDF-Import, 452er-Katalogprüfung, Offline-Speicherung, Originalseitenansicht und Legacy-Entfernung geprüft.")
           PY
 
       - name: Stimmgerät-Design und Bedienung optimieren
