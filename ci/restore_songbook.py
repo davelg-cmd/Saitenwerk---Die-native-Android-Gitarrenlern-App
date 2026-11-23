@@ -66,7 +66,7 @@ if '"♫  Liederbuch"' not in s:
 # Keep the in-app changelog synchronized with the repository changelog.
 if 'Liederbuch wiederhergestellt' not in s:
     marker = 'val changes = listOf(\n'
-    entry = '            "23.11.2026 · Build $buildNumber" to "Liederbuch vollständig wiederhergestellt: Bottom-Navigation und Startseiten-Einstieg reaktiviert; vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Funktionen wieder erreichbar; Songdaten und Songreader-Assets aus dem archivierten Alpha-7-Quellstand wieder eingebunden.",\\n'
+    entry = '            "23.11.2026 · Build $buildNumber" to "Liederbuch vollständig wiederhergestellt: Bottom-Navigation und Startseiten-Einstieg reaktiviert; vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Funktionen wieder erreichbar; Songdaten und Songreader-Assets aus dem archivierten Alpha-7-Quellstand wieder eingebunden.",\n'
     if marker in s:
         s = s.replace(marker, marker + entry, 1)
     else:
