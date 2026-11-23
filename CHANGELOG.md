@@ -1,3 +1,10 @@
+## Liederbuch wiederhergestellt – 23.11.2026
+- **Liederbuch wieder aktiviert:** Der vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Code wird wieder über die aktive Bottom-Navigation und einen Startseiten-Einstieg erreichbar gemacht.
+- **Songdaten wiederhergestellt:** Die zuvor entfernten Songbook-Assets werden aus dem archivierten Alpha-7-Quellstand in den aktuellen Build-Prozess übernommen.
+- **Songreader wiederhergestellt:** Songblätter, Akkorddarstellung, Transponierung, Kapodaster, Favoriten, Setlist und der vorhandene Song-Player bleiben an den bestehenden Songbook-Code angebunden.
+- **CI angepasst:** Die bisherige Prüfung auf die Entfernung des Liederbuchs wurde durch eine vollständige Wiederherstellungs- und Validierungsprüfung ersetzt.
+- **Wichtig:** Der App-Quellstand im aktuellen Build-Backup wird nicht durch einen alten Gesamtstand ersetzt; die Wiederherstellung erfolgt gezielt und nur für die fehlenden Liederbuch-Einstiege und -Assets.
+
 # Saitenwerk – Changelog
 
 Alle wesentlichen Änderungen, Erweiterungen, Reparaturen und Problembehebungen werden ab sofort hier dokumentiert. Neue Änderungen werden dem Changelog immer zusammen mit der jeweiligen Entwicklung eingetragen.
