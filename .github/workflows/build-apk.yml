@@ -341,7 +341,14 @@ jobs:
       # ------------------------------------------------------------
       # Vorhandene Funktionen des gespeicherten Projektstands prüfen
       # ------------------------------------------------------------
-      - name: Liederbuch-Entfernung validieren
+      - name: Liederbuch vollständig wiederherstellen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/restore_songbook.py
+
+      - name: Liederbuch vollständig validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
@@ -349,33 +356,32 @@ jobs:
           python3 - <<'PY'
           import os
           from pathlib import Path
-
           root = Path(os.environ["PROJECT_DIR"])
           main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
           s = main.read_text(encoding="utf-8")
-
-          forbidden = [
+          required = [
               'menu.add(0, 4, 3, "Lieder")',
-              '"♫  Liederbuch" to 4',
               'is SongsFragment -> 4',
               '4 -> current is SongsFragment',
               '4 -> show(SongsFragment())',
+              '"♫  Liederbuch"',
+              'class SongsFragment : Fragment()',
+              'class SongDetailFragment : Fragment()',
+              'a.assets.open("songs.json")',
+              'a.assets.open("public_domain_sheets.json")',
           ]
-          found = [x for x in forbidden if x in s]
-          if found:
-              raise SystemExit("FEHLER: Liederbuch ist weiterhin in der aktiven UI verdrahtet: " + ", ".join(found))
-
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Liederbuch unvollständig verdrahtet: " + ", ".join(missing))
           for rel in [
               "app/src/main/assets/songs.json",
               "app/src/main/assets/public_domain_sheets.json",
               "app/src/main/res/drawable/ic_nav_songs.xml",
           ]:
-              if (root / rel).exists():
-                  raise SystemExit("FEHLER: Liederbuch-Ressource weiterhin im APK-Projekt vorhanden: " + rel)
-
-          print("LIEDERBUCH-ENTFERNUNG: PASS")
-          print("Keine Lieder-Navigation, kein Startseiten-Einstieg und keine Songdaten im APK-Projekt.")
-
+              p = root / rel
+              if not p.is_file() or p.stat().st_size == 0:
+                  raise SystemExit("FEHLER: Liederbuch-Ressource fehlt oder ist leer: " + rel)
+          print("LIEDERBUCH: PASS – Navigation, Startseiten-Einstieg, Songkatalog und Songreader-Assets vorhanden.")
           PY
 
       - name: Stimmgerät-Design und Bedienung optimieren
