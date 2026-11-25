@@ -20,7 +20,9 @@ block = '''        section("Lernfortschritt","Setze sämtliche gespeicherten Ler
                 .setMessage("Dabei werden alle Lernstudio- und Lernpfad-Werte gelöscht: Übungsminuten, Tages- und Wochenzeiten, XP, Level, Serien, Quizpunkte, Bestwerte, geführte Sessions, Schlagmuster-, Rhythmus-, Griffbrett- und Akkordwechsel-Statistiken sowie abgeschlossene Lernstufen. Deine App-Einstellungen, Akkordauswahl, Tempi, Taktarten und Song-Arrangements bleiben erhalten.")
                 .setNegativeButton("Abbrechen", null)
                 .setPositiveButton("Alles zurücksetzen") { _, _ ->
-                    a.getSharedPreferences("saitenwerk", 0).edit()
+                    val resetPrefs = a.getSharedPreferences("saitenwerk", 0)
+                    val editor = resetPrefs.edit()
+                    editor
                         // Lernstudio: Zeit, Serien, XP, Quiz und Routine
                         .remove("learn_daily_day")
                         .remove("learn_daily_seconds")
@@ -54,7 +56,14 @@ block = '''        section("Lernfortschritt","Setze sämtliche gespeicherten Ler
                         // Griffbrett-Notentrainer
                         .remove("learn_fretboard_best_streak")
                         .remove("learn_fretboard_best_score")
-                        .apply()
+                    val statsKeys = resetPrefs.all.keys.filter {
+                        it.startsWith("learn_chord_listen_attempts_") ||
+                        it.startsWith("learn_chord_listen_correct_")
+                    }
+                    statsKeys.forEach { editor.remove(it) }
+                    editor.remove("learn_chord_listen_errors")
+                    editor.remove("learn_chord_listen_best_streak")
+                    editor.apply()
                     Toast.makeText(a, "Gesamter Lernfortschritt wurde zurückgesetzt", Toast.LENGTH_SHORT).show()
                 }
                 .show()

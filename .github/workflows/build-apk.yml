@@ -338,6 +338,9 @@ jobs:
               'chord_training_mastered',
               'learn_fretboard_best_streak',
               'learn_fretboard_best_score',
+              'statsKeys.forEach { editor.remove(it) }',
+              'learn_chord_listen_errors',
+              'learn_chord_listen_best_streak',
           ]
           missing = [x for x in required if x not in s]
           if missing:
