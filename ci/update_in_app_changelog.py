@@ -26,17 +26,6 @@ changes = """        val changes = listOf(
             "18.11.2026 · Build 390" to "Persönliches Heute-üben-Dashboard im Lernstudio mit Schnellstart, Wochenübersicht und direktem Einstieg in die Trainingseinheiten.",
             "18.11.2026 · Build 387" to "Ausgangsbasis für die anschließenden Lernstudio-, Trainings- und Fortschrittsverbesserungen."
         )"""
-current_build_for_entry = int(os.environ.get("VERSION_CODE", "0")) - 1000
-if current_build_for_entry > 495:
-    from datetime import datetime
-    build_date = datetime.now().strftime("%d.%m.%Y")
-    entry = (
-        f'            "{build_date} · Build {current_build_for_entry}" to '
-        '"Akkord-Blitztrainer: vier technikbasierte Schwierigkeitsstufen (Anfänger, Fortgeschrittene Anfänger, Fortgeschritten, Experte). '
-        '93 eindeutige Griffbilder werden nach Grifftechnik einsortiert; Beschreibung und Akkordanzahl werden angezeigt. '
-        'Adaptive Wiederholung, Fehlerliste und Einzelakkord-Statistiken bleiben erhalten; Fehlertraining bleibt innerhalb der gewählten Stufe.",\n'
-    )
-    changes = changes.replace("val changes = listOf(\n", "val changes = listOf(\n" + entry, 1)
 s = s[:start] + changes + s[end:]
 # Keep this merge build in the visible history on every later release without duplicating it in Build 427 itself.
 current_build = int(os.environ.get("VERSION_CODE", "0")) - 1000

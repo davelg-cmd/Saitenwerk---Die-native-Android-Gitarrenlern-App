@@ -1,4 +1,4 @@
-## Akkord-Blitztrainer – Schwierigkeitsstufen – 25.11.2026 · Build 496
+## Akkord-Blitztrainer – Schwierigkeitsstufen – 25.11.2026 · Build 497
 - **Vier klare Lernstufen:** Anfänger, Fortgeschrittene Anfänger, Fortgeschritten und Experte ersetzen die bisherigen Akkordfamilien als Trainingskategorien.
 - **Technikbasierte Zuordnung:** Alle 93 im Quiz verwendeten eindeutigen Griffbilder werden anhand offener Grundgriffe, offener Erweiterungen, Barré-/Powertechnik und komplexer Voicings einsortiert; die deutsche/internationale B/Bb-Doppelbezeichnung bleibt wie bisher ohne doppelte Quizfrage.
 - **Stufenübersicht:** Jede Auswahl zeigt Beschreibung und Anzahl der enthaltenen Akkorde; „Alle“ bleibt als freies gemischtes Training verfügbar.

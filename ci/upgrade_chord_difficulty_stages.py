@@ -126,9 +126,7 @@ new = '''            val stageOptions = listOf("Alle") + ChordLibrary.difficulty
             }'''
 if old not in s: raise SystemExit("Alter Kategorien-Dialog nicht gefunden")
 s = s.replace(old, new, 1)
-s = s.replace('            categoryButton.text = "Kategorie · $category"
-            newQuestion()', '            updateStageHeader()
-            newQuestion()', 1)
+s = s.replace('            categoryButton.text = "Kategorie · $category"', '            updateStageHeader()', 1)
 
 required = ['val difficultyStages = listOf("Anfänger", "Fortgeschrittene Anfänger", "Fortgeschritten", "Experte")',
             'fun difficultyFor(shape: ChordShape): String', 'setTitle("Schwierigkeitsstufe")',
