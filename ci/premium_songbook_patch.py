@@ -11,19 +11,24 @@ def rep(old,new,label):
     if old not in s: raise SystemExit(f"PATCH FEHLER: {label} nicht gefunden")
     s=s.replace(old,new,1)
 
-rep('''            menu.add(0, 3, 2, "Akkorde").setIcon(R.drawable.ic_nav_chords)
-            menu.add(0, 5, 4, "Lernstudio").setIcon(R.drawable.ic_nav_learn)''','''            menu.add(0, 3, 2, "Akkorde").setIcon(R.drawable.ic_nav_chords)
-            menu.add(0, 4, 3, "Lieder").setIcon(R.drawable.ic_nav_songs)
-            menu.add(0, 5, 4, "Lernstudio").setIcon(R.drawable.ic_nav_learn)''',"Navigation")
-rep('''            is ChordsFragment -> 3
+if 'menu.add(0, 4, 3, "Lieder").setIcon(R.drawable.ic_nav_songs)' not in s:
+    marker='menu.add(0, 3, 2, "Akkorde").setIcon(R.drawable.ic_nav_chords)'
+    pos=s.find(marker)
+    if pos<0: raise SystemExit("PATCH FEHLER: Navigation nicht gefunden")
+    line_end=s.find("\n",pos)
+    s=s[:line_end+1]+'            menu.add(0, 4, 3, "Lieder").setIcon(R.drawable.ic_nav_songs)\n'+s[line_end+1:]
+if 'is SongsFragment -> 4' not in s:
+    rep('''            is ChordsFragment -> 3
             is LearnFragment -> 5''','''            is ChordsFragment -> 3
             is SongsFragment -> 4
             is LearnFragment -> 5''',"Navigation-Sync")
-rep('''            3 -> current is ChordsFragment
+if '4 -> current is SongsFragment' not in s:
+    rep('''            3 -> current is ChordsFragment
             5 -> current is LearnFragment''','''            3 -> current is ChordsFragment
             4 -> current is SongsFragment
             5 -> current is LearnFragment''',"Navigation-Routing")
-rep('''            3 -> show(ChordsFragment())
+if '4 -> show(SongsFragment())' not in s:
+    rep('''            3 -> show(ChordsFragment())
             5 -> show(LearnFragment())''','''            3 -> show(ChordsFragment())
             4 -> show(SongsFragment())
             5 -> show(LearnFragment())''',"Navigation-Ziel")
