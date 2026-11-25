@@ -13,6 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
+            "25.11.2026 · Build 492" to "Akkordgriff-Korrektur: C#7, D#7 und C6 um fehlende Akkordtöne ergänzt. Die CI prüft die tatsächlichen Tonklassen dieser Griffbilder gegen die erwarteten Akkordtöne sowie die sechs Saiten- und Fingerpositionen. Der Premium-Blitztrainer und seine adaptive Datenbank bleiben erhalten.",
             "25.11.2026 · Build 491" to "Akkord-Blitztrainer Premium: vier Modi (Griffbild erkennen, Griff zuordnen, 60-Sekunden-Blitzrunde und Fehlertraining), adaptive Wiederholung nach individueller Trefferquote, dauerhaft gespeicherte Fehlerliste, Reaktionszeit und Serien. Die zentrale ChordLibrary wurde von 67 auf 94 eindeutige Griffbilder erweitert; neue Dur-, Moll-, Sept-, Add-, Sus-, Power-, übermäßige und verminderte Akkorde mit geprüften Sechs-Saiten- und Fingerpositionen. Der vollständige Lernfortschritt-Reset löscht auch die neuen Einzelakkord-Statistiken, bewahrt aber Modus- und Kategorieeinstellungen.",
             "25.11.2026 · Build 490" to "Update-Installation repariert: DownloadManager-Abschlussmeldungen werden auf Android 13+ über einen exportierten, auf die erwartete Download-ID und den tatsächlichen Download-Status geprüften Broadcast-Empfänger verarbeitet. Nach erfolgreichem APK-Download kann der Android-Installationsdialog automatisch geöffnet werden, ohne die Download-Benachrichtigung antippen zu müssen.",
             "25.11.2026 · Build 483" to "Verworfenes Songbook vollständig zurückgebaut: Navigation, Datenmodell, Repository, Listen-/Detailansichten, PDF-Importer, PDF-Viewer, PDFBox-Abhängigkeit und zugehörige Ressourcen aus dem App-Projekt entfernt. Song-Praxis, gemeinsamer Gitarrentrainer, Akkordbibliothek, Lernstudio, Lernfortschritt und Stimmgerät bleiben erhalten. Die CI prüft die Abwesenheit aller Songbook-Komponenten vor dem Build.",
@@ -62,6 +63,11 @@ required = [
     "Build 483",
     "Build 490",
     "Build 491",
+    "Build 492",
+    "Akkordgriff-Korrektur",
+    "C#7",
+    "D#7",
+    "C6",
     "Akkord-Blitztrainer Premium",
     "60-Sekunden-Blitzrunde",
     "94 eindeutige Griffbilder",

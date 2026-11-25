@@ -1,3 +1,8 @@
+## Akkordgriff-Prüfung – 25.11.2026 · Build 492
+- **Voicings präzisiert:** C#7, D#7 und C6 enthalten jetzt die vollständigen charakteristischen Akkordtöne.
+- **Musikalische Validierung:** Die CI berechnet aus Standardstimmung und Bundpositionen die tatsächlich klingenden Tonklassen und vergleicht sie mit den erwarteten Tönen dieser drei Akkorde.
+- **Regression abgesichert:** Der Premium-Blitztrainer aus Build 491 wird aus dem geprüften Quellbackup übernommen und nicht erneut doppelt in die Akkorddatenbank eingefügt. Die Griffbildkorrekturen werden bei jedem folgenden Build erneut validiert.
+
 ## Akkord-Blitztrainer Premium – 25.11.2026
 - **Vier Trainingsmodi:** Griffbild erkennen, Griff zuordnen (Name → Griffbild), 60-Sekunden-Blitzrunde und gezieltes Fehlertraining.
 - **Adaptive Wiederholung:** Individuelle Trefferquoten je Akkord, gewichtete Fragenauswahl zugunsten unsicherer Griffe, dauerhaft gespeicherte Fehlerliste und automatische Entlastung nach drei sicheren Antworten in Folge.
