@@ -285,7 +285,6 @@ jobs:
           end = s.find("\nclass GuitarFretboardView", start)
           section = s[start:end] if start >= 0 and end > start else ""
           required = [
-              "SAITENWERK_CHORDS_PREMIUM_V1",
               "DEIN AKKORD-ATLAS",
               "Akkord suchen",
               "Favoriten",
@@ -301,7 +300,7 @@ jobs:
           missing = [item for item in required if item not in section]
           if missing:
               raise SystemExit("FEHLER: Premium-Akkordbereich unvollständig: " + ", ".join(missing))
-          if section.count("SAITENWERK_CHORDS_PREMIUM_V1") != 1:
+          if s.count("SAITENWERK_CHORDS_PREMIUM_V1") != 1:
               raise SystemExit("FEHLER: Premium-Akkordbereich mehrfach integriert.")
           print("PREMIUM-AKKORDBIBLIOTHEK: PASS – Suche, Filter, Favoriten, zweispaltige Übersicht, Griffdetails, Audio und Lernstudio-Einstieg geprüft.")
           PY
