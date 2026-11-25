@@ -121,10 +121,29 @@ if 'putString("importedContent", song.importedContent)' not in s:
             raise SystemExit("PATCH FEHLER: Song-Bundle: weder Genre- noch Künstlerfeld im Speicherblock gefunden")
         at = artist_match.end()
         s = s[:at] + bundle_fields + s[at:]
-rep('''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
-        } ?: Song("Unbekannter Titel")''','''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty(), false,
+old_bundle_read = '''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
+        } ?: Song("Unbekannter Titel")'''
+new_bundle_read = '''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty(), false,
                 it.getInt("sourcePageStart",0), it.getInt("sourcePageEnd",0), it.getString("importedContent").orEmpty())
-        } ?: Song("Unbekannter Titel")''',"Song-Bundle-Auslesen")
+        } ?: Song("Unbekannter Titel")'''
+if old_bundle_read in s:
+    rep(old_bundle_read, new_bundle_read, "Song-Bundle-Auslesen")
+else:
+    marker = 'val song = arguments?.let {'
+    start_bundle = s.find(marker)
+    end_bundle = s.find('} ?: Song("Unbekannter Titel")', start_bundle)
+    if start_bundle < 0 or end_bundle < 0:
+        raise SystemExit("PATCH FEHLER: Song-Bundle-Block nicht gefunden")
+    bundle_reader = s[start_bundle:end_bundle]
+    required_bundle_fields = [
+        'it.getInt("sourcePageStart",0)',
+        'it.getInt("sourcePageEnd",0)',
+        'it.getString("importedContent").orEmpty()'
+    ]
+    missing_bundle_fields = [field for field in required_bundle_fields if field not in bundle_reader]
+    if missing_bundle_fields:
+        raise SystemExit("PATCH FEHLER: Song-Bundle-Felder fehlen: " + ", ".join(missing_bundle_fields))
+    print("SONG-BUNDLE: vorhandene PDF-Felder bereits korrekt – keine doppelte Änderung nötig")
 rep('''        val bundledSheet = try {
             val raw = a.assets.open("public_domain_sheets.json").bufferedReader().use { it.readText() }
             val arr = JSONArray(raw)
