@@ -74,6 +74,12 @@ jobs:
           fi
 
           LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f \( -name source-project.tar.gz -o -name source-project.zip \) -print | sort -V | tail -n 1)"
+          # Build 479 enthält das verworfene Premium-Songbook. Für den einmaligen
+          # Rückbau bewusst auf den letzten davor geprüften Stand Build 436 zurückgehen.
+          if [[ "$LATEST_ARCHIVE" == "$BACKUP_ROOT/build-479/source-project.tar.gz" || "$LATEST_ARCHIVE" == "$BACKUP_ROOT/build-479/source-project.zip" ]]; then
+            LATEST_ARCHIVE="$BACKUP_ROOT/build-436/source-project.tar.gz"
+            echo "Songbook-Rückbau: Build 479 übersprungen; verwende geprüften Ausgangsstand Build 436."
+          fi
           if [ -z "$LATEST_ARCHIVE" ]; then
             echo "FEHLER: Kein vollständiges Projekt-Backup (source-project.tar.gz oder source-project.zip) gefunden."
             exit 1
@@ -342,83 +348,28 @@ jobs:
           python3 ci/configure_stable_signing.py
 
 
-      - name: Persönliches Premium-Songbook anwenden
+      - name: Verworfenes Songbook vollständig entfernen
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          mkdir -p "$PROJECT_DIR/ci"
-          cp "$GITHUB_WORKSPACE/ci/premium_songbook_patch.py" "$PROJECT_DIR/ci/premium_songbook_patch.py"
-          PROJECT_DIR="$PROJECT_DIR" python3 "$PROJECT_DIR/ci/premium_songbook_patch.py"
+          python3 ci/remove_songbook.py
 
-      - name: Build-436-Quellprojekt als Arbeitsartefakt sichern
+      - name: Bereinigten Quellstand als Arbeitsartefakt sichern
         uses: actions/upload-artifact@v4
         with:
-          name: Saitenwerk-Build-436-Source
+          name: Saitenwerk-Quellstand-ohne-Songbook
           path: ${{ env.PROJECT_DIR }}/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
 
-      # ------------------------------------------------------------
-      # Vollständiges persönliches PDF-Songbook validieren
-      # ------------------------------------------------------------
-      - name: Persönliches Premium-Songbook vollständig validieren
+      - name: Songbook-Rückbau und Restfreiheit validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-          root = Path(os.environ["PROJECT_DIR"])
-          main = (root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
-          importer_path = root / "app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt"
-          if not importer_path.is_file():
-              raise SystemExit("FEHLER: SongbookPdfImporter.kt fehlt.")
-          importer = importer_path.read_text(encoding="utf-8")
-          required_main = [
-              'menu.add(0, 4, 3, "Lieder")',
-              'is SongsFragment -> 4',
-              '4 -> current is SongsFragment',
-              '4 -> show(SongsFragment())',
-              'class SongsFragment : Fragment()',
-              'class SongDetailFragment : Fragment()',
-              'SongbookPdfImporter.importPdf',
-              'SongbookPdfViewer.show',
-              'sourcePageStart',
-              'importedContent',
-              'Original-PDF-Seiten ansehen',
-          ]
-          missing = [item for item in required_main if item not in main]
-          if missing:
-              raise SystemExit("FEHLER: Songbook-Integration unvollständig: " + ", ".join(missing))
-          required_importer = [
-              'EXPECTED_SONGS=452',
-              'PDFTextStripper()',
-              'PDDocument.load(file)',
-              'sourcePageEnd',
-              'filesDir',
-              'File(context.filesDir,CATALOG_FILE)',
-          ]
-          missing = [item for item in required_importer if item not in importer]
-          if missing:
-              raise SystemExit("FEHLER: Vollständiger PDF-Import unvollständig: " + ", ".join(missing))
-          if 'a.assets.open("songs.json")' in main or 'a.assets.open("public_domain_sheets.json")' in main:
-              raise SystemExit("FEHLER: Alte Liederbuch-Datenquelle ist noch aktiv.")
-          for legacy in [
-              "app/src/main/assets/saitenwerk_legacy.html",
-              "app/src/main/assets/songs.json",
-              "app/src/main/assets/public_domain_sheets.json",
-          ]:
-              if (root / legacy).exists():
-                  raise SystemExit("FEHLER: Alte Liederbuch-Ressource ist noch vorhanden: " + legacy)
-          if 'implementation("com.tom-roush:pdfbox-android:2.0.27.0")' not in (root / "app/build.gradle.kts").read_text(encoding="utf-8"):
-              raise SystemExit("FEHLER: PDFBox-Android-Abhängigkeit fehlt.")
-          if not (root / "app/src/main/res/drawable/ic_nav_songs.xml").is_file():
-              raise SystemExit("FEHLER: Lieder-Navigationssymbol fehlt.")
-          print("PERSÖNLICHES PREMIUM-SONGBOOK: PASS – PDF-Import, 452er-Katalogprüfung, Offline-Speicherung, Originalseitenansicht und Legacy-Entfernung geprüft.")
-          PY
+          python3 ci/remove_songbook.py --verify
 
       - name: Stimmgerät-Design und Bedienung optimieren
         env:

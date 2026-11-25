@@ -1,27 +1,9 @@
-## Songbook-CI: bestehende Bundle-Felder erkennen – 25.11.2026
-- Ursache von Build #475 behoben: Das Patchskript erwartete eine veraltete dreifeldrige Song-Konstruktorzeile, obwohl Build 436 die PDF-Felder `sourcePageStart`, `sourcePageEnd` und `importedContent` bereits vollständig aus dem Bundle liest.
-- Der Patch prüft diese drei Felder jetzt im vorhandenen `SongDetailFragment` und lässt eine bereits korrekte Implementierung unverändert; fehlende Felder führen weiterhin zu einer klaren Fehlermeldung.
-- Der neue GitHub-Workflow wird zur Bestätigung ausgeführt. Ein erfolgreicher Android-Build und ein Importtest auf einem Gerät sind noch nicht bestätigt.
-
-## CI-Reparatur Premium-Songbook – 25.11.2026
-- Beschädigte, mehrfach angehängte Fragmente aus `ci/premium_songbook_patch.py` entfernt; Python-RegEx-Import ergänzt.
-- Original-PDF-Viewer: Seitenanzeige-Interpolation korrigiert.
-- Diese Änderungen beheben den zuletzt diagnostizierten Python-Syntaxfehler; ein erfolgreicher Android-Build und ein PDF-Import auf einem Gerät sind damit noch nicht bestätigt.
-
-## Persönliches Premium-Songbook – 23.11.2026
-- Alte gemeinfreie/Legacy-Liederbuch-Datenquelle und veraltete HTML-Songbook-Implementierung aus dem App-Projekt entfernt.
-- Vollständigen privaten PDF-Import für 452 Songs mit Prüfung der fortlaufenden Inhaltsverzeichnis-Einträge und Erfassung der jeweiligen vollständigen Songseitenbereiche vorbereitet.
-- Original-PDF und extrahierter Katalog werden ausschließlich im nicht automatisch gesicherten privaten App-Speicher abgelegt; keine PDF- oder Songtextdatei wird in öffentliche App-Assets eingebettet.
-- Songsterr-orientierte Songansicht mit Text-/Akkordaufbereitung, Suche über Titel/Künstler/Text/Akkorde, Favoriten, Setlisten, Transponierung, Kapodaster und Songplayer-Anbindung ergänzt.
-- Layoutgetreue Original-PDF-Ansicht pro Song sowie Zugriff auf das vollständige 477-seitige Originaldokument ergänzt.
-- GitHub-Buildworkflow auf private Songbook-Architektur umgestellt; alte Wiederherstellung aus dem Alpha-7-Liederbucharchiv wird nicht mehr ausgeführt.
-
-## Liederbuch wiederhergestellt – 23.11.2026
-- **Liederbuch wieder aktiviert:** Der vorhandene SongRepository-, SongsFragment- und SongDetailFragment-Code wird wieder über die aktive Bottom-Navigation und einen Startseiten-Einstieg erreichbar gemacht.
-- **Songdaten wiederhergestellt:** Die zuvor entfernten Songbook-Assets werden aus dem archivierten Alpha-7-Quellstand in den aktuellen Build-Prozess übernommen.
-- **Songreader wiederhergestellt:** Songblätter, Akkorddarstellung, Transponierung, Kapodaster, Favoriten, Setlist und der vorhandene Song-Player bleiben an den bestehenden Songbook-Code angebunden.
-- **CI angepasst:** Die bisherige Prüfung auf die Entfernung des Liederbuchs wurde durch eine vollständige Wiederherstellungs- und Validierungsprüfung ersetzt.
-- **Wichtig:** Der App-Quellstand im aktuellen Build-Backup wird nicht durch einen alten Gesamtstand ersetzt; die Wiederherstellung erfolgt gezielt und nur für die fehlenden Liederbuch-Einstiege und -Assets.
+## Vollständiger Songbook-Rückbau – 25.11.2026
+- Rückbau des verworfenen Songbook-Experiments in der Build-Pipeline umgesetzt: Der Workflow verwendet für diesen einmaligen Rückbau den geprüften Ausgangsstand Build 436 statt des Songbook-haltigen Build 479.
+- Die CI entfernt Songbook-Navigation, Song-Datenmodell, Repository, Listen- und Detailansichten, PDF-Importer/-Viewer, PDFBox-Abhängigkeit sowie die zugehörigen Ressourcen.
+- Die Entfernung wird vor dem Android-Build automatisiert auf verbliebene Klassen, Verweise, Abhängigkeiten und Ressourcen geprüft.
+- Song-Praxis, gemeinsamer Gitarrentrainer, Akkordbibliothek, Lernstudio, Lernfortschritt, Stimmgerät und die übrigen bestehenden Trainingsfunktionen bleiben erhalten.
+- Der anschließende Android-Build muss den Rückbau noch bestätigen; ein erfolgreicher Build und ein Gerätetest sind erst nach Abschluss des Workflows bestätigt.
 
 # Saitenwerk – Changelog
 

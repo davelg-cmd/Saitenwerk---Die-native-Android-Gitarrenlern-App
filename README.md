@@ -10,7 +10,6 @@ Im Mittelpunkt stehen:
 
 - 🎸 **Gitarrenstimmgerät** mit alternativen Stimmungen
 - 🎵 **Akkordbibliothek** mit Griffbildern und praktischen Lernmöglichkeiten
-- 📖 **Liederbuch** zum Lernen und Spielen von Songs
 - 🎼 **Songpraxis und Akkordfolgen** zum praktischen Üben
 - 🧠 **Lernstudio** für strukturiertes und individuelles Training
 - 🖐️ **Interaktive Griffbrett- und Notenübungen**
