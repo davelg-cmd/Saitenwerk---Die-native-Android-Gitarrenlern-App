@@ -144,7 +144,7 @@ else:
     if missing_bundle_fields:
         raise SystemExit("PATCH FEHLER: Song-Bundle-Felder fehlen: " + ", ".join(missing_bundle_fields))
     print("SONG-BUNDLE: vorhandene PDF-Felder bereits korrekt – keine doppelte Änderung nötig")
-rep('''        val bundledSheet = try {
+old_legacy_sheet = '''        val bundledSheet = try {
             val raw = a.assets.open("public_domain_sheets.json").bufferedReader().use { it.readText() }
             val arr = JSONArray(raw)
             (0 until arr.length()).asSequence()
@@ -153,9 +153,16 @@ rep('''        val bundledSheet = try {
                 ?: org.json.JSONObject()
         } catch (_: Exception) { org.json.JSONObject() }
 
-        fun loadSection(name: String): org.json.JSONObject {''','''        val importedSheet = if(song.importedContent.isNotBlank()) org.json.JSONObject().put("content",song.importedContent) else org.json.JSONObject()
+        fun loadSection(name: String): org.json.JSONObject {'''
+new_legacy_sheet = '''        val importedSheet = if(song.importedContent.isNotBlank()) org.json.JSONObject().put("content",song.importedContent) else org.json.JSONObject()
 
-        fun loadSection(name: String): org.json.JSONObject {''',"Legacy-Sheet")
+        fun loadSection(name: String): org.json.JSONObject {'''
+if old_legacy_sheet in s:
+    rep(old_legacy_sheet, new_legacy_sheet, "Legacy-Sheet")
+elif 'val importedSheet = if(song.importedContent.isNotBlank())' in s:
+    print("LEGACY-SHEET: bereits auf private PDF-Datenquelle umgestellt")
+else:
+    raise SystemExit("PATCH FEHLER: weder Legacy- noch Premium-Sheet-Datenquelle gefunden")
 old_legacy_load = '''            if (name == "Gesamter Song" && bundledSheet.optString("content").isNotBlank()) {
                 return org.json.JSONObject().put("content", bundledSheet.optString("content"))
                     .put("capo", bundledSheet.optInt("capo", 0))
