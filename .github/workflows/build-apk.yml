@@ -342,6 +342,15 @@ jobs:
           python3 ci/configure_stable_signing.py
 
 
+      - name: Build-436-Quellprojekt als Arbeitsartefakt sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saitenwerk-Build-436-Source
+          path: ${{ env.PROJECT_DIR }}/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
       # ------------------------------------------------------------
       # Vollständiges persönliches PDF-Songbook validieren
       # ------------------------------------------------------------
