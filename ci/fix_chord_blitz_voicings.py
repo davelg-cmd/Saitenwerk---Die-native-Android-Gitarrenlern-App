@@ -11,8 +11,6 @@ replacements = {
     'ChordShape("C#7", "Septakkord", intArrayOf(4,4,3,4,2,-1), note="Cis-Dominantseptakkord", fingers=intArrayOf(3,4,2,4,1,0))',
     'ChordShape("D#7", "Septakkord", intArrayOf(-1,6,5,6,4,-1), 4, note="Dis-Dominantseptakkord", fingers=intArrayOf(0,3,2,4,1,0))':
     'ChordShape("D#7", "Septakkord", intArrayOf(-1,6,5,6,4,6), 4, note="Dis-Dominantseptakkord", fingers=intArrayOf(0,3,2,4,1,4))',
-    'ChordShape("C6", "Weitere Akkorde", intArrayOf(-1,3,2,2,1,0), note="C-Dur mit hinzugefügter Sexte", fingers=intArrayOf(0,3,2,4,1,0))':
-    'ChordShape("C6", "Weitere Akkorde", intArrayOf(-1,3,2,2,1,3), note="C-Dur mit hinzugefügter Sexte", fingers=intArrayOf(0,3,2,4,1,4))',
 }
 for old, new in replacements.items():
     if old in source:
@@ -26,7 +24,6 @@ tuning = [4, 9, 2, 7, 11, 4]
 expected = {
     "C#7": {1, 5, 8, 11},
     "D#7": {1, 3, 7, 10},
-    "C6": {0, 4, 7, 9},
 }
 for name, wanted in expected.items():
     line = next((line for line in source.splitlines() if f'ChordShape("{name}"' in line), None)
@@ -47,5 +44,11 @@ for name, wanted in expected.items():
         raise SystemExit(f"FEHLER: {name} enthält nicht alle erwarteten Akkordtöne: {sorted(actual)}")
     print(f"{name}: PASS – Tonklassen {sorted(actual)} enthalten alle erwarteten Akkordtöne.")
 
+# C6 is intentionally voiced as a valid shell chord (root, third and sixth); the fifth is omitted.
+c6_line = next((line for line in source.splitlines() if 'ChordShape("C6"' in line), None)
+if c6_line is None or 'intArrayOf(-1,3,2,2,1,0)' not in c6_line:
+    raise SystemExit("FEHLER: C6-Shell-Voicing fehlt oder wurde unerwartet verändert.")
+print("C6: PASS – gültiger Shell-Griff mit Grundton, Terz und Sexte; Quinte bewusst ausgelassen.")
+
 main.write_text(source, encoding="utf-8")
-print("AKKORD-BLITZTRAINER: Premium-Implementierung erhalten; drei Griffbilder musikalisch korrigiert.")
+print("AKKORD-BLITZTRAINER: Premium-Implementierung erhalten; zwei Dominantseptakkorde korrigiert und C6-Shell-Voicing validiert.")

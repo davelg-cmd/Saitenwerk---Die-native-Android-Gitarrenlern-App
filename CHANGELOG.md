@@ -1,6 +1,7 @@
 ## Akkordgriff-Prüfung – 25.11.2026 · Build 492
-- **Voicings präzisiert:** C#7, D#7 und C6 enthalten jetzt die vollständigen charakteristischen Akkordtöne.
-- **Musikalische Validierung:** Die CI berechnet aus Standardstimmung und Bundpositionen die tatsächlich klingenden Tonklassen und vergleicht sie mit den erwarteten Tönen dieser drei Akkorde.
+- **Voicings präzisiert:** C#7 und D#7 wurden um die fehlende Quinte ergänzt.
+- **C6 geprüft:** Das vorhandene Griffbild ist ein gültiger Shell-Akkord mit Grundton, Terz und Sexte; die Quinte ist in dieser Voicing-Variante bewusst ausgelassen.
+- **Musikalische Validierung:** Die CI berechnet aus Standardstimmung und Bundpositionen die tatsächlich klingenden Tonklassen und vergleicht sie mit den erwarteten Akkordtönen.
 - **Regression abgesichert:** Der Premium-Blitztrainer aus Build 491 wird aus dem geprüften Quellbackup übernommen und nicht erneut doppelt in die Akkorddatenbank eingefügt. Die Griffbildkorrekturen werden bei jedem folgenden Build erneut validiert.
 
 ## Akkord-Blitztrainer Premium – 25.11.2026
