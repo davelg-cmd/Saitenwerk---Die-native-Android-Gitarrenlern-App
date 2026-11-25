@@ -13,7 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
-            "25.11.2026 · Build 502" to "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken.",
+            "25.11.2026 · Build 503" to "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken.",
             "25.11.2026 · Build 498" to "Akkord-Blitztrainer: vier technikbasierte Schwierigkeitsstufen (Anfänger, Fortgeschrittene Anfänger, Fortgeschritten, Experte). 93 eindeutige Griffbilder werden nach Grifftechnik einsortiert; Beschreibung und Akkordanzahl werden angezeigt. Adaptive Wiederholung, Fehlerliste und Einzelakkord-Statistiken bleiben erhalten; Fehlertraining bleibt innerhalb der gewählten Stufe.",\n            "25.11.2026 · Build 495" to "Akkordgriff-Korrektur: C#7 und D#7 um die fehlende Quinte ergänzt. Das C6-Griffbild wurde als gültiger Shell-Akkord mit Grundton, Terz und Sexte geprüft; die Quinte darf hier bewusst entfallen. Die CI prüft Tonklassen sowie Sechs-Saiten- und Fingerpositionen. Der Premium-Blitztrainer und seine adaptive Datenbank bleiben erhalten.",
             "25.11.2026 · Build 491" to "Akkord-Blitztrainer Premium: vier Modi (Griffbild erkennen, Griff zuordnen, 60-Sekunden-Blitzrunde und Fehlertraining), adaptive Wiederholung nach individueller Trefferquote, dauerhaft gespeicherte Fehlerliste, Reaktionszeit und Serien. Die zentrale ChordLibrary wurde von 67 auf 94 eindeutige Griffbilder erweitert; neue Dur-, Moll-, Sept-, Add-, Sus-, Power-, übermäßige und verminderte Akkorde mit geprüften Sechs-Saiten- und Fingerpositionen. Der vollständige Lernfortschritt-Reset löscht auch die neuen Einzelakkord-Statistiken, bewahrt aber Modus- und Kategorieeinstellungen.",
             "25.11.2026 · Build 490" to "Update-Installation repariert: DownloadManager-Abschlussmeldungen werden auf Android 13+ über einen exportierten, auf die erwartete Download-ID und den tatsächlichen Download-Status geprüften Broadcast-Empfänger verarbeitet. Nach erfolgreichem APK-Download kann der Android-Installationsdialog automatisch geöffnet werden, ohne die Download-Benachrichtigung antippen zu müssen.",
@@ -28,7 +28,7 @@ changes = """        val changes = listOf(
             "18.11.2026 · Build 387" to "Ausgangsbasis für die anschließenden Lernstudio-, Trainings- und Fortschrittsverbesserungen."
         )"""
 current_build_for_entry = int(os.environ.get("VERSION_CODE", "0")) - 1000
-if current_build_for_entry > 502:
+if current_build_for_entry > 503:
     from datetime import datetime
     build_date = datetime.now().strftime("%d.%m.%Y")
     entry = (
@@ -75,11 +75,11 @@ required = [
     "Build 483",
     "Build 490",
     "Build 491",
-    "Build 502",
+    "Build 503",
     "Build 498",
     "Hör-Quiz",
     "Hör-Fehlertraining",
-    "authentischen Gitarrenklängen",
+    "authentischer Gitarrenklänge",
     "Build 495",
     "Akkordgriff-Korrektur",
     "C#7",
