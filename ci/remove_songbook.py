@@ -89,7 +89,11 @@ def remove_top_level_declarations(source: str) -> str:
             "FEHLER: Songbook-Deklarationen nicht eindeutig erkannt. "
             f"Fehlend: {missing}; mehrfach: {duplicate}; gefunden: {found}"
         )
-    for m in reversed(matches):
+    # Alle Grenzen anhand derselben Originalfassung berechnen. Andernfalls würde
+    # das Entfernen rückwärts liegender Klassen die nächste Deklaration verschieben
+    # und eine körperlose data class könnte versehentlich fremde Klassen mitlöschen.
+    spans = []
+    for m in matches:
         opening = source.find("{", m.end())
         next_decl = TOP_LEVEL.search(source, m.end())
         if opening < 0 or (next_decl and next_decl.start() < opening):
@@ -102,7 +106,9 @@ def remove_top_level_declarations(source: str) -> str:
                 end += 1
             if end < len(source) and source[end] == "\n":
                 end += 1
-        source = source[:m.start()] + source[end:]
+        spans.append((m.start(), end))
+    for start, end in reversed(spans):
+        source = source[:start] + source[end:]
     return source
 
 def remove_function(source: str, name: str, signature: str) -> str:
