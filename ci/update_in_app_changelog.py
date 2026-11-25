@@ -31,12 +31,16 @@ current_build_for_entry = int(os.environ.get("VERSION_CODE", "0")) - 1000
 if current_build_for_entry > 503:
     from datetime import datetime
     build_date = datetime.now().strftime("%d.%m.%Y")
-    entry = (
-        f'            "{build_date} · Build {current_build_for_entry}" to '
-        '"Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. '
-        'Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. '
-        'Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken.",\n'
+    description = (
+        "Premium-Akkordbereich: vollständige Bibliotheks-Startseite mit Suche, Favoriten, Qualitätsfiltern und zweispaltiger Akkordübersicht. "
+        "Detailansicht mit hochkantem Griffbild, Saiten-/Fingerlegende, authentischer Gitarren-Hörprobe und Favoritenverwaltung. "
+        "Navigation und leere Such-/Favoritenzustände überarbeitet; bestehende ChordLibrary und Lerntrainer bleiben gemeinsame Datenbasis."
+        if current_build_for_entry == 504 else
+        "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. "
+        "Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. "
+        "Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken."
     )
+    entry = f'            "{build_date} · Build {current_build_for_entry}" to "{description}",\\n'
     changes = changes.replace("val changes = listOf(\n", "val changes = listOf(\n" + entry, 1)
 s = s[:start] + changes + s[end:]
 # Keep this merge build in the visible history on every later release without duplicating it in Build 427 itself.
