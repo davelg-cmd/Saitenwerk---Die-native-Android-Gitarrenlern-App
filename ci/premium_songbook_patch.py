@@ -70,7 +70,7 @@ class SongsFragment : Fragment(){
         if(uri==null)return@registerForActivityResult
         val a=requireActivity() as MainActivity
         try{requireActivity().contentResolver.takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)}catch(_:Exception){}
-        val d=ProgressDialog(a).apply{setMessage("Songbook wird vollständig eingelesen …");setCancelable(false);show()}
+        val d=android.app.ProgressDialog(a).apply{setMessage("Songbook wird vollständig eingelesen …");setCancelable(false);show()}
         Thread{try{SongbookPdfImporter.importPdf(a,uri);a.runOnUiThread{d.dismiss();Toast.makeText(a,"Songbook erfolgreich importiert · 452 Songs offline verfügbar",Toast.LENGTH_LONG).show();parentFragmentManager.beginTransaction().replace(id,SongsFragment()).commit()}}
         catch(t:Throwable){a.runOnUiThread{d.dismiss();Toast.makeText(a,"PDF-Import fehlgeschlagen: ${t.message}",Toast.LENGTH_LONG).show()}}}.start()
     }
