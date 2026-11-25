@@ -135,13 +135,7 @@ jobs:
           if grep -q 'learn_chord_q_attempts_' "$MAIN"; then
             echo "Premium-Blitztrainer und adaptive Akkorddatenbank sind bereits im Backup enthalten."
           else
-            python3 - <<'PY'
-            import gzip
-            from pathlib import Path
-            archive = Path("ci/upgrade_chord_blitz_premium.py.gz")
-            target = Path("ci/upgrade_chord_blitz_premium.py")
-            target.write_bytes(gzip.decompress(archive.read_bytes()))
-            PY
+            python3 -c 'import gzip; from pathlib import Path; Path("ci/upgrade_chord_blitz_premium.py").write_bytes(gzip.decompress(Path("ci/upgrade_chord_blitz_premium.py.gz").read_bytes()))'
             python3 ci/upgrade_chord_blitz_premium.py
           fi
           python3 ci/fix_chord_blitz_voicings.py
