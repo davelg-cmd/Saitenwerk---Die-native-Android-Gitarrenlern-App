@@ -82,12 +82,11 @@ def remove_top_level_declarations(source: str) -> str:
     found = {}
     for m in matches:
         found[m.group(1)] = found.get(m.group(1), 0) + 1
-    missing = sorted(name for name in TARGETS if found.get(name, 0) == 0)
     duplicate = sorted(name for name, count in found.items() if count != 1)
-    if missing or duplicate:
+    if duplicate:
         raise SystemExit(
-            "FEHLER: Songbook-Deklarationen nicht eindeutig erkannt. "
-            f"Fehlend: {missing}; mehrfach: {duplicate}; gefunden: {found}"
+            "FEHLER: Songbook-Deklarationen mehrfach gefunden. "
+            f"Mehrfach: {duplicate}; gefunden: {found}"
         )
     # Alle Grenzen anhand derselben Originalfassung berechnen. Andernfalls würde
     # das Entfernen rückwärts liegender Klassen die nächste Deklaration verschieben
@@ -126,28 +125,32 @@ def remove_function(source: str, name: str, signature: str) -> str:
         end += 1
     return source[:m.start()] + source[end:]
 
-def remove_exact_line(source: str, pattern: str, label: str) -> str:
+def remove_optional_line(source: str, pattern: str, label: str) -> str:
     source, count = re.subn(pattern, "", source, flags=re.MULTILINE)
-    if count != 1:
-        raise SystemExit(f"FEHLER: {label} nicht eindeutig gefunden (Treffer: {count}).")
+    if count > 1:
+        raise SystemExit(f"FEHLER: {label} mehrfach gefunden (Treffer: {count}).")
+    if count == 1:
+        print(f"ENTFERNT: {label}")
+    else:
+        print(f"NICHT VORHANDEN: {label} (bereits entfernt oder im Ausgangsstand nicht enthalten)")
     return source
 
 def apply_removal():
     s = MAIN.read_text(encoding="utf-8")
-    s = remove_exact_line(
+    s = remove_optional_line(
         s,
         r'^[ \t]*menu\.add\(0,\s*4,\s*3,\s*"Lieder"\)\.setIcon\(R\.drawable\.ic_nav_songs\)[ \t]*\r?\n',
         "Lieder-Navigation"
     )
-    s = remove_exact_line(s, r'^[ \t]*is SongsFragment -> 4[ \t]*\r?\n', "Navigation-Synchronisierung")
-    s = remove_exact_line(s, r'^[ \t]*4 -> current is SongsFragment[ \t]*\r?\n', "Navigation-Routing")
-    s = remove_exact_line(s, r'^[ \t]*4 -> show\(SongsFragment\(\)\)[ \t]*\r?\n', "Navigation-Ziel")
-    s = remove_exact_line(s, r'^[ \t]*"[^"\n]*Liederbuch" to 4,[ \t]*\r?\n', "Liederbuch-Startseiteneinstieg")
-    s = remove_function(
-        s,
-        "openSong()",
-        r"^[ \t]*fun\s+openSong\s*\(\s*song\s*:\s*Song\s*\)\s*\{"
-    )
+    s = remove_optional_line(s, r'^[ \t]*is SongsFragment -> 4[ \t]*\r?\n', "Navigation-Synchronisierung")
+    s = remove_optional_line(s, r'^[ \t]*4 -> current is SongsFragment[ \t]*\r?\n', "Navigation-Routing")
+    s = remove_optional_line(s, r'^[ \t]*4 -> show\(SongsFragment\(\)\)[ \t]*\r?\n', "Navigation-Ziel")
+    s = remove_optional_line(s, r'^[ \t]*"[^"\n]*Liederbuch" to 4,[ \t]*\r?\n', "Liederbuch-Startseiteneinstieg")
+    open_song = re.compile(r"^[ \t]*fun\s+openSong\s*\(\s*song\s*:\s*Song\s*\)\s*\{", re.MULTILINE)
+    if open_song.search(s):
+        s = remove_function(s, "openSong()", open_song.pattern)
+    else:
+        print("NICHT VORHANDEN: openSong()-Routing")
     s = remove_top_level_declarations(s)
     MAIN.write_text(s, encoding="utf-8")
 
