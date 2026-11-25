@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import re
 
 ROOT=Path(os.environ["PROJECT_DIR"])
 MAIN=ROOT/"app/src/main/java/de/saitenwerk/app/MainActivity.kt"
@@ -116,119 +117,6 @@ if 'putString("importedContent", song.importedContent)' not in s:
         s = s[:at] + bundle_fields + s[at:]
     else:
         artist_match = re.search(r'(?m)^(\s*)putString\(\s*"artist"\s*,\s*song\.artist\s*\)\s*$', s)
-        if not artist_match:
-            raise SystemExit("PATCH FEHLER: Song-Bundle: weder Genre- noch Künstlerfeld im Speicherblock gefunden")
-        at = artist_match.end()
-        s = s[:at] + bundle_fields + s[at:]
-rep('''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
-        } ?: Song("Unbekannter Titel")''','''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty(), false,
-                it.getInt("sourcePageStart",0), it.getInt("sourcePageEnd",0), it.getString("importedContent").orEmpty())
-        } ?: Song("Unbekannter Titel")''',"Song-Bundle-Auslesen")
-rep('''        val bundledSheet = try {
-            val raw = a.assets.open("public_domain_sheets.json").bufferedReader().use { it.readText() }
-            val arr = JSONArray(raw)
-            (0 until arr.length()).asSequence()
-                .map { arr.getJSONObject(it) }
-                .firstOrNull { it.optString("title") == song.title && it.optString("artist") == song.artist }
-                ?: org.json.JSONObject()
-        } catch (_: Exception) { org.json.JSONObject() }
-
-        fun loadSection(name: String): org.json.JSONObject {''','''        val importedSheet = if(song.importedContent.isNotBlank()) org.json.JSONObject().put("content",song.importedContent) else org.json.JSONObject()
-
-        fun loadSection(name: String): org.json.JSONObject {''',"Legacy-Sheet")
-rep('''            if (name == "Gesamter Song" && bundledSheet.optString("content").isNotBlank()) {
-                return org.json.JSONObject().put("content", bundledSheet.optString("content"))
-                    .put("capo", bundledSheet.optInt("capo", 0))
-                    .put("transpose", bundledSheet.optInt("transpose", 0))
-                    .put("formatVersion", 4)
-            }''','''            if(name=="Gesamter Song"&&importedSheet.optString("content").isNotBlank()){
-                return org.json.JSONObject().put("content",importedSheet.optString("content")).put("formatVersion",5)
-            }''',"Legacy-Laden")
-rep('''        var playerTempo = bundledSheet.optInt("tempo", 72).coerceIn(40, 160)''','''        var playerTempo = 72''',"Legacy-Tempo")
-needle='''        root.addView(TextView(a).apply {
-            text = listOf(song.artist, song.genre).filter { it.isNotBlank() }.joinToString(" · ")
-            textSize = 14f
-            setTextColor(a.getColor(R.color.sw_copper))
-            setPadding(a.dp(20), 0, a.dp(20), a.dp(10))
-        })'''
-rep(needle,needle+'''\n        if(song.sourcePageStart>0){val original=a.button("▣  Original-PDF-Seiten ansehen");original.setOnClickListener{SongbookPdfViewer.show(a,song.sourcePageStart,song.sourcePageEnd)};root.addView(original,LinearLayout.LayoutParams(-1,a.dp(48)).apply{setMargins(a.dp(16),0,a.dp(16),a.dp(8))})}''',"Original-PDF-Button")
-MAIN.write_text(s,encoding="utf-8")
-g=GRADLE.read_text(encoding="utf-8")
-if "pdfbox-android:2.0.27.0" not in g:g=g.replace('implementation("com.google.android.material:material:1.12.0")','implementation("com.google.android.material:material:1.12.0")\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")')
-GRADLE.write_text(g,encoding="utf-8")
-for rel in ["app/src/main/assets/saitenwerk_legacy.html","app/src/main/assets/songs.json","app/src/main/assets/public_domain_sheets.json","SONGBOOK_PUBLIC_DOMAIN.md","CHANGELOG_ALPHA7_LIEDERBUCH.md","UPDATE_ALPHA7_SONGREADER_V3.md","fix_v3.py","UPDATEFIX_README.md"]:
-    p=ROOT/rel
-    if p.exists():p.unlink()
-(ROOT/"app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/songbook_pdf_importer.kt").read_text(),encoding="utf-8")
-(ROOT/"app/src/main/java/de/saitenwerk/app/SongbookPdfViewer.kt").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/songbook_pdf_viewer.kt").read_text(),encoding="utf-8")
-(ROOT/"app/src/main/res/drawable/ic_nav_songs.xml").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/ic_nav_songs.xml").read_text(),encoding="utf-8")
-p=ROOT/"app/src/main/java/de/saitenwerk/app/MainActivity.kt";s=p.read_text(encoding="utf-8")
-if '"25.11.2026 · Build $buildNumber"' not in s:
-    s=s.replace('''        val changes = listOf(
-            "20.11.2026 · Build $buildNumber"''','''        val changes = listOf(
-            "25.11.2026 · Build $buildNumber" to "Persönliches Premium-Songbook vollständig neu aufgebaut: altes gemeinfreies/Legacy-Liederbuch entfernt. Das private PDF wird mit allen 452 Songs, vollständigen Songseiten und Inhaltsverzeichnis auf dem Gerät importiert und lokal katalogisiert. Suche durchsucht Titel, Künstler, Text und Akkorde; Original-PDF-Seiten bleiben pro Song aufrufbar. Favoriten, Setlisten, Songpraxis, Transponierung, Kapodaster und Songplayer bleiben mit dem neuen Katalog verbunden. PDF und Songdaten werden nicht als öffentliche Repository-Assets ausgeliefert.",
-            "20.11.2026 · Build $buildNumber"''',1)
-    p.write_text(s,encoding="utf-8")
-(Path(os.environ["PROJECT_DIR"])/"UPLOAD_INSTRUCTIONS.md").write_text("# Saitenwerk – Premium-Songbook\n\nDer Quellstand basiert auf Build 436. Das persönliche PDF wird vollständig auf dem Gerät importiert: 452 Songs, vollständige Songseiten, Text/Akkorde und Original-PDF-Seiten. Die PDF-Datei selbst bleibt absichtlich außerhalb des öffentlichen Repositorys.\n\nNach Installation: Lieder → Eigenes Songbook-PDF importieren.\n",encoding="utf-8")
-print("PREMIUM_SONGBOOK_PATCH_OK")
-, s)
-    if genre_match:
-        at = genre_match.end()
-        s = s[:at] + bundle_fields + s[at:]
-    else:
-        artist_match = re.search(r'(?m)^(\s*)putString\(\s*"artist"\s*,\s*song\.artist\s*\)\s*
-rep('''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
-        } ?: Song("Unbekannter Titel")''','''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty(), false,
-                it.getInt("sourcePageStart",0), it.getInt("sourcePageEnd",0), it.getString("importedContent").orEmpty())
-        } ?: Song("Unbekannter Titel")''',"Song-Bundle-Auslesen")
-rep('''        val bundledSheet = try {
-            val raw = a.assets.open("public_domain_sheets.json").bufferedReader().use { it.readText() }
-            val arr = JSONArray(raw)
-            (0 until arr.length()).asSequence()
-                .map { arr.getJSONObject(it) }
-                .firstOrNull { it.optString("title") == song.title && it.optString("artist") == song.artist }
-                ?: org.json.JSONObject()
-        } catch (_: Exception) { org.json.JSONObject() }
-
-        fun loadSection(name: String): org.json.JSONObject {''','''        val importedSheet = if(song.importedContent.isNotBlank()) org.json.JSONObject().put("content",song.importedContent) else org.json.JSONObject()
-
-        fun loadSection(name: String): org.json.JSONObject {''',"Legacy-Sheet")
-rep('''            if (name == "Gesamter Song" && bundledSheet.optString("content").isNotBlank()) {
-                return org.json.JSONObject().put("content", bundledSheet.optString("content"))
-                    .put("capo", bundledSheet.optInt("capo", 0))
-                    .put("transpose", bundledSheet.optInt("transpose", 0))
-                    .put("formatVersion", 4)
-            }''','''            if(name=="Gesamter Song"&&importedSheet.optString("content").isNotBlank()){
-                return org.json.JSONObject().put("content",importedSheet.optString("content")).put("formatVersion",5)
-            }''',"Legacy-Laden")
-rep('''        var playerTempo = bundledSheet.optInt("tempo", 72).coerceIn(40, 160)''','''        var playerTempo = 72''',"Legacy-Tempo")
-needle='''        root.addView(TextView(a).apply {
-            text = listOf(song.artist, song.genre).filter { it.isNotBlank() }.joinToString(" · ")
-            textSize = 14f
-            setTextColor(a.getColor(R.color.sw_copper))
-            setPadding(a.dp(20), 0, a.dp(20), a.dp(10))
-        })'''
-rep(needle,needle+'''\n        if(song.sourcePageStart>0){val original=a.button("▣  Original-PDF-Seiten ansehen");original.setOnClickListener{SongbookPdfViewer.show(a,song.sourcePageStart,song.sourcePageEnd)};root.addView(original,LinearLayout.LayoutParams(-1,a.dp(48)).apply{setMargins(a.dp(16),0,a.dp(16),a.dp(8))})}''',"Original-PDF-Button")
-MAIN.write_text(s,encoding="utf-8")
-g=GRADLE.read_text(encoding="utf-8")
-if "pdfbox-android:2.0.27.0" not in g:g=g.replace('implementation("com.google.android.material:material:1.12.0")','implementation("com.google.android.material:material:1.12.0")\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")')
-GRADLE.write_text(g,encoding="utf-8")
-for rel in ["app/src/main/assets/saitenwerk_legacy.html","app/src/main/assets/songs.json","app/src/main/assets/public_domain_sheets.json","SONGBOOK_PUBLIC_DOMAIN.md","CHANGELOG_ALPHA7_LIEDERBUCH.md","UPDATE_ALPHA7_SONGREADER_V3.md","fix_v3.py","UPDATEFIX_README.md"]:
-    p=ROOT/rel
-    if p.exists():p.unlink()
-(ROOT/"app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/songbook_pdf_importer.kt").read_text(),encoding="utf-8")
-(ROOT/"app/src/main/java/de/saitenwerk/app/SongbookPdfViewer.kt").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/songbook_pdf_viewer.kt").read_text(),encoding="utf-8")
-(ROOT/"app/src/main/res/drawable/ic_nav_songs.xml").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/ic_nav_songs.xml").read_text(),encoding="utf-8")
-p=ROOT/"app/src/main/java/de/saitenwerk/app/MainActivity.kt";s=p.read_text(encoding="utf-8")
-if '"25.11.2026 · Build $buildNumber"' not in s:
-    s=s.replace('''        val changes = listOf(
-            "20.11.2026 · Build $buildNumber"''','''        val changes = listOf(
-            "25.11.2026 · Build $buildNumber" to "Persönliches Premium-Songbook vollständig neu aufgebaut: altes gemeinfreies/Legacy-Liederbuch entfernt. Das private PDF wird mit allen 452 Songs, vollständigen Songseiten und Inhaltsverzeichnis auf dem Gerät importiert und lokal katalogisiert. Suche durchsucht Titel, Künstler, Text und Akkorde; Original-PDF-Seiten bleiben pro Song aufrufbar. Favoriten, Setlisten, Songpraxis, Transponierung, Kapodaster und Songplayer bleiben mit dem neuen Katalog verbunden. PDF und Songdaten werden nicht als öffentliche Repository-Assets ausgeliefert.",
-            "20.11.2026 · Build $buildNumber"''',1)
-    p.write_text(s,encoding="utf-8")
-(Path(os.environ["PROJECT_DIR"])/"UPLOAD_INSTRUCTIONS.md").write_text("# Saitenwerk – Premium-Songbook\n\nDer Quellstand basiert auf Build 436. Das persönliche PDF wird vollständig auf dem Gerät importiert: 452 Songs, vollständige Songseiten, Text/Akkorde und Original-PDF-Seiten. Die PDF-Datei selbst bleibt absichtlich außerhalb des öffentlichen Repositorys.\n\nNach Installation: Lieder → Eigenes Songbook-PDF importieren.\n",encoding="utf-8")
-print("PREMIUM_SONGBOOK_PATCH_OK")
-, s)
         if not artist_match:
             raise SystemExit("PATCH FEHLER: Song-Bundle: weder Genre- noch Künstlerfeld im Speicherblock gefunden")
         at = artist_match.end()
