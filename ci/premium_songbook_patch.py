@@ -110,7 +110,16 @@ bundle_fields = """
                 putInt("sourcePageEnd", song.sourcePageEnd)
                 putString("importedContent", song.importedContent)"""
 if 'putString("importedContent", song.importedContent)' not in s:
-    genre_match = re.search(r'(?m)^(\s*)putString\(\s*"genre"\s*,\s*song\.genre\s*\)\s*
+    genre_match = re.search(r'(?m)^(\s*)putString\(\s*"genre"\s*,\s*song\.genre\s*\)\s*$', s)
+    if genre_match:
+        at = genre_match.end()
+        s = s[:at] + bundle_fields + s[at:]
+    else:
+        artist_match = re.search(r'(?m)^(\s*)putString\(\s*"artist"\s*,\s*song\.artist\s*\)\s*$', s)
+        if not artist_match:
+            raise SystemExit("PATCH FEHLER: Song-Bundle: weder Genre- noch Künstlerfeld im Speicherblock gefunden")
+        at = artist_match.end()
+        s = s[:at] + bundle_fields + s[at:]
 rep('''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
         } ?: Song("Unbekannter Titel")''','''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty(), false,
                 it.getInt("sourcePageStart",0), it.getInt("sourcePageEnd",0), it.getString("importedContent").orEmpty())
