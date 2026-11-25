@@ -636,10 +636,12 @@ jobs:
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
           if "class ChordTrainingPanel" not in s:
-              required = ['fun showChanges() { showStrumming("changes") }', 'Gemeinsamer Gitarrentrainer', 'learn_training_chords_ordered', 'learn_training_meter', 'learn_training_bpm', 'ChordDiagramView(a, selectedChords.firstOrNull())', 'Zum Lernstudio']
+              required = ['fun showChanges() { showStrumming("changes") }', 'Gemeinsamer Gitarrentrainer', 'learn_training_chords_ordered', 'learn_training_meter', 'learn_training_bpm', 'ChordDiagramView(a, selectedChords.firstOrNull())']
               missing = [x for x in required if x not in s]
               if missing:
                   raise SystemExit("FEHLER: Zusammengeführter Akkordwechsel-Trainer unvollständig: " + ", ".join(missing))
+              if "Zum Lernstudio" not in s and "Akkord-Blitztrainer öffnen" not in s:
+                  raise SystemExit("FEHLER: Einstieg von der Akkordbibliothek zum Lernstudio/Akkord-Blitztrainer fehlt.")
               print("AKKORDWECHSEL-TRAINING: PASS – im gemeinsamen Trainer enthalten.")
           else:
               required = ['Akkordwechsel-Training', 'Trainingsakkorde auswählen', 'chord_training_selected_chords', 'chord_training_bpm', 'chord_training_meter', 'Taktart auswählen', 'meterTempoRow', 'contentDescription = chordName', 'chord_training_best_streak', 'Reihenfolge mischen', 'Als Nächstes', 'private val fretboard = ChordDiagramView(host)', 'open class ChordDiagramView(context: android.content.Context, initialShape: ChordShape? = null)', 'fretboard.setChord(ChordLibrary.all.firstOrNull', 'stage.addView(fretboard, LayoutParams(-1, host.dp(210)))', 'val fingers: IntArray = IntArray(6)', 'fingers=intArrayOf(0,3,2,0,1,0)', 'canvas.drawText(finger.toString(), x, baseline, fingerPaint)', '1 Zeige  ·  2 Mitte  ·  3 Ring  ·  4 Klein']
