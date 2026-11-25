@@ -74,12 +74,6 @@ jobs:
           fi
 
           LATEST_ARCHIVE="$(find "$BACKUP_ROOT" -mindepth 2 -maxdepth 2 -type f \( -name source-project.tar.gz -o -name source-project.zip \) -print | sort -V | tail -n 1)"
-          # Build 479 enthält das verworfene Premium-Songbook. Für den einmaligen
-          # Rückbau bewusst auf den letzten davor geprüften Stand Build 436 zurückgehen.
-          if [[ "$LATEST_ARCHIVE" == "$BACKUP_ROOT/build-479/source-project.tar.gz" || "$LATEST_ARCHIVE" == "$BACKUP_ROOT/build-479/source-project.zip" ]]; then
-            LATEST_ARCHIVE="$BACKUP_ROOT/build-436/source-project.tar.gz"
-            echo "Songbook-Rückbau: Build 479 übersprungen; verwende geprüften Ausgangsstand Build 436."
-          fi
           if [ -z "$LATEST_ARCHIVE" ]; then
             echo "FEHLER: Kein vollständiges Projekt-Backup (source-project.tar.gz oder source-project.zip) gefunden."
             exit 1

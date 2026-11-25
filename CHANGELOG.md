@@ -3,7 +3,9 @@
 - Die CI entfernt Songbook-Navigation, Song-Datenmodell, Repository, Listen- und Detailansichten, PDF-Importer/-Viewer, PDFBox-Abhängigkeit sowie die zugehörigen Ressourcen.
 - Die Entfernung wird vor dem Android-Build automatisiert auf verbliebene Klassen, Verweise, Abhängigkeiten und Ressourcen geprüft.
 - Song-Praxis, gemeinsamer Gitarrentrainer, Akkordbibliothek, Lernstudio, Lernfortschritt, Stimmgerät und die übrigen bestehenden Trainingsfunktionen bleiben erhalten.
-- Der anschließende Android-Build muss den Rückbau noch bestätigen; ein erfolgreicher Build und ein Gerätetest sind erst nach Abschluss des Workflows bestätigt.
+- Reparatur: Das CI-Entfernungsskript bewahrt die Felder der MainActivity (Update-Verwaltung, Navigation und Mikrofonberechtigung) zuverlässig und entfernt nur die Songbook-Einstiegsmethode sowie die zugehörigen Songbook-Klassen.
+- Build #483: Android-Kotlin-Kompilierung und vollständiger GitHub-Actions-Workflow erfolgreich; bereinigter Quellstand und APK-Artefakt wurden bereitgestellt, das Beta-Release `beta-latest` aktualisiert.
+- Ein Test auf einem realen Android-Gerät wurde nicht durchgeführt.
 
 # Saitenwerk – Changelog
 
