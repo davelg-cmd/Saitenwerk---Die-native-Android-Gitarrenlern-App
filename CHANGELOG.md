@@ -1,3 +1,12 @@
+## Akkordbereich – Premium-Akkordbibliothek – 25.11.2026 · Build 504
+- **Bibliotheks-Startseite neu gestaltet:** Der Akkordbereich startet nicht mehr mit einer leeren Auswahlfläche, sondern mit einem Akkord-Atlas, Bibliotheksumfang, Favoritenübersicht und klarer Orientierung.
+- **Schnelle Suche:** Akkorde lassen sich nach Name, Akkordqualität und Beschreibung durchsuchen.
+- **Filter und Favoriten:** Direktfilter für Alle, Favoriten, Dur, Moll, Septakkorde, Sus-, Add- und Power-Akkorde. Favoriten werden weiterhin lokal gespeichert.
+- **Übersichtliche Akkordkarten:** Zweispaltige Darstellung mit Akkordname, Qualität und direktem Einstieg in die Griffansicht; Trefferzahl und sinnvolle Leerzustände werden angezeigt.
+- **Premium-Detailansicht:** Großes hochkant ausgerichtetes Griffbild mit tiefer E-Saite links und hoher e-Saite rechts, Saiten-/Fingerlegende und verständlichen Symbolen.
+- **Direkte Hörprobe:** Jeder Akkord kann über die vorhandene authentische Gitarren-Soundengine angehört werden. Favoriten lassen sich direkt in der Detailansicht verwalten.
+- **Integration erhalten:** Die zentrale ChordLibrary, vorhandene Akkorddaten, Favoriten und der Einstieg zum Lernstudio/Akkord-Blitztrainer bleiben erhalten. Keine zweite Datenbank und kein Eingriff in die Trainerlogik.
+
 ## Akkord-Blitztrainer – Hör-Quiz – 25.11.2026 · Build 503
 - **Hör-Quiz integriert:** Neuer Trainingsmodus innerhalb des bestehenden Akkord-Blitztrainers. Akkorde werden ausschließlich anhand ihres Gitarrenklangs erkannt; keine Griffbild-Hinweise.
 - **Authentischer Gitarrenklang:** Wiedergabe über die vorhandene lokale Sample-Soundengine und dieselbe zentrale `ChordLibrary`; kein zusätzlicher Klangbestand und vollständig offline.
