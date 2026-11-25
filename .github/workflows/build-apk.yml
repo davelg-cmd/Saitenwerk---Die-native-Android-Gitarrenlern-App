@@ -282,7 +282,7 @@ jobs:
           from pathlib import Path
           s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
           start = s.find("class ChordsFragment : Fragment() {")
-          end = s.find("\\nclass GuitarFretboardView", start)
+          end = s.find("\nclass GuitarFretboardView", start)
           section = s[start:end] if start >= 0 and end > start else ""
           required = [
               "SAITENWERK_CHORDS_PREMIUM_V1",

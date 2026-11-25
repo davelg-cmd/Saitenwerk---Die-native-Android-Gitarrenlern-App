@@ -35,7 +35,7 @@ if current_build_for_entry > 503:
         "Premium-Akkordbereich: vollständige Bibliotheks-Startseite mit Suche, Favoriten, Qualitätsfiltern und zweispaltiger Akkordübersicht. "
         "Detailansicht mit hochkantem Griffbild, Saiten-/Fingerlegende, authentischer Gitarren-Hörprobe und Favoritenverwaltung. "
         "Navigation und leere Such-/Favoritenzustände überarbeitet; bestehende ChordLibrary und Lerntrainer bleiben gemeinsame Datenbasis."
-        if current_build_for_entry == 504 else
+        if current_build_for_entry >= 504 else
         "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. "
         "Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. "
         "Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken."
