@@ -156,22 +156,37 @@ rep('''        val bundledSheet = try {
         fun loadSection(name: String): org.json.JSONObject {''','''        val importedSheet = if(song.importedContent.isNotBlank()) org.json.JSONObject().put("content",song.importedContent) else org.json.JSONObject()
 
         fun loadSection(name: String): org.json.JSONObject {''',"Legacy-Sheet")
-rep('''            if (name == "Gesamter Song" && bundledSheet.optString("content").isNotBlank()) {
+old_legacy_load = '''            if (name == "Gesamter Song" && bundledSheet.optString("content").isNotBlank()) {
                 return org.json.JSONObject().put("content", bundledSheet.optString("content"))
                     .put("capo", bundledSheet.optInt("capo", 0))
                     .put("transpose", bundledSheet.optInt("transpose", 0))
                     .put("formatVersion", 4)
-            }''','''            if(name=="Gesamter Song"&&importedSheet.optString("content").isNotBlank()){
+            }'''
+new_legacy_load = '''            if(name=="Gesamter Song"&&importedSheet.optString("content").isNotBlank()){
                 return org.json.JSONObject().put("content",importedSheet.optString("content")).put("formatVersion",5)
-            }''',"Legacy-Laden")
-rep('''        var playerTempo = bundledSheet.optInt("tempo", 72).coerceIn(40, 160)''','''        var playerTempo = 72''',"Legacy-Tempo")
+            }'''
+if old_legacy_load in s:
+    rep(old_legacy_load, new_legacy_load, "Legacy-Laden")
+elif 'name=="Gesamter Song"&&importedSheet.optString("content").isNotBlank()' in s:
+    print("LEGACY-LOAD: bereits auf importierte Songdaten umgestellt")
+else:
+    raise SystemExit("PATCH FEHLER: Songdetail-Ladepfad nicht erkannt")
+if 'var playerTempo = bundledSheet.optInt("tempo", 72).coerceIn(40, 160)' in s:
+    rep('''        var playerTempo = bundledSheet.optInt("tempo", 72).coerceIn(40, 160)''','''        var playerTempo = 72''',"Legacy-Tempo")
+elif 'var playerTempo = 72' in s:
+    print("LEGACY-TEMPO: Standardtempo bereits gesetzt")
+else:
+    raise SystemExit("PATCH FEHLER: Player-Tempo-Deklaration nicht gefunden")
 needle='''        root.addView(TextView(a).apply {
             text = listOf(song.artist, song.genre).filter { it.isNotBlank() }.joinToString(" · ")
             textSize = 14f
             setTextColor(a.getColor(R.color.sw_copper))
             setPadding(a.dp(20), 0, a.dp(20), a.dp(10))
         })'''
-rep(needle,needle+'''\n        if(song.sourcePageStart>0){val original=a.button("▣  Original-PDF-Seiten ansehen");original.setOnClickListener{SongbookPdfViewer.show(a,song.sourcePageStart,song.sourcePageEnd)};root.addView(original,LinearLayout.LayoutParams(-1,a.dp(48)).apply{setMargins(a.dp(16),0,a.dp(16),a.dp(8))})}''',"Original-PDF-Button")
+if 'SongbookPdfViewer.show(a,song.sourcePageStart,song.sourcePageEnd)' not in s:
+    rep(needle,needle+'''\n        if(song.sourcePageStart>0){val original=a.button("▣  Original-PDF-Seiten ansehen");original.setOnClickListener{SongbookPdfViewer.show(a,song.sourcePageStart,song.sourcePageEnd)};root.addView(original,LinearLayout.LayoutParams(-1,a.dp(48)).apply{setMargins(a.dp(16),0,a.dp(16),a.dp(8))})}''',"Original-PDF-Button")
+else:
+    print("ORIGINAL-PDF-BUTTON: bereits vorhanden")
 MAIN.write_text(s,encoding="utf-8")
 g=GRADLE.read_text(encoding="utf-8")
 if "pdfbox-android:2.0.27.0" not in g:g=g.replace('implementation("com.google.android.material:material:1.12.0")','implementation("com.google.android.material:material:1.12.0")\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")')
