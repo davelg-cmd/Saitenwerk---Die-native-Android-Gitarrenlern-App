@@ -64,7 +64,7 @@ object SongRepository {
     fun hasSongSheet(a:MainActivity,s:Song)=s.importedContent.isNotBlank()||s.custom||run{val p="song_arrangement_${s.title}|${s.artist}_";listOf("Intro","Strophe 1","Strophe 2","Strophe 3","Refrain","Bridge","Solo","Outro").any{q->val r=prefs(a).getString(p+q,"{}")?:"{}";try{org.json.JSONObject(r).optString("content").isNotBlank()||org.json.JSONObject(r).optString("chords").isNotBlank()}catch(_:Exception){false}}}
     fun addCustom(a:MainActivity,s:Song){val ar=try{JSONArray(prefs(a).getString("custom_songs","[]"))}catch(_:Exception){JSONArray()};if(load(a).any{key(it)==key(s)})return;ar.put(org.json.JSONObject().put("title",s.title).put("artist",s.artist).put("genre",s.genre.ifBlank{"Eigene Songs"}));prefs(a).edit().putString("custom_songs",ar.toString()).apply()}
 }
-class SongsFragment:Fragment(){
+class SongsFragment : Fragment(){
     private var currentSongs=mutableListOf<Song>()
     private val pdfPicker=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->
         if(uri==null)return@registerForActivityResult
