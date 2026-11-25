@@ -87,8 +87,20 @@ if "Eine alte Update-Datei konnte nicht entfernt werden." not in s:
         raise SystemExit("FEHLER: Download-Funktion nicht gefunden.")
     s = s.replace(needle, replacement, 1)
 
+# Android DownloadManager sends ACTION_DOWNLOAD_COMPLETE from its own provider process.
+# RECEIVER_NOT_EXPORTED can suppress that cross-package system broadcast on Android 13+,
+# leaving a successful download without the app ever opening the installer.
+old_receiver = "activity.registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED)"
+new_receiver = "activity.registerReceiver(downloadReceiver, filter, Context.RECEIVER_EXPORTED)"
+if old_receiver in s:
+    s = s.replace(old_receiver, new_receiver, 1)
+elif new_receiver not in s:
+    raise SystemExit("FEHLER: DownloadManager-Empfängerregistrierung nicht gefunden.")
+if s.count(new_receiver) != 1:
+    raise SystemExit("FEHLER: DownloadManager-Empfänger muss exakt einmal exportiert registriert sein.")
+
 p.write_text(s, encoding="utf-8")
-for token in ["DownloadManager.STATUS_FAILED", "Dateikopf: $header", "val archive = readApkInfo(file)", "Eine alte Update-Datei konnte nicht entfernt werden."]:
+for token in ["Context.RECEIVER_EXPORTED", "DownloadManager.STATUS_FAILED", "Dateikopf: $header", "val archive = readApkInfo(file)", "Eine alte Update-Datei konnte nicht entfernt werden."]:
     if token not in s:
         raise SystemExit("FEHLER: Update-Diagnose fehlt: " + token)
 print("UPDATE-DOWNLOAD-VALIDIERUNG: PASS")
