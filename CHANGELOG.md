@@ -1,3 +1,8 @@
+## CI-Reparatur Premium-Songbook – 25.11.2026
+- Beschädigte, mehrfach angehängte Fragmente aus `ci/premium_songbook_patch.py` entfernt; Python-RegEx-Import ergänzt.
+- Original-PDF-Viewer: Seitenanzeige-Interpolation korrigiert.
+- Diese Änderungen beheben den zuletzt diagnostizierten Python-Syntaxfehler; ein erfolgreicher Android-Build und ein PDF-Import auf einem Gerät sind damit noch nicht bestätigt.
+
 ## Persönliches Premium-Songbook – 23.11.2026
 - Alte gemeinfreie/Legacy-Liederbuch-Datenquelle und veraltete HTML-Songbook-Implementierung aus dem App-Projekt entfernt.
 - Vollständigen privaten PDF-Import für 452 Songs mit Prüfung der fortlaufenden Inhaltsverzeichnis-Einträge und Erfassung der jeweiligen vollständigen Songseitenbereiche vorbereitet.
