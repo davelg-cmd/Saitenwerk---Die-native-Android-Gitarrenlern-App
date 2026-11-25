@@ -1,3 +1,11 @@
+## Akkord-Blitztrainer – Schwierigkeitsstufen – 25.11.2026 · Build 496
+- **Vier klare Lernstufen:** Anfänger, Fortgeschrittene Anfänger, Fortgeschritten und Experte ersetzen die bisherigen Akkordfamilien als Trainingskategorien.
+- **Technikbasierte Zuordnung:** Alle 93 im Quiz verwendeten eindeutigen Griffbilder werden anhand offener Grundgriffe, offener Erweiterungen, Barré-/Powertechnik und komplexer Voicings einsortiert; die deutsche/internationale B/Bb-Doppelbezeichnung bleibt wie bisher ohne doppelte Quizfrage.
+- **Stufenübersicht:** Jede Auswahl zeigt Beschreibung und Anzahl der enthaltenen Akkorde; „Alle“ bleibt als freies gemischtes Training verfügbar.
+- **Fehlertraining bleibt passend:** Adaptive Wiederholung, Trefferquoten, Fehlerliste und Einzelakkord-Statistiken bleiben erhalten. Das Fehlertraining greift ausschließlich auf die ausgewählte Stufe zurück.
+- **Daten bleiben erhalten:** Keine Lernstatistik und kein Trainingsfortschritt wird gelöscht. Eine alte Akkordfamilien-Auswahl wird einmalig auf „Alle“ migriert, weil die bisherigen Kategorien nicht 1:1 den neuen Schwierigkeitsstufen entsprechen.
+- **CI-Absicherung:** Die Verteilung aller Griffbilder, Mindestumfang jeder Stufe und idempotente Integration werden vor dem Android-Build geprüft.
+
 ## Akkordgriff-Prüfung – 25.11.2026 · Build 495
 - **Voicings präzisiert:** C#7 und D#7 wurden um die fehlende Quinte ergänzt.
 - **C6 geprüft:** Das vorhandene Griffbild ist ein gültiger Shell-Akkord mit Grundton, Terz und Sexte; die Quinte ist in dieser Voicing-Variante bewusst ausgelassen.
