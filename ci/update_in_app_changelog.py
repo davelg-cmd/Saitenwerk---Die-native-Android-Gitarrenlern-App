@@ -40,7 +40,7 @@ if current_build_for_entry > 503:
         "Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. "
         "Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken."
     )
-    entry = f'            "{build_date} · Build {current_build_for_entry}" to "{description}",\\n'
+    entry = f'            "{build_date} · Build {current_build_for_entry}" to "{description}",\n'
     changes = changes.replace("val changes = listOf(\n", "val changes = listOf(\n" + entry, 1)
 s = s[:start] + changes + s[end:]
 # Keep this merge build in the visible history on every later release without duplicating it in Build 427 itself.
