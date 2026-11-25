@@ -1,3 +1,6 @@
+## Update-Installation – 25.11.2026
+- **Automatisches Öffnen des Installationsdialogs repariert:** Der DownloadManager-Abschluss-Broadcast wird auf Android 13+ jetzt über `Context.RECEIVER_EXPORTED` empfangen. Der Empfänger prüft weiterhin die gespeicherte Download-ID und den tatsächlichen DownloadManager-Status, bevor die APK-Validierung und der Android-Installer gestartet werden. Ziel: Installation direkt nach Downloadabschluss, ohne Antippen der Download-Benachrichtigung.
+
 ## Changelog-Korrektur – 25.11.2026
 - **In-App-Changelog korrigiert:** Historische Einträge verwenden wieder ihre ursprünglichen Build-Nummern statt die Nummer des jeweils aktuellen Builds. Der gemeinsame Gitarrentrainer ist Build 427, die nachfolgende Überarbeitung vom 20.11. ist Build 436; ältere Einträge behalten 426, 399, 394, 392, 390 und 387.
 
