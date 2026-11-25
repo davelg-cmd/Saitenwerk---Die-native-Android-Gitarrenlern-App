@@ -1,3 +1,8 @@
+## Songbook-CI: bestehende Bundle-Felder erkennen – 25.11.2026
+- Ursache von Build #475 behoben: Das Patchskript erwartete eine veraltete dreifeldrige Song-Konstruktorzeile, obwohl Build 436 die PDF-Felder `sourcePageStart`, `sourcePageEnd` und `importedContent` bereits vollständig aus dem Bundle liest.
+- Der Patch prüft diese drei Felder jetzt im vorhandenen `SongDetailFragment` und lässt eine bereits korrekte Implementierung unverändert; fehlende Felder führen weiterhin zu einer klaren Fehlermeldung.
+- Der neue GitHub-Workflow wird zur Bestätigung ausgeführt. Ein erfolgreicher Android-Build und ein Importtest auf einem Gerät sind noch nicht bestätigt.
+
 ## CI-Reparatur Premium-Songbook – 25.11.2026
 - Beschädigte, mehrfach angehängte Fragmente aus `ci/premium_songbook_patch.py` entfernt; Python-RegEx-Import ergänzt.
 - Original-PDF-Viewer: Seitenanzeige-Interpolation korrigiert.
