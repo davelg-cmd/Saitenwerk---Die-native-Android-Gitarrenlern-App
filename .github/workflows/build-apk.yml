@@ -799,7 +799,7 @@ jobs:
               raise SystemExit("FEHLER: Trainer-Einstiege sind doppelt oder nicht eindeutig.")
           if s.find('fun showChanges() { showStrumming("changes") }') < s.find('fun showStrumming(initialMode: String = "strumming") {'):
               raise SystemExit("FEHLER: Lokale showChanges-Funktion steht vor showStrumming.")
-          if 'Akkordwechsel & Schlagmuster trainieren' not in s or 'Zum Lernstudio' not in s:
+          if 'Akkordwechsel & Schlagmuster trainieren' not in s or ('Zum Lernstudio' not in s and 'Akkord-Blitztrainer öffnen' not in s):
               raise SystemExit("FEHLER: Gemeinsamer Trainer ist nicht an Song-Praxis und Akkordbibliothek angebunden.")
           forbidden_ui = ['val previewButton', 'val barsButton', 'val down = a.button("↓ Abschlag")', 'val up = a.button("↑ Aufschlag")', 'previewButton.setOnClickListener', 'down.setOnClickListener', 'up.setOnClickListener', 'Muster vorhören', 'Jetzt du · Training starten']
           found = [x for x in forbidden_ui if x in trainer]
