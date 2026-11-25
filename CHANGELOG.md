@@ -1,3 +1,11 @@
+## Akkord-Blitztrainer – Hör-Quiz – 25.11.2026 · Build 500
+- **Hör-Quiz integriert:** Neuer Trainingsmodus innerhalb des bestehenden Akkord-Blitztrainers. Akkorde werden ausschließlich anhand ihres Gitarrenklangs erkannt; keine Griffbild-Hinweise.
+- **Authentischer Gitarrenklang:** Wiedergabe über die vorhandene lokale Sample-Soundengine und dieselbe zentrale `ChordLibrary`; kein zusätzlicher Klangbestand und vollständig offline.
+- **Wiederholbare Wiedergabe:** Jeder Akkord wird zu Beginn einer Frage abgespielt und kann beliebig oft erneut angehört werden. Vier Antwortmöglichkeiten bleiben erhalten.
+- **Vier Schwierigkeitsstufen:** Das Hör-Quiz nutzt dieselben Stufen wie die visuelle Akkorderkennung. Die adaptive Auswahl berücksichtigt ausschließlich die eigene Hör-Trefferquote.
+- **Getrennte Hör-Auswertung:** Eigene Versuche, Trefferquote, Reaktionszeiten, Serien und Fehlerliste. Hörfehler werden nicht mit Griffbildfehlern vermischt; zusätzlich gibt es ein stufengebundenes Hör-Fehlertraining.
+- **Lernfortschritt-Reset erweitert:** Der vollständige Reset löscht auch alle neuen Hörstatistiken und Hörfehler, bewahrt aber Modus- und Stufeneinstellungen.
+
 ## Akkord-Blitztrainer – Schwierigkeitsstufen – 25.11.2026 · Build 498
 - **Vier klare Lernstufen:** Anfänger, Fortgeschrittene Anfänger, Fortgeschritten und Experte ersetzen die bisherigen Akkordfamilien als Trainingskategorien.
 - **Technikbasierte Zuordnung:** Alle 93 im Quiz verwendeten eindeutigen Griffbilder werden anhand offener Grundgriffe, offener Erweiterungen, Barré-/Powertechnik und komplexer Voicings einsortiert; die deutsche/internationale B/Bb-Doppelbezeichnung bleibt wie bisher ohne doppelte Quizfrage.

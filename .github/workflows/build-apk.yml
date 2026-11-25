@@ -219,12 +219,44 @@ jobs:
           print("12 Bünde, sechs Saiten, Tonausgabe, 10er-Runde, Serienbestwert und Lernstudio-Einstieg geprüft.")
           PY
 
-      - name: Vollständigen Lernfortschritt-Reset integrieren
+      - name: Akkord-Hör-Quiz integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
           set -euo pipefail
-          python3 ci/upgrade_complete_learning_reset.py
+          python3 -c 'import gzip; from pathlib import Path; Path("ci/upgrade_chord_hearing_quiz.py").write_bytes(gzip.decompress(Path("ci/upgrade_chord_hearing_quiz.py.gz").read_bytes()))'
+          python3 ci/upgrade_chord_hearing_quiz.py
+
+      - name: Akkord-Hör-Quiz validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          required = [
+              '"listen" to "Hör-Quiz · Akkord erkennen"',
+              '"listenMistakes" to "Hör-Fehlertraining"',
+              'GuitarAudioEngine.playChord(a, shape, downstroke = true, volume = 0.88f, replace = true)',
+              'learn_chord_listen_attempts_$key',
+              'learn_chord_listen_correct_$key',
+              'learn_chord_listen_errors',
+              'learn_chord_listen_best_streak',
+              'if (mode == "listen" || mode == "listenMistakes") recordListenAnswer',
+              'statsKeys.forEach { editor.remove(it) }',
+              'Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen',
+          ]
+          missing = [item for item in required if item not in s]
+          if missing:
+              raise SystemExit("FEHLER: Hör-Quiz unvollständig: " + ", ".join(missing))
+          if s.count('"listen" to "Hör-Quiz · Akkord erkennen"') != 1:
+              raise SystemExit("FEHLER: Hör-Quiz-Modus mehrfach integriert.")
+          if 'ChordDiagramView(a, shape)' not in s:
+              raise SystemExit("FEHLER: Visuelle Griffbild-Erkennung wurde versehentlich entfernt.")
+          print("AKKORD-HÖR-QUIZ: PASS – Gitarrenklang, Replay, Stufen, adaptive Auswahl, getrennte Statistik/Fehlerliste, Reset und bestehende Modi geprüft.")
+          PY
 
       - name: Vollständigen Lernfortschritt-Reset validieren
         env:
