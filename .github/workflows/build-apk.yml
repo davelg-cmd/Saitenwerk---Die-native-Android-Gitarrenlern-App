@@ -219,6 +219,13 @@ jobs:
           print("12 Bünde, sechs Saiten, Tonausgabe, 10er-Runde, Serienbestwert und Lernstudio-Einstieg geprüft.")
           PY
 
+      - name: Vollständigen Lernfortschritt-Reset integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_complete_learning_reset.py
+
       - name: Akkord-Hör-Quiz integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
