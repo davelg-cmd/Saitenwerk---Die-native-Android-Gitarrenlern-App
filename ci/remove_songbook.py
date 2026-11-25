@@ -115,7 +115,10 @@ def remove_function(source: str, name: str, signature: str) -> str:
     if len(matches) != 1:
         raise SystemExit(f"FEHLER: {name} nicht eindeutig gefunden (Treffer: {len(matches)}).")
     m = matches[0]
-    opening = source.find("{", m.end())
+    # Die Signatur-RegEx enthält bereits die öffnende Klammer.
+    # Nicht erst nach m.end() suchen: Das würde bei einer Funktion mit
+    # Properties direkt danach versehentlich den nächsten Lambda-Block erwischen.
+    opening = source.find("{", m.start(), m.end())
     if opening < 0:
         raise SystemExit(f"FEHLER: Funktionsblock {name} ohne öffnende Klammer.")
     end = kotlin_matching_brace(source, opening) + 1
