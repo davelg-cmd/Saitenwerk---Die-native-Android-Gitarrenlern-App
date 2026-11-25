@@ -1,6 +1,5 @@
 from pathlib import Path
 import os
-import re
 
 ROOT=Path(os.environ["PROJECT_DIR"])
 MAIN=ROOT/"app/src/main/java/de/saitenwerk/app/MainActivity.kt"
@@ -106,7 +105,10 @@ class SongAdapter(private val all:List<Song>,private val host:MainActivity,priva
 }
 '''
 s=s[:start]+new+s[end:]
-bundle_fields = '''\n                putInt("sourcePageStart", song.sourcePageStart)\n                putInt("sourcePageEnd", song.sourcePageEnd)\n                putString("importedContent", song.importedContent)'''
+bundle_fields = """
+                putInt("sourcePageStart", song.sourcePageStart)
+                putInt("sourcePageEnd", song.sourcePageEnd)
+                putString("importedContent", song.importedContent)"""
 if 'putString("importedContent", song.importedContent)' not in s:
     genre_match = re.search(r'(?m)^(\s*)putString\(\s*"genre"\s*,\s*song\.genre\s*\)\s*
 rep('''            Song(it.getString("title").orEmpty(), it.getString("artist").orEmpty(), it.getString("genre").orEmpty())
