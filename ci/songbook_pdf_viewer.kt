@@ -17,7 +17,7 @@ object SongbookPdfViewer{
   val img=ImageView(a).apply{adjustViewBounds=true;scaleType=ImageView.ScaleType.FIT_CENTER};val nav=LinearLayout(a).apply{gravity=Gravity.CENTER};val prev=a.button("‹");val next=a.button("›")
   nav.addView(prev,LinearLayout.LayoutParams(a.dp(64),a.dp(48)));nav.addView(next,LinearLayout.LayoutParams(a.dp(64),a.dp(48)));root.addView(h);root.addView(img,LinearLayout.LayoutParams(-1,0,1f));root.addView(nav);d.setView(root)
   val pfd=ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY);val r=PdfRenderer(pfd);var page=first
-  fun render(){val p=r.openPage(page);val b=Bitmap.createBitmap(p.width*2,p.height*2,Bitmap.Config.ARGB_8888);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();img.setImageBitmap(b);h.text="Original-PDF · Seite \${page+1}";prev.isEnabled=page>first;next.isEnabled=page<last}
+  fun render(){val p=r.openPage(page);val b=Bitmap.createBitmap(p.width*2,p.height*2,Bitmap.Config.ARGB_8888);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();img.setImageBitmap(b);h.text="Original-PDF · Seite ${page+1}";prev.isEnabled=page>first;next.isEnabled=page<last}
   prev.setOnClickListener{if(page>first){page--;render()}};next.setOnClickListener{if(page<last){page++;render()}};d.setOnDismissListener{r.close();pfd.close()};d.show();d.window?.setLayout(a.dp(380),a.dp(650));render()
  }
 }
