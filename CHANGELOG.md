@@ -1,3 +1,11 @@
+## Akkord-Blitztrainer Premium – 25.11.2026
+- **Vier Trainingsmodi:** Griffbild erkennen, Griff zuordnen (Name → Griffbild), 60-Sekunden-Blitzrunde und gezieltes Fehlertraining.
+- **Adaptive Wiederholung:** Individuelle Trefferquoten je Akkord, gewichtete Fragenauswahl zugunsten unsicherer Griffe, dauerhaft gespeicherte Fehlerliste und automatische Entlastung nach drei sicheren Antworten in Folge.
+- **Leistungsfeedback:** Reaktionszeit, Trefferquote, laufende Serie, persönliche Bestserie und Rundenfortschritt.
+- **Zentrale Akkorddatenbank erweitert:** Die vorhandene `ChordLibrary` wächst von 67 auf 94 eindeutige Griffbilder. Ergänzt wurden chromatische Dur- und Moll-Barrégriffe, weitere Septakkorde, Add9-, Sus-, Power-, übermäßige und verminderte Akkorde. Jede Ergänzung wird auf sechs Saitenwerte, Bundpositionen und Fingerzuordnung geprüft.
+- **Fehlertraining und Lernfortschritt:** Unsichere Akkorde werden dauerhaft vorgemerkt und bevorzugt wiederholt. Der vollständige Lernfortschritt-Reset löscht auch die neuen Einzelakkord-Statistiken und Fehlerlisten; Modus- und Kategorieeinstellungen bleiben erhalten.
+- **Technik:** Die Akkordbibliothek bleibt die einzige Datenquelle; keine zweite Datenbank und keine Änderungen am gemeinsamen Akkordwechsel-/Schlagmustertrainer.
+
 ## Update-Installation – 25.11.2026
 - **Automatisches Öffnen des Installationsdialogs repariert:** Der DownloadManager-Abschluss-Broadcast wird auf Android 13+ jetzt über `Context.RECEIVER_EXPORTED` empfangen. Der Empfänger prüft weiterhin die gespeicherte Download-ID und den tatsächlichen DownloadManager-Status, bevor die APK-Validierung und der Android-Installer gestartet werden. Ziel: Installation direkt nach Downloadabschluss, ohne Antippen der Download-Benachrichtigung.
 

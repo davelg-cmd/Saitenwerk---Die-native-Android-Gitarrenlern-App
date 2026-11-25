@@ -126,6 +126,20 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_learning_studio.py
 
+      - name: Akkord-Blitztrainer auf Premium-Niveau erweitern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import gzip
+          from pathlib import Path
+          archive = Path("ci/upgrade_chord_blitz_premium.py.gz")
+          target = Path("ci/upgrade_chord_blitz_premium.py")
+          target.write_bytes(gzip.decompress(archive.read_bytes()))
+          PY
+          python3 ci/upgrade_chord_blitz_premium.py
+
       - name: Intelligenten Schlagmuster-Trainer integrieren
         run: |
           set -euo pipefail
