@@ -13,7 +13,7 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
-            "25.11.2026 · Build 487" to "Update-Installation repariert: DownloadManager-Abschlussmeldungen werden auf Android 13+ über einen exportierten, auf die erwartete Download-ID und den tatsächlichen Download-Status geprüften Broadcast-Empfänger verarbeitet. Nach erfolgreichem APK-Download kann der Android-Installationsdialog automatisch geöffnet werden, ohne die Download-Benachrichtigung antippen zu müssen.",
+            "25.11.2026 · Build 490" to "Update-Installation repariert: DownloadManager-Abschlussmeldungen werden auf Android 13+ über einen exportierten, auf die erwartete Download-ID und den tatsächlichen Download-Status geprüften Broadcast-Empfänger verarbeitet. Nach erfolgreichem APK-Download kann der Android-Installationsdialog automatisch geöffnet werden, ohne die Download-Benachrichtigung antippen zu müssen.",
             "25.11.2026 · Build 483" to "Verworfenes Songbook vollständig zurückgebaut: Navigation, Datenmodell, Repository, Listen-/Detailansichten, PDF-Importer, PDF-Viewer, PDFBox-Abhängigkeit und zugehörige Ressourcen aus dem App-Projekt entfernt. Song-Praxis, gemeinsamer Gitarrentrainer, Akkordbibliothek, Lernstudio, Lernfortschritt und Stimmgerät bleiben erhalten. Die CI prüft die Abwesenheit aller Songbook-Komponenten vor dem Build.",
             "20.11.2026 · Build 436" to "Gemeinsamer Gitarrentrainer: Akkordwechsel- und Schlagmuster-Training zu einem Trainer zusammengeführt. Beide Modi teilen Akkordauswahl, geordnete Akkordfolge, Taktart und Tempo; vorhandene Einstellungen werden übernommen. Akkordwechsel zeigt den aktuellen und nächsten Griff samt Griffbild, Schlagmuster nutzt die bestehende Wischsteuerung mit Tonwiedergabe und Timing-Auswertung. Separate ChordTrainingPanel-Implementierung und doppelte Traineroberfläche entfernt; Einstiege aus Song-Praxis und Akkordbibliothek auf den gemeinsamen Trainer umgestellt.",
             "19.11.2026 · Build 427" to "Gemeinsamer Gitarrentrainer: Akkordwechsel- und Schlagmuster-Modus in einer einzigen Trainingsoberfläche zusammengeführt. Akkordauswahl, geordnete Akkordfolge, Taktart und Tempo werden gemeinsam verwaltet; Modusumschaltung, ein Start-/Stopp-Steuerelement und ein gemeinsamer Trainingsablauf. Im Akkordwechsel-Modus werden Akkorddiagramm, Akkordfolge und Gitarrenwiedergabe pro Takt angezeigt; im Schlagmuster-Modus bleiben Wischgesten, Tonwiedergabe und Timing-Auswertung aktiv. Bestehende Akkordfolgen, Taktarten, Tempi und Trainingsfortschritte aus beiden bisherigen Trainern werden migriert und die Statistikwerte getrennt fortgeführt. Die separate Trainerklasse und doppelte Traineroberfläche in der Akkordbibliothek entfernt; Song-Praxis besitzt nur noch einen gemeinsamen Trainer-Einstieg.",
@@ -58,7 +58,8 @@ required = [
     "Mehrfachauswahl von Gitarrenakkorden",
     "Taktarten 3/4, 4/4 und 6/8",
     "Akkordfolge",
-    "Build $buildNumber",
+    "Build 483",
+    "Build 490",
 ]
 missing = [item for item in required if item not in s]
 if missing:
