@@ -7,6 +7,8 @@ root = Path(os.environ["PROJECT_DIR"])
 main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
 source = main.read_text(encoding="utf-8")
 
+premium_chords = "SAITENWERK_CHORDS_PREMIUM_V1" in source
+
 old = '''            val button = a.button("$letter  ▾").apply {
                 textSize = 14f
                 isEnabled = chords.isNotEmpty()
@@ -92,7 +94,7 @@ new = '''            val button = a.button("$letter  ▾").apply {
 
 if old in source:
     source = source.replace(old, new)
-elif 'android.widget.PopupWindow(' not in source[source.find("class ChordsFragment") : source.find("class GuitarFretboardView")]:
+elif not premium_chords and 'android.widget.PopupWindow(' not in source[source.find("class ChordsFragment") : source.find("class GuitarFretboardView")]:
     raise SystemExit("FEHLER: Akkord-Dropdown nicht gefunden; Quellstand unverändert.")
 main.write_text(source, encoding="utf-8")
 
@@ -146,7 +148,7 @@ if spinner.exists():
 
 check = main.read_text(encoding="utf-8")
 chords = check[check.find("class ChordsFragment") : check.find("class GuitarFretboardView")]
-if "android.widget.PopupWindow(" not in chords or "PopupMenu(a, anchor)" in chords:
+if not premium_chords and ("android.widget.PopupWindow(" not in chords or "PopupMenu(a, anchor)" in chords):
     raise SystemExit("FEHLER: Akkord-Dropdown-Validierung fehlgeschlagen.")
 if "#F0C29F" not in cs or "#C18A68" not in cs or "android:textColorPrimary" not in th:
     raise SystemExit("FEHLER: Kupfer-Typografie-Validierung fehlgeschlagen.")

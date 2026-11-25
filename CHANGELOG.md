@@ -1,4 +1,4 @@
-## Akkordbereich – Premium-Akkordbibliothek – 25.11.2026 · Build 511
+## Akkordbereich – Premium-Akkordbibliothek – 25.11.2026 · Build 512
 - **Bibliotheks-Startseite neu gestaltet:** Der Akkordbereich startet nicht mehr mit einer leeren Auswahlfläche, sondern mit einem Akkord-Atlas, Bibliotheksumfang, Favoritenübersicht und klarer Orientierung.
 - **Schnelle Suche:** Akkorde lassen sich nach Name, Akkordqualität und Beschreibung durchsuchen.
 - **Filter und Favoriten:** Direktfilter für Alle, Favoriten, Dur, Moll, Septakkorde, Sus-, Add- und Power-Akkorde. Favoriten werden weiterhin lokal gespeichert.
