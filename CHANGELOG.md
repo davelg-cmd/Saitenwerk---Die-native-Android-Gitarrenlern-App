@@ -1,3 +1,6 @@
+## Changelog-Korrektur – 25.11.2026
+- **In-App-Changelog korrigiert:** Historische Einträge verwenden wieder ihre ursprünglichen Build-Nummern statt die Nummer des jeweils aktuellen Builds. Der gemeinsame Gitarrentrainer ist Build 427, die nachfolgende Überarbeitung vom 20.11. ist Build 436; ältere Einträge behalten 426, 399, 394, 392, 390 und 387.
+
 ## Vollständiger Songbook-Rückbau – 25.11.2026
 - Rückbau des verworfenen Songbook-Experiments in der Build-Pipeline umgesetzt: Der Workflow verwendet für diesen einmaligen Rückbau den geprüften Ausgangsstand Build 436 statt des Songbook-haltigen Build 479.
 - Die CI entfernt Songbook-Navigation, Song-Datenmodell, Repository, Listen- und Detailansichten, PDF-Importer/-Viewer, PDFBox-Abhängigkeit sowie die zugehörigen Ressourcen.
