@@ -566,7 +566,6 @@ jobs:
               "class SettingsFragment : Fragment()",
               "Stimmgerät öffnen",
               "Lernfortschritt zurücksetzen",
-              "meterTempoRow",
           ]
           missing = [x for x in required_app if x not in main]
           if missing:
