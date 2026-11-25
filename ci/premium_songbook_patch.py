@@ -142,7 +142,7 @@ MAIN.write_text(s,encoding="utf-8")
 g=GRADLE.read_text(encoding="utf-8")
 if "pdfbox-android:2.0.27.0" not in g:g=g.replace('implementation("com.google.android.material:material:1.12.0")','implementation("com.google.android.material:material:1.12.0")\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")')
 GRADLE.write_text(g,encoding="utf-8")
-for rel in ["app/src/main/assets/saitenwerk_legacy.html","app/src/main/assets/songs.json","app/src/main/assets/public_domain_sheets.json","SONGBOOK_PUBLIC_DOMAIN.md","CHANGELOG_ALPHA7_LIEDERBUCH.md","UPDATE_ALPHA7_SONGREADER_V3.md","fix_v3.py","UPDATEFIX_README.md","saitenwerk-upload.jks"]:
+for rel in ["app/src/main/assets/saitenwerk_legacy.html","app/src/main/assets/songs.json","app/src/main/assets/public_domain_sheets.json","SONGBOOK_PUBLIC_DOMAIN.md","CHANGELOG_ALPHA7_LIEDERBUCH.md","UPDATE_ALPHA7_SONGREADER_V3.md","fix_v3.py","UPDATEFIX_README.md"]:
     p=ROOT/rel
     if p.exists():p.unlink()
 (ROOT/"app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt").write_text((Path(os.environ["GITHUB_WORKSPACE"])/"ci/songbook_pdf_importer.kt").read_text(),encoding="utf-8")
