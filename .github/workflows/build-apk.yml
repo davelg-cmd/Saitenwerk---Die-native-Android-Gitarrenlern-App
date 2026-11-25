@@ -264,6 +264,48 @@ jobs:
           print("AKKORD-HÖR-QUIZ: PASS – Gitarrenklang, Replay, Stufen, adaptive Auswahl, getrennte Statistik/Fehlerliste, Reset und bestehende Modi geprüft.")
           PY
 
+      - name: Premium-Akkordbibliothek integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          base64 -d ci/premium_chords_library.py.gz.b64 | gzip -dc > ci/premium_chords_library.py
+          python3 ci/premium_chords_library.py
+
+      - name: Premium-Akkordbibliothek validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/MainActivity.kt").read_text(encoding="utf-8")
+          start = s.find("class ChordsFragment : Fragment() {")
+          end = s.find("\\nclass GuitarFretboardView", start)
+          section = s[start:end] if start >= 0 and end > start else ""
+          required = [
+              "SAITENWERK_CHORDS_PREMIUM_V1",
+              "DEIN AKKORD-ATLAS",
+              "Akkord suchen",
+              "Favoriten",
+              "Septakkorde",
+              "Griff ansehen",
+              "Akkord anhören",
+              "Tiefe E-Saite links",
+              "ChordDiagramView(a, ch)",
+              "ChordPreviewPlayer.play(ch, a)",
+              "Akkord-Blitztrainer öffnen",
+              "ChordLibrary.all.distinctBy",
+          ]
+          missing = [item for item in required if item not in section]
+          if missing:
+              raise SystemExit("FEHLER: Premium-Akkordbereich unvollständig: " + ", ".join(missing))
+          if section.count("SAITENWERK_CHORDS_PREMIUM_V1") != 1:
+              raise SystemExit("FEHLER: Premium-Akkordbereich mehrfach integriert.")
+          print("PREMIUM-AKKORDBIBLIOTHEK: PASS – Suche, Filter, Favoriten, zweispaltige Übersicht, Griffdetails, Audio und Lernstudio-Einstieg geprüft.")
+          PY
+
       - name: Vollständigen Lernfortschritt-Reset validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
