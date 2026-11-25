@@ -1,4 +1,4 @@
-## Akkord-Blitztrainer – Hör-Quiz – 25.11.2026 · Build 500
+## Akkord-Blitztrainer – Hör-Quiz – 25.11.2026 · Build 502
 - **Hör-Quiz integriert:** Neuer Trainingsmodus innerhalb des bestehenden Akkord-Blitztrainers. Akkorde werden ausschließlich anhand ihres Gitarrenklangs erkannt; keine Griffbild-Hinweise.
 - **Authentischer Gitarrenklang:** Wiedergabe über die vorhandene lokale Sample-Soundengine und dieselbe zentrale `ChordLibrary`; kein zusätzlicher Klangbestand und vollständig offline.
 - **Wiederholbare Wiedergabe:** Jeder Akkord wird zu Beginn einer Frage abgespielt und kann beliebig oft erneut angehört werden. Vier Antwortmöglichkeiten bleiben erhalten.

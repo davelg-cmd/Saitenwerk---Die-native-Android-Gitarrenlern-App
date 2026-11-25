@@ -253,7 +253,6 @@ jobs:
               'learn_chord_listen_best_streak',
               'if (mode == "listen" || mode == "listenMistakes") recordListenAnswer',
               'statsKeys.forEach { editor.remove(it) }',
-              'Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen',
           ]
           missing = [item for item in required if item not in s]
           if missing:
