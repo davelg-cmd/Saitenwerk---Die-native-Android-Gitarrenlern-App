@@ -394,12 +394,12 @@ jobs:
           if missing:
               raise SystemExit("FEHLER: Songbook-Integration unvollständig: " + ", ".join(missing))
           required_importer = [
-              'EXPECTED_SONGS = 452',
+              'EXPECTED_SONGS=452',
               'PDFTextStripper()',
               'PDDocument.load(file)',
               'sourcePageEnd',
               'filesDir',
-              'File(context.filesDir, CATALOG)',
+              'File(context.filesDir,CATALOG_FILE)',
           ]
           missing = [item for item in required_importer if item not in importer]
           if missing:
