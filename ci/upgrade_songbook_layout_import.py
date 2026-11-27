@@ -122,7 +122,7 @@ internal object SongbookLayoutImporter {
             ordered.forEach { token ->
                 val word=words.lastOrNull()
                 val previous=word?.lastOrNull()
-                if(word==null || previous==null || token.x-(previous.x+previous.width)>max(1.8f,previous.height*0.34f))
+                if(word==null || previous==null || token.x-(previous.x+previous.width)>max(1.8f,previous.height*0.22f))
                     words += mutableListOf(token)
                 else word += token
             }
@@ -159,9 +159,10 @@ private object SongbookLayoutParser {
         val next=page.lines.getOrNull(index+1)
         val gapBefore=prev?.let{line.y-(it.y+it.height)} ?: line.y
         val gapAfter=next?.let{it.y-(line.y+line.height)} ?: line.height
-        val isolated=gapBefore>median*0.75f && gapAfter>median*0.35f
+        val isolated=gapBefore>median*1.25f && gapAfter>median*0.75f
         val larger=line.height>=median*1.22f
-        return upper || larger || isolated
+        val atTop=line.y<page.height*0.14f
+        return upper || larger || atTop || (isolated && text.length<=64)
     }
     fun parse(pages:List<LayoutPage>,source:String):List<SongbookSong> {
         if(pages.isEmpty()) return emptyList()
@@ -193,8 +194,8 @@ private object SongbookLayoutParser {
             collected.drop(1).forEachIndexed { index,item ->
                 val (page,line)=item
                 if(isChordLine(line)) {
-                    pending=line.tokens.toMutableList()
-                    pendingY=line.y
+                    if(pending.isEmpty()) pendingY=line.y
+                    pending.addAll(line.tokens)
                 } else {
                     val chordTokens=if(pending.isNotEmpty() && (line.y-pendingY)<max(18f,line.height*2.2f)) pending else mutableListOf()
                     val placements=chordTokens.mapNotNull { token ->
