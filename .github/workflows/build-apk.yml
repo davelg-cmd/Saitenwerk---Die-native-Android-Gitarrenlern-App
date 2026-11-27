@@ -497,6 +497,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_pdf_indexed_parser.py
 
+      - name: Songbook auf benutzereigene PDFs umstellen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/make_songbook_user_owned.py
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
