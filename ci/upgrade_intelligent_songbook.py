@@ -176,7 +176,7 @@ class SongbookFragment : Fragment() {
             isVerticalScrollBarEnabled = true
             overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         }
-        listScroll.addView(list, ScrollView.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+        listScroll.addView(list, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
         root.addView(listScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         fun refresh(q:String="") {
             list.removeAllViews()
