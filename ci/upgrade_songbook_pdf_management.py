@@ -212,7 +212,7 @@ end=s.index('\nclass SongbookFragment : Fragment() {', start)
 parser='''object SongbookParser {
     private val chordPattern = Pattern.compile("""(?<![A-Za-z0-9])([A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|m9|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:/[A-G](?:#|b)?)?)(?![A-Za-z0-9])""")
     fun parse(text: String, source: String): List<SongbookSong> {
-        val normalized = text.replace("\r\n", "\n").replace('\r', '\n').filter { it.code != 0 }.trim()
+        val normalized = text.replace("\\r\\n", "\\n").replace('\\r', '\\n').filter { it.code != 0 }.trim()
         if (normalized.isBlank()) return emptyList()
         val pages = normalized.split(Regex("""\[\[SAITENWERK_SEITE_\d+]]""")).filter { it.isNotBlank() }
         val blocks = mutableListOf<String>()
@@ -236,7 +236,7 @@ parser='''object SongbookParser {
                 if (page.trim().length >= 20) blocks += page.trim()
             } else boundaries.forEachIndexed { index, start ->
                 val end = boundaries.getOrNull(index + 1) ?: lines.size
-                val block = lines.subList(start, end).joinToString("\n").trim()
+                val block = lines.subList(start, end).joinToString("\\n").trim()
                 if (block.length >= 20) blocks += block
             }
         }
@@ -254,7 +254,7 @@ parser='''object SongbookParser {
             if (seen.add(key)) result += SongbookSong(title=title, artist=artist, lyrics=block, chords=chords.toList(), source=source)
         }
         if (result.isEmpty()) {
-            val all = pages.joinToString("\n\n").trim()
+            val all = pages.joinToString("\\n\\n").trim()
             if (all.length >= 20) result += SongbookSong(title=all.lines().firstOrNull { it.isNotBlank() }?.trim()?.take(120) ?: "PDF-Inhalt prüfen", artist="Unbekannter Künstler", lyrics=all, chords=emptyList(), source=source)
         }
         return result
