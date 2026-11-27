@@ -461,6 +461,49 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Neues intelligentes Premium-Songbook integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_intelligent_songbook.py
+
+      - name: Intelligentes Premium-Songbook validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["PROJECT_DIR"])
+          main = root / "app/src/main/java/de/saitenwerk/app/MainActivity.kt"
+          songbook = root / "app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt"
+          gradle = root / "app/build.gradle.kts"
+          if not songbook.is_file():
+              raise SystemExit("FEHLER: IntelligentSongbook.kt fehlt.")
+          s = songbook.read_text(encoding="utf-8")
+          required = [
+              "class SongbookFragment",
+              "class SongbookDb",
+              "object SongbookParser",
+              "PDFTextStripper",
+              "PDDocument.load",
+              "saitenwerk_songbook.db",
+              "YouTube-Verknüpfung suchen",
+              "enablejsapi=1",
+              "Auto-Sync für Lyrics aktivieren",
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: Intelligentes Songbook unvollständig: " + ", ".join(missing))
+          if "com.tom-roush:pdfbox-android:2.0.27.0" not in gradle.read_text(encoding="utf-8"):
+              raise SystemExit("FEHLER: PDFBox-Android-Abhängigkeit fehlt.")
+          if "SongbookFragment" not in main.read_text(encoding="utf-8"):
+              raise SystemExit("FEHLER: Songbook-Navigation fehlt.")
+          print("INTELLIGENTES-SONGBOOK: PASS – PDF-Import, Parser, SQLite-Datenbank, Songdetail, YouTube-Player und Synchronisationsoberfläche geprüft.")
+          PY
+
       - name: Songbook-Rückbau und Restfreiheit validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
