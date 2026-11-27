@@ -253,7 +253,14 @@ method=r'''    private fun importPdf(uri:Uri) {
                 requireActivity().runOnUiThread {
                     if(progress.parent!=null) root.removeView(progress)
                     AlertDialog.Builder(requireContext()).setTitle("Import fehlgeschlagen")
-                        .setMessage(t.cause?.message ?: t.message ?: "Unbekannter PDF-Fehler").setPositiveButton("OK",null).show()
+                        .setMessage(buildString {
+                            append("Fehlertyp: ").append(t.javaClass.name)
+                            append("\nMeldung: ").append(t.message ?: "keine")
+                            t.cause?.let { append("\nUrsache: ").append(it.javaClass.name).append(": ").append(it.message ?: "keine Meldung") }
+                            append("\n\nAufrufstelle:")
+                            t.stackTrace.take(5).forEach { append("\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
+                            t.cause?.stackTrace?.take(3)?.forEach { append("\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
+                        }).setPositiveButton("OK",null).show()
                 }
             }
         }
