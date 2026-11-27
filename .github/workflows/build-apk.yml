@@ -504,6 +504,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_toc_robust.py
 
+      - name: PDF-Songs auf gemeinsam genutzten Seiten exakt trennen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_songbook_same_page_segments.py
+
       - name: Bekannte gemeinfreie Lieder und YouTube-Sync integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
