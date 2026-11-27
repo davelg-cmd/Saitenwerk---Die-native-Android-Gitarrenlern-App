@@ -211,8 +211,7 @@ parser='''object SongbookParser {
     private val chordPattern = Pattern.compile("""(?<![A-Za-z0-9])([A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|m9|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:/[A-G](?:#|b)?)?)(?![A-Za-z0-9])""")
 
     fun parse(text: String, source: String): List<SongbookSong> {
-        val clean = text.replace("\\r\\n", "\\n").replace("\\r", "\\n")
-            .replace("\\u0000", "").replace(Regex("[ \\t]+\\n"), "\\n").trim()
+        val clean = text.filter { it.code != 0 }.trim()
         if (clean.isBlank()) return emptyList()
         val pageBlocks = clean.split(Regex("""\[\[SAITENWERK_SEITE_\d+]]""")).map { it.trim() }.filter { it.isNotBlank() }
         val candidates = mutableListOf<String>()
@@ -223,12 +222,12 @@ parser='''object SongbookParser {
         val songs = mutableListOf<SongbookSong>()
         val used = HashSet<String>()
         for (block in candidates) {
-            val lines = block.lines().map { it.trim().replace(Regex("\\\\s{2,}"), " ") }.filter { it.isNotBlank() }
+            val lines = block.lines().map { it.trim().replace(Regex("""\s{2,}"""), " ") }.filter { it.isNotBlank() }
             if (lines.isEmpty()) continue
             val titleIndex = lines.indexOfFirst { line ->
                 val normalized = line.trim('#','*','-',' ').trim()
                 normalized.length in 2..120 && normalized.count { it.isLetter() } >= 2 &&
-                    !looksLikeChordLine(normalized) && !normalized.matches(Regex("(?i)seite\\\\s+\\\\d+"))
+                    !looksLikeChordLine(normalized) && !normalized.matches(Regex("""(?i)seite\s+\d+"""))
             }
             if (titleIndex < 0) continue
             val title = lines[titleIndex].trim('#','*','-',' ').trim().take(120)
@@ -251,7 +250,7 @@ parser='''object SongbookParser {
             )
         }
         if (songs.isEmpty()) {
-            val lyrics = pageBlocks.joinToString("\n\n").trim()
+            val lyrics = pageBlocks.joinToString(System.lineSeparator() + System.lineSeparator()).trim()
             val title = lyrics.lines().firstOrNull { it.trim().length >= 2 }?.trim()?.take(120) ?: "Importiertes Lied"
             val chords = linkedSetOf<String>()
             val matcher = chordPattern.matcher(lyrics)
@@ -268,7 +267,7 @@ parser='''object SongbookParser {
         value.length <= 8 && value.firstOrNull() in listOf('A','B','C','D','E','F','G')
 
     private fun looksLikeChordLine(line: String): Boolean {
-        val words = line.trim().split(Regex("\\\\s+")).filter { it.isNotBlank() }
+        val words = line.trim().split(Regex("""\s+""")).filter { it.isNotBlank() }
         if (words.isEmpty()) return false
         val matches = words.count { word ->
             val matcher = chordPattern.matcher(word.trim(',', ';', ':', '.', '|'))
