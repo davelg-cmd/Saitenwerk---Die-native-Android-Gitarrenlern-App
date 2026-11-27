@@ -269,7 +269,7 @@ renderer=r'''    private fun renderSongbookLines(lines:List<String>,chords:org.j
         box.removeAllViews();views.clear()
         lines.forEachIndexed{index,line->
             val item=LinearLayout(requireContext()).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(10),dp(7),dp(10),dp(7));setBackgroundColor(if(index==songbookActiveLine)Color.rgb(67,49,35)else Color.rgb(22,24,29))}
-            val positioned=Regex("""^\\[\\[CHORDS:([^]]+)]](.*)$""").matchEntire(line)
+            val positioned=Regex("""^\[\[CHORDS:([^]]+)]](.*)$""").matchEntire(line)
             if(positioned!=null) {
                 val chordRow=LinearLayout(requireContext()).apply{orientation=LinearLayout.HORIZONTAL;weightSum=1000f}
                 var previous=0f
@@ -290,7 +290,7 @@ renderer=r'''    private fun renderSongbookLines(lines:List<String>,chords:org.j
                 if(chord.isNotBlank())item.addView(label(chord,15f,Color.rgb(218,169,112)))
                 item.addView(label(line,17f,Color.WHITE))
             }
-            item.setOnClickListener{select(index);Toast.makeText(requireContext(),"Zeile \${index+1} ausgewählt",Toast.LENGTH_SHORT).show()}
+            item.setOnClickListener{select(index);Toast.makeText(requireContext(),"Zeile ${index+1} ausgewählt",Toast.LENGTH_SHORT).show()}
             box.addView(item,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT).apply{bottomMargin=dp(5)});views.add(item)
         }
     }
