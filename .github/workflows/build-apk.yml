@@ -504,6 +504,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_public_domain_songbook.py
 
+      - name: Songbook-Player mit echter Zeitmarken-Synchronisierung und Akkordpositionen integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_performance_sync.py
+
       - name: Songbook auf benutzereigene PDFs umstellen
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
