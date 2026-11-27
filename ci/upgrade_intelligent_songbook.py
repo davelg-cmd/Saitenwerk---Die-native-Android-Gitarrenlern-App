@@ -171,7 +171,13 @@ class SongbookFragment : Fragment() {
         }
         root.addView(search, LinearLayout.LayoutParams(-1,dp(52)).apply { topMargin=dp(12); bottomMargin=dp(10) })
         val list = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
-        root.addView(list)
+        val listScroll = ScrollView(requireContext()).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = true
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+        }
+        listScroll.addView(list, ScrollView.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+        root.addView(listScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         fun refresh(q:String="") {
             list.removeAllViews()
             db.all().filter { q.isBlank() || (it.title + " " + it.artist).contains(q,true) }.take(100).forEach { song ->
