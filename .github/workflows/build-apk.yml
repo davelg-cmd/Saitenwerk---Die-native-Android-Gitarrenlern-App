@@ -497,6 +497,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_pdf_indexed_parser.py
 
+      - name: PDF-Inhaltsverzeichnis tolerant und seitenversatzsicher erkennen
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_toc_robust.py
+
       - name: Bekannte gemeinfreie Lieder und YouTube-Sync integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
