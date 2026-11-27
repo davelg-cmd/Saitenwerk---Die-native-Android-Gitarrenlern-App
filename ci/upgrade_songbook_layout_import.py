@@ -262,9 +262,14 @@ method=r'''    private fun importPdf(uri:Uri) {
 s=s[:start]+method+s[end:]
 
 # Render chord positions as a separate chord row above the matching lyric line.
-old='''            if(chord.isNotBlank())item.addView(label(chord,15f,Color.rgb(218,169,112)))
-            item.addView(label(line,17f,Color.WHITE));item.setOnClickListener'''
-new='''            val positioned=Regex("""^\\[\\[CHORDS:([^]]+)]](.*)$""").matchEntire(line)
+render_start=s.index("    private fun renderSongbookLines(")
+render_end=s.index("\n    private fun updateSongbookLine",render_start)
+renderer=r'''    private fun renderSongbookLines(lines:List<String>,chords:org.json.JSONObject,views:MutableList<View>,scroll:ScrollView,select:(Int)->Unit){
+        val box=scroll.getChildAt(0) as? LinearLayout ?: return
+        box.removeAllViews();views.clear()
+        lines.forEachIndexed{index,line->
+            val item=LinearLayout(requireContext()).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(10),dp(7),dp(10),dp(7));setBackgroundColor(if(index==songbookActiveLine)Color.rgb(67,49,35)else Color.rgb(22,24,29))}
+            val positioned=Regex("""^\\[\\[CHORDS:([^]]+)]](.*)$""").matchEntire(line)
             if(positioned!=null) {
                 val chordRow=LinearLayout(requireContext()).apply{orientation=LinearLayout.HORIZONTAL;weightSum=1000f}
                 var previous=0f
@@ -274,20 +279,23 @@ new='''            val positioned=Regex("""^\\[\\[CHORDS:([^]]+)]](.*)$""").matc
                     val x=parts.getOrNull(1)?.toFloatOrNull()?.coerceIn(previous,0.98f) ?: previous
                     val gap=((x-previous)*1000f).coerceAtLeast(0f)
                     if(gap>0f) chordRow.addView(View(requireContext()),LinearLayout.LayoutParams(0,dp(24),gap))
-                    val chordView=label(value,14f,Color.rgb(218,169,112))
-                    chordRow.addView(chordView,LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,dp(24)))
+                    chordRow.addView(label(value,14f,Color.rgb(218,169,112)),LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,dp(24)))
                     previous=(x+0.07f).coerceAtMost(1f)
                 }
                 if(previous<1f) chordRow.addView(View(requireContext()),LinearLayout.LayoutParams(0,dp(24),((1f-previous)*1000f).coerceAtLeast(1f)))
                 item.addView(chordRow)
                 item.addView(label(positioned.groupValues[2],17f,Color.WHITE))
             } else {
+                val chord=chords.optString(index.toString(),"")
                 if(chord.isNotBlank())item.addView(label(chord,15f,Color.rgb(218,169,112)))
                 item.addView(label(line,17f,Color.WHITE))
             }
-            item.setOnClickListener'''
-if old not in s: raise SystemExit("Songbook line renderer anchor missing")
-s=s.replace(old,new,1)
+            item.setOnClickListener{select(index);Toast.makeText(requireContext(),"Zeile \${index+1} ausgewählt",Toast.LENGTH_SHORT).show()}
+            box.addView(item,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT).apply{bottomMargin=dp(5)});views.add(item)
+        }
+    }
+'''
+s=s[:render_start]+renderer+s[render_end:]
 target.write_text(s,encoding="utf-8")
 (root/"SONGBOOK_LAYOUT_IMPORT_V2.txt").write_text(
     "SaitenWerk Songbook layout importer V2\n"
