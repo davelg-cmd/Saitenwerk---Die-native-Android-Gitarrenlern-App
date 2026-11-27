@@ -1,3 +1,17 @@
+## Unreleased – Intelligentes Premium-Songbook
+
+- Neuer **Songbook-Bereich** als eigenständige Premium-Funktion in Saitenwerk.
+- Beliebige PDF-Dateien können direkt aus der App ausgewählt und analysiert werden.
+- PDF-Text wird strukturiert verarbeitet; Songs, Künstler, Lyrics und erkannte Akkorde werden getrennt gespeichert.
+- Neues lokales SQLite-Songbook statt eines bloßen PDF-Viewers.
+- Doppelte Songs werden anhand von Titel und Künstler erkannt und aktualisiert.
+- Songdetailansicht mit Lyrics, Akkordübersicht und YouTube-Einstieg.
+- Eingebettete YouTube-Wiedergabe über den offiziellen IFrame-Player-Ansatz vorbereitet.
+- Synchronisationsoberfläche für zeitbasierte Lyrics-Marker integriert.
+- PDFBox-Android 2.0.27.0 als aktuelle Text-Extraktionsbasis integriert.
+- Build-Pipeline erweitert: Songbook wird nach dem Entfernen der alten Implementierung reproduzierbar in den aktuellen Buildstand integriert und automatisch validiert.
+- Alle Änderungen bleiben mit dem bestehenden Akkord-/Lernsystem kompatibel.
+
 ## Akkordbereich – Premium-Akkordbibliothek – 25.11.2026 · Build 515
 - **Bibliotheks-Startseite neu gestaltet:** Der Akkordbereich startet nicht mehr mit einer leeren Auswahlfläche, sondern mit einem Akkord-Atlas, Bibliotheksumfang, Favoritenübersicht und klarer Orientierung.
 - **Schnelle Suche:** Akkorde lassen sich nach Name, Akkordqualität und Beschreibung durchsuchen.
