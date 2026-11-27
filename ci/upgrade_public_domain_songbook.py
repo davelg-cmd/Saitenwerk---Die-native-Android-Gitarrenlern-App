@@ -229,7 +229,10 @@ if "private fun autoLinkYoutubeSongs()" not in s:
         if (candidates.isEmpty()) return
         executor.execute {
             candidates.forEach { song ->
-                runCatching { YouTubeAutoLinker.findVideoId(song.title, song.artist) }
+                val match = runCatching { YouTubeAutoLinker.findVideoId(song.title, song.artist) }.getOrNull()
+                if (!match.isNullOrBlank()) {
+                    runCatching { db.upsert(song.copy(youtubeId=match, youtubeConfidence=65)) }
+                }
             }
         }
     }
