@@ -209,71 +209,62 @@ start=s.index('object SongbookParser {')
 end=s.index('\nclass SongbookFragment : Fragment() {', start)
 parser='''object SongbookParser {
     private val chordPattern = Pattern.compile("""(?<![A-Za-z0-9])([A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|m9|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:/[A-G](?:#|b)?)?)(?![A-Za-z0-9])""")
-
     fun parse(text: String, source: String): List<SongbookSong> {
-        val clean = text.filter { it.code != 0 }.trim()
-        if (clean.isBlank()) return emptyList()
-        val pageBlocks = clean.split(Regex("""\[\[SAITENWERK_SEITE_\d+]]""")).map { it.trim() }.filter { it.isNotBlank() }
-        val candidates = mutableListOf<String>()
-        for (page in pageBlocks) {
-            val sections = page.split(Regex("""\n\s*\n\s*\n+""")).map { it.trim() }.filter { it.length >= 24 }
-            if (sections.isEmpty()) candidates += page else candidates += sections
+        val normalized = text.replace("\r\n", "\n").replace('\r', '\n').filter { it.code != 0 }.trim()
+        if (normalized.isBlank()) return emptyList()
+        val pages = normalized.split(Regex("""\[\[SAITENWERK_SEITE_\d+]]""")).filter { it.isNotBlank() }
+        val blocks = mutableListOf<String>()
+        pages.forEach { page ->
+            val lines = page.lines()
+            val starts = mutableListOf<Int>()
+            lines.forEachIndexed { i, raw ->
+                val line = raw.trim()
+                if (!isTitle(line)) return@forEachIndexed
+                val numbered = line.matches(Regex("""(?i)^(?:(?:lied|song)\s*)?\d{1,3}\s*[.)\-:]?\s+\S.*$"""))
+                val marked = raw.trimStart().startsWith("#") || line.startsWith("♪") || line.startsWith("♫")
+                val upper = line.count { it.isLetter() } >= 3 && line.filter { it.isLetter() }.all { !it.isLowerCase() }
+                val before = i == 0 || lines.getOrNull(i - 1).isNullOrBlank() || lines.getOrNull(i - 1)?.trim()?.matches(Regex("""[-_=*~•·]{3,}""")) == true
+                val after = lines.getOrNull(i + 1).isNullOrBlank()
+                val score = (if (before) 1 else 0) + (if (after) 1 else 0) + (if (numbered) 3 else 0) + (if (marked) 3 else 0) + (if (upper) 2 else 0) + (if (line.length <= 58 && !line.endsWith(".") && !line.endsWith(",")) 1 else 0)
+                val hasBody = lines.drop(i + 1).take(5).any { it.trim().length >= 12 }
+                if (score >= 3 && hasBody && (before || numbered || marked || upper)) starts += i
+            }
+            val boundaries = starts.distinct().sorted()
+            if (boundaries.isEmpty()) {
+                if (page.trim().length >= 20) blocks += page.trim()
+            } else boundaries.forEachIndexed { index, start ->
+                val end = boundaries.getOrNull(index + 1) ?: lines.size
+                val block = lines.subList(start, end).joinToString("\n").trim()
+                if (block.length >= 20) blocks += block
+            }
         }
-        val songs = mutableListOf<SongbookSong>()
-        val used = HashSet<String>()
-        for (block in candidates) {
-            val lines = block.lines().map { it.trim().replace(Regex("""\s{2,}"""), " ") }.filter { it.isNotBlank() }
-            if (lines.isEmpty()) continue
-            val titleIndex = lines.indexOfFirst { line ->
-                val normalized = line.trim('#','*','-',' ').trim()
-                normalized.length in 2..120 && normalized.count { it.isLetter() } >= 2 &&
-                    !looksLikeChordLine(normalized) && !normalized.matches(Regex("""(?i)seite\s+\d+"""))
-            }
-            if (titleIndex < 0) continue
-            val title = lines[titleIndex].trim('#','*','-',' ').trim().take(120)
-            val artist = lines.drop(titleIndex + 1).firstOrNull { line ->
-                line.length in 2..100 && !looksLikeChordLine(line) &&
-                    !line.startsWith("[") && line.count { it.isLetter() } >= 2
-            }?.trim() ?: "Unbekannter Künstler"
+        val result = mutableListOf<SongbookSong>()
+        val seen = HashSet<String>()
+        blocks.forEach { block ->
+            val lines = block.lines().map { it.trim() }.filter { it.isNotBlank() }
+            if (lines.isEmpty()) return@forEach
+            val title = lines.firstOrNull { isTitle(it) }?.trim('#','*','-','♪','♫',' ')?.trim()?.take(120) ?: return@forEach
+            val artist = lines.firstOrNull { it.startsWith("Von:", true) || it.startsWith("Artist:", true) || it.startsWith("Interpret:", true) || it.startsWith("Künstler:", true) }?.substringAfter(':')?.trim()?.takeIf { it.isNotBlank() } ?: "Unbekannter Künstler"
             val chords = linkedSetOf<String>()
-            lines.forEach { line ->
-                val matcher = chordPattern.matcher(line)
-                while (matcher.find()) {
-                    val chord = matcher.group(1)
-                    if (isPlausibleChord(chord)) chords += chord
-                }
-            }
+            val matcher = chordPattern.matcher(block)
+            while (matcher.find()) if (matcher.group(1).length <= 8) chords += matcher.group(1)
             val key = title.lowercase(Locale.ROOT) + "|" + artist.lowercase(Locale.ROOT)
-            if (used.add(key)) songs += SongbookSong(
-                title = title, artist = artist, lyrics = block,
-                chords = chords.toList(), source = source
-            )
+            if (seen.add(key)) result += SongbookSong(title=title, artist=artist, lyrics=block, chords=chords.toList(), source=source)
         }
-        if (songs.isEmpty()) {
-            val lyrics = pageBlocks.joinToString(System.lineSeparator() + System.lineSeparator()).trim()
-            val title = lyrics.lines().firstOrNull { it.trim().length >= 2 }?.trim()?.take(120) ?: "Importiertes Lied"
-            val chords = linkedSetOf<String>()
-            val matcher = chordPattern.matcher(lyrics)
-            while (matcher.find()) if (isPlausibleChord(matcher.group(1))) chords += matcher.group(1)
-            if (lyrics.length >= 20) songs += SongbookSong(
-                title = title, artist = "Unbekannter Künstler", lyrics = lyrics,
-                chords = chords.toList(), source = source
-            )
+        if (result.isEmpty()) {
+            val all = pages.joinToString("\n\n").trim()
+            if (all.length >= 20) result += SongbookSong(title=all.lines().firstOrNull { it.isNotBlank() }?.trim()?.take(120) ?: "PDF-Inhalt prüfen", artist="Unbekannter Künstler", lyrics=all, chords=emptyList(), source=source)
         }
-        return songs
+        return result
     }
-
-    private fun isPlausibleChord(value: String): Boolean =
-        value.length <= 8 && value.firstOrNull() in listOf('A','B','C','D','E','F','G')
-
-    private fun looksLikeChordLine(line: String): Boolean {
-        val words = line.trim().split(Regex("""\s+""")).filter { it.isNotBlank() }
-        if (words.isEmpty()) return false
-        val matches = words.count { word ->
-            val matcher = chordPattern.matcher(word.trim(',', ';', ':', '.', '|'))
-            matcher.matches() && isPlausibleChord(matcher.group(1))
-        }
-        return matches >= maxOf(1, (words.size + 1) / 2)
+    private fun isTitle(value: String): Boolean {
+        val line = value.trim().trim('#','*','♪','♫',' ').trim()
+        if (line.length !in 2..100 || line.count { it.isLetter() } < 2) return false
+        if (line.matches(Regex("""(?i)(seite|page)\s+\d+""")) || line.matches(Regex("""\d{1,4}"""))) return false
+        if (line.contains("www.") || line.contains("http://") || line.contains("https://")) return false
+        val words = line.split(Regex("""\s+"""))
+        val chordWords = words.count { it.matches(Regex("""[A-G](?:#|b)?(?:m|maj7|7|sus4|sus2|dim|aug)?""")) }
+        return !(chordWords >= maxOf(1, (words.size + 1) / 2) && words.size <= 12)
     }
 }
 '''
