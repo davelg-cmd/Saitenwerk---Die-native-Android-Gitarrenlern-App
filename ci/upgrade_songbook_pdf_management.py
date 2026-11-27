@@ -151,7 +151,11 @@ method='''    private fun importPdf(uri:Uri) {
                                 }
                                 var pageText = stripper.getText(doc).trim()
                                 val usefulChars = pageText.count { it.isLetterOrDigit() }
-                                if (usefulChars < 24 && renderer != null && pageIndex < renderer.pageCount) {
+                                val extractionQuality = if (pageText.isBlank()) 0.0 else usefulChars.toDouble() / pageText.length
+                                val suspiciousExtraction = usefulChars < 24 ||
+                                    '\\uFFFD' in pageText ||
+                                    (pageText.length > 80 && extractionQuality < 0.42)
+                                if (suspiciousExtraction && renderer != null && pageIndex < renderer.pageCount) {
                                     val ocrText = renderer.openPage(pageIndex).use { page ->
                                         val bitmap = Bitmap.createBitmap(
                                             (page.width * 2).coerceAtLeast(1),
@@ -163,7 +167,12 @@ method='''    private fun importPdf(uri:Uri) {
                                             Tasks.await(recognizer.process(InputImage.fromBitmap(bitmap, 0))).text
                                         } finally { bitmap.recycle() }
                                     }
-                                    if (ocrText.isNotBlank()) pageText = ocrText
+                                    val ocrChars = ocrText.count { it.isLetterOrDigit() }
+                                    val ocrQuality = if (ocrText.isBlank()) 0.0 else ocrChars.toDouble() / ocrText.length
+                                    if (ocrChars > usefulChars ||
+                                        (ocrChars >= 20 && ocrQuality > extractionQuality + 0.08)) {
+                                        pageText = ocrText
+                                    }
                                 }
                                 if (pageText.isNotBlank()) pages += "[[SAITENWERK_SEITE_${pageIndex + 1}]]\\n" + pageText
                             }
