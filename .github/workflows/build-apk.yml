@@ -461,6 +461,13 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Songbook-Rückbau und Restfreiheit validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/remove_songbook.py --verify
+
       - name: Neues intelligentes Premium-Songbook integrieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
@@ -503,13 +510,6 @@ jobs:
               raise SystemExit("FEHLER: Songbook-Navigation fehlt.")
           print("INTELLIGENTES-SONGBOOK: PASS – PDF-Import, Parser, SQLite-Datenbank, Songdetail, YouTube-Player und Synchronisationsoberfläche geprüft.")
           PY
-
-      - name: Songbook-Rückbau und Restfreiheit validieren
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-        run: |
-          set -euo pipefail
-          python3 ci/remove_songbook.py --verify
 
       - name: Stimmgerät-Design und Bedienung optimieren
         env:
