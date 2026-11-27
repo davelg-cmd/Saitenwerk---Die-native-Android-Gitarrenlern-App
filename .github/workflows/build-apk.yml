@@ -518,6 +518,15 @@ jobs:
           set -euo pipefail
           python3 ci/make_songbook_user_owned.py
 
+      # Der Performance-Sync ersetzt den showSong-Abschnitt bis openYoutube().
+      # Deshalb OAuth-Methoden erst danach final erneut einfügen.
+      - name: YouTube-OAuth nach Songbook-Erweiterungen final integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_youtube_oauth_songbook.py
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
