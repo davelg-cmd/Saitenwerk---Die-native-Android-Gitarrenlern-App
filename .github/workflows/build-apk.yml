@@ -569,7 +569,7 @@ jobs:
               "saitenwerk_songbook.db",
               "YouTube-Verknüpfung suchen",
               "enablejsapi=1",
-              "Auto-Sync für Lyrics aktivieren",
+              "Lyrics mit YouTube synchronisieren",
               "CREATE TABLE IF NOT EXISTS imported_pdfs",
               "CREATE TABLE IF NOT EXISTS song_pdf_sources",
               "fun removePdf(uri: String)",
