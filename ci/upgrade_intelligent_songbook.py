@@ -265,7 +265,9 @@ class SongbookFragment : Fragment() {
     private fun card(): LinearLayout = LinearLayout(requireContext()).apply {
         orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(14),dp(16),dp(14))
         setBackgroundColor(Color.rgb(27,29,34))
-        val p=LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT); p.setMargins(0,dp(7),0,dp(7)); root.addView(this,p)
+        val p=LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT)
+        p.setMargins(0,dp(7),0,dp(7))
+        layoutParams = p
     }
     private fun button(text:String)=Button(requireContext()).apply { this.text=text; setTextColor(Color.WHITE); setAllCaps(false); minHeight=0; minimumHeight=0; setPadding(dp(8),0,dp(8),0) }
     private fun label(text:String,size:Float,color:Int)=TextView(requireContext()).apply { this.text=text; textSize=size; setTextColor(color); setPadding(0,dp(4),dp(8),dp(4)) }
