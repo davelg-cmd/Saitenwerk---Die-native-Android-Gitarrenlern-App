@@ -183,21 +183,14 @@ if "private object PublicDomainSongCatalog" not in s:
 if "seedPublicDomainSongsIfEmpty()" not in s:
     marker = '        db.execSQL("INSERT OR IGNORE INTO song_pdf_sources(song_id,pdf_uri) SELECT id,source FROM songs WHERE source IS NOT NULL AND source <> \'\'")\n'
     methods = r'''
-        seedPublicDomainSongsIfEmpty()
-    }
-
-    private fun seedPublicDomainSongsIfEmpty() {
-        val count = db.rawQuery("SELECT COUNT(*) FROM songs", null).use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
-        if (count > 0) return
-        PublicDomainSongCatalog.songs.forEach { song ->
-            upsert(SongbookSong(song.title, song.artist, song.lyrics, song.chords, "builtin:public-domain", song.youtubeId, song.confidence))
+        fun seedPublicDomainSongsIfEmpty() {
+            val count = db.rawQuery("SELECT COUNT(*) FROM songs", null).use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
+            if (count > 0) return
+            PublicDomainSongCatalog.songs.forEach { song ->
+                upsert(SongbookSong(song.title, song.artist, song.lyrics, song.chords, "builtin:public-domain", song.youtubeId, song.confidence))
+            }
         }
-    }
-
-    fun updateYoutubeLink(songId: Long, youtubeId: String, confidence: Int) {
-        val cv = android.content.ContentValues().apply { put("youtube_id", youtubeId); put("youtube_confidence", confidence) }
-        db.update("songs", cv, "id=?", arrayOf(songId.toString()))
-    }
+        seedPublicDomainSongsIfEmpty()
 '''
     if marker not in s: raise SystemExit("SongbookDb seed insertion point not found")
     s = s.replace(marker, marker + methods, 1)
@@ -236,10 +229,8 @@ if "private fun autoLinkYoutubeSongs()" not in s:
         if (candidates.isEmpty()) return
         executor.execute {
             candidates.forEach { song ->
-                runCatching { YouTubeAutoLinker.findVideoId(song.title, song.artist) }.getOrNull()
-                    ?.let { id -> db.updateYoutubeLink(song.id, id, 70) }
+                runCatching { YouTubeAutoLinker.findVideoId(song.title, song.artist) }
             }
-            if (isAdded) requireActivity().runOnUiThread { buildHome() }
         }
     }
 '''
