@@ -198,16 +198,32 @@ if "seedPublicDomainSongsIfEmpty()" not in s:
 if "private object YouTubeAutoLinker" not in s:
     yt = r'''
 private object YouTubeAutoLinker {
-    private val idRegex = Regex("""\"videoId\":\"([A-Za-z0-9_-]{11})\"""")
-    fun findVideoId(title: String, artist: String): String? {
-        val q = java.net.URLEncoder.encode("$title $artist Gitarrenakkorde", "UTF-8")
-        val c = (java.net.URL("https://www.youtube.com/results?search_query=$q").openConnection() as java.net.HttpURLConnection).apply {
-            requestMethod="GET"; connectTimeout=8000; readTimeout=10000
+    private val videoBlock = Regex("""\"videoRenderer\":\{\"videoId\":\"([A-Za-z0-9_-]{11})\"(.*?)(?=\"videoRenderer\"|\"continuationItemRenderer\")""", RegexOption.DOT_MATCHES_ALL)
+    private val titlePattern = Regex("""\"title\":\{\"runs\":\[\{\"text\":\"([^\"]+)""")
+    private val ownerPattern = Regex("""\"ownerText\":\{\"runs\":\[\{\"text\":\"([^\"]+)""")
+    private fun words(value:String)=value.lowercase(java.util.Locale.ROOT)
+        .replace(Regex("""[^\\p{L}\\p{N} ]""")," ").split(Regex("""\\s+""")).filter{it.length>2}.toSet()
+    fun findVideoId(title:String,artist:String):String? {
+        val q=java.net.URLEncoder.encode("\"$title\" \"$artist\" Lied", "UTF-8")
+        val c=(java.net.URL("https://www.youtube.com/results?search_query=$q").openConnection() as java.net.HttpURLConnection).apply {
+            requestMethod="GET";connectTimeout=8000;readTimeout=10000
             setRequestProperty("User-Agent","Mozilla/5.0 (Android) SaitenWerk/1.0")
         }
         return try {
-            if (c.responseCode !in 200..299) null
-            else idRegex.find(c.inputStream.bufferedReader().use { it.readText() })?.groupValues?.get(1)
+            if(c.responseCode !in 200..299) return null
+            val html=c.inputStream.bufferedReader().use{it.readText()}
+            val wantedTitle=words(title);val wantedArtist=words(artist)
+            videoBlock.findAll(html).mapNotNull { match ->
+                val body=match.groupValues[2]
+                val foundTitle=titlePattern.find(body)?.groupValues?.get(1) ?: return@mapNotNull null
+                val foundArtist=ownerPattern.find(body)?.groupValues?.get(1).orEmpty()
+                val titleWords=words(foundTitle);val artistWords=words(foundArtist)
+                if(wantedTitle.isEmpty()) return@mapNotNull null
+                val titleScore=wantedTitle.count{it in titleWords}.toDouble()/wantedTitle.size
+                val artistScore=if(wantedArtist.isEmpty()) 0.0 else wantedArtist.count{it in artistWords}.toDouble()/wantedArtist.size
+                val score=titleScore*0.8+artistScore*0.2
+                if(titleScore>=0.6 && score>=0.62) match.groupValues[1] to score else null
+            }.maxByOrNull{it.second}?.first
         } finally { c.disconnect() }
     }
 }
