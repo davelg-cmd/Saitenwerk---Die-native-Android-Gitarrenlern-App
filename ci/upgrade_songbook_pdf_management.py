@@ -176,13 +176,15 @@ method='''    private fun importPdf(uri:Uri) {
                 }
                 val songs = SongbookParser.parse(extracted, uri.toString())
                 if (songs.isEmpty()) error("Es konnten keine Songs erkannt werden. Bitte prüfe, ob die PDF lesbaren Text oder gut erkennbare Noten-/Akkordseiten enthält.")
-                songs.forEach { db.upsert(it) }
-                db.registerPdf(uri.toString(), displayName, songs.size)
+                val savedCount = songs.count { song -> db.upsert(song) > 0L }
+                if (savedCount == 0) error("Songs erkannt, aber kein Song konnte gespeichert werden.")
+                db.registerPdf(uri.toString(), displayName, savedCount)
                 requireActivity().runOnUiThread {
                     if(progress.parent!=null) root.removeView(progress)
+                    buildHome()
                     AlertDialog.Builder(requireContext()).setTitle("PDF analysiert")
-                        .setMessage(songs.size.toString() + " Songs erkannt und in das Songbook übernommen.\\n\\nText-PDFs werden direkt ausgelesen; gescannte Seiten werden zusätzlich per Texterkennung (OCR) verarbeitet.")
-                        .setPositiveButton("Songbook öffnen"){_,_->buildHome()}.show()
+                        .setMessage(savedCount.toString() + " Songs erkannt und gespeichert. Das Songbook wurde aktualisiert.\\n\\nText-PDFs werden direkt ausgelesen; gescannte Seiten werden zusätzlich per Texterkennung (OCR) verarbeitet.")
+                        .setPositiveButton("OK", null).show()
                 }
             } catch(t:Throwable) {
                 requireActivity().runOnUiThread {
