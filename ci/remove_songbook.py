@@ -167,6 +167,14 @@ def apply_removal():
         )
         if count > 1:
             raise SystemExit(f"FEHLER: PDFBox-Abhängigkeit mehrfach gefunden ({count}).")
+        g, ocr_count = re.subn(
+            r'^[ \t]*implementation\(["\']com\.google\.mlkit:text-recognition:[^"\']+["\']\)[ \t]*\r?\n',
+            "",
+            g,
+            flags=re.MULTILINE
+        )
+        if ocr_count > 1:
+            raise SystemExit(f"FEHLER: ML-Kit-OCR-Abhängigkeit mehrfach gefunden ({ocr_count}).")
         GRADLE.write_text(g, encoding="utf-8")
 
     for rel in [
@@ -200,7 +208,7 @@ def validate():
         "SongsFragment", "SongDetailFragment", "SongRepository", "SongAdapter",
         "SongbookPdfImporter", "SongbookPdfViewer", "songbook_catalog",
         "sourcePageStart", "sourcePageEnd", "importedContent",
-        "pdfbox-android", "ic_nav_songs",
+        "pdfbox-android", "text-recognition", "ic_nav_songs",
     ]
     files = list((ROOT / "app/src/main").rglob("*"))
     for path in files:
@@ -213,8 +221,12 @@ def validate():
         found = [term for term in forbidden if term in content]
         if found:
             raise SystemExit(f"FEHLER: Songbook-Rest in {path.relative_to(ROOT)}: {', '.join(found)}")
-    if GRADLE.is_file() and "pdfbox-android" in GRADLE.read_text(encoding="utf-8"):
-        raise SystemExit("FEHLER: PDFBox-Abhängigkeit ist weiterhin vorhanden.")
+    if GRADLE.is_file():
+        gradle_text = GRADLE.read_text(encoding="utf-8")
+        if "pdfbox-android" in gradle_text:
+            raise SystemExit("FEHLER: PDFBox-Abhängigkeit ist weiterhin vorhanden.")
+        if "text-recognition" in gradle_text:
+            raise SystemExit("FEHLER: ML-Kit-OCR-Abhängigkeit ist weiterhin vorhanden.")
     for rel in [
         "app/src/main/java/de/saitenwerk/app/SongbookPdfImporter.kt",
         "app/src/main/java/de/saitenwerk/app/SongbookPdfViewer.kt",
