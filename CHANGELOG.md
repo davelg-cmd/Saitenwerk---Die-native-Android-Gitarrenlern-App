@@ -1,3 +1,12 @@
+## Unreleased – Songbook-PDF-Erkennung und Verwaltung
+
+- **PDF-Auslesung verbessert:** Das Songbook verarbeitet PDF-Seiten einzeln und ordnet die extrahierten Textzeilen strukturierter zu. Titel, Künstler, Liedtext und Akkorde werden mit einer erweiterten Akkorderkennung ausgewertet.
+- **OCR für Scans:** Wenn eine PDF-Seite keinen brauchbaren Textlayer enthält, wird sie gerendert und per ML Kit Texterkennung ausgelesen.
+- **Importierte PDFs verwalten:** Im Songbook erscheint eine Liste der importierten PDF-Dateien mit Dateiname und erkannter Songanzahl.
+- **PDF entfernen:** Jede importierte PDF kann aus dem Songbook entfernt werden. Songs, die ausschließlich aus dieser PDF stammen, werden ebenfalls entfernt; Songs, die noch einer anderen importierten PDF zugeordnet sind, bleiben erhalten. Die Originaldatei auf dem Gerät wird nicht gelöscht.
+- **Navigation:** Der Songbook-Eintrag in der unteren Hauptleiste erhält ein eigenes Buchsymbol.
+- **Build-Prüfung:** OCR-Abhängigkeit, PDF-Verwaltung, Löschlogik und Navigationssymbol werden im CI-Build validiert.
+
 ## Songbook-Absturz beim Öffnen behoben – Build 525
 
 - **Ursache:** Die Karten-Hilfsfunktion fügte Karten bereits selbst zur Root-Ansicht hinzu. Die Aufrufer fügten dieselben Views anschließend erneut ein. Android quittierte das mit einer `IllegalStateException` („child already has a parent“).
