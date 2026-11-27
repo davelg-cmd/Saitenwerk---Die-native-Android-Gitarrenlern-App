@@ -153,7 +153,7 @@ method='''    private fun importPdf(uri:Uri) {
                                 val usefulChars = pageText.count { it.isLetterOrDigit() }
                                 val extractionQuality = if (pageText.isBlank()) 0.0 else usefulChars.toDouble() / pageText.length
                                 val suspiciousExtraction = usefulChars < 24 ||
-                                    '\\uFFFD' in pageText ||
+                                    '\uFFFD' in pageText ||
                                     (pageText.length > 80 && extractionQuality < 0.42)
                                 if (suspiciousExtraction && renderer != null && pageIndex < renderer.pageCount) {
                                     val ocrText = renderer.openPage(pageIndex).use { page ->
