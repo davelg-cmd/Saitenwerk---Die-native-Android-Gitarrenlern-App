@@ -179,6 +179,7 @@ def apply_removal():
         "UPLOAD_INSTRUCTIONS.md",
         "SONGBOOK_PUBLIC_DOMAIN.md",
         "CHANGELOG_ALPHA7_LIEDERBUCH.md",
+        "SONGBOOK_PDF_MANAGEMENT_OCR_V1.txt",
         "UPDATE_ALPHA7_SONGREADER_V3.md",
         "fix_v3.py",
         "UPDATEFIX_README.md",
