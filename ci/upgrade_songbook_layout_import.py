@@ -15,6 +15,7 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.text.TextPosition
@@ -33,6 +34,9 @@ private data class LayoutPage(val number:Int,val width:Float,val height:Float,va
 
 internal object SongbookLayoutImporter {
     fun importPdf(context:Context, uri:Uri, source:String):List<SongbookSong> {
+        // pdfbox-android muss seine Android-Assets initialisieren, bevor PDFTextStripper
+        // oder LegacyPDFStreamEngine erstmals geladen werden.
+        PDFBoxResourceLoader.init(context.applicationContext)
         val resolver=context.contentResolver
         val descriptor=resolver.openFileDescriptor(uri,"r") ?: error("PDF-Datei konnte nicht geöffnet werden.")
         val renderer=PdfRenderer(descriptor)
