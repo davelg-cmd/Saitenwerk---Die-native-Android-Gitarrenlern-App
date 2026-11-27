@@ -187,7 +187,7 @@ if "seedPublicDomainSongsIfEmpty()" not in s:
             val count = db.rawQuery("SELECT COUNT(*) FROM songs", null).use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
             if (count > 0) return
             PublicDomainSongCatalog.songs.forEach { song ->
-                upsert(SongbookSong(song.title, song.artist, song.lyrics, song.chords, "builtin:public-domain", song.youtubeId, song.confidence))
+                upsert(SongbookSong(title=song.title, artist=song.artist, lyrics=song.lyrics, chords=song.chords, source="builtin:public-domain", youtubeId=song.youtubeId, youtubeConfidence=song.confidence))
             }
         }
         seedPublicDomainSongsIfEmpty()
