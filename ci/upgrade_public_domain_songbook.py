@@ -202,7 +202,7 @@ private object YouTubeAutoLinker {
     private val titlePattern = Regex("""\"title\":\{\"runs\":\[\{\"text\":\"([^\"]+)""")
     private val ownerPattern = Regex("""\"ownerText\":\{\"runs\":\[\{\"text\":\"([^\"]+)""")
     private fun words(value:String)=value.lowercase(java.util.Locale.ROOT)
-        .replace(Regex("""[^\\p{L}\\p{N} ]""")," ").split(Regex("""\\s+""")).filter{it.length>2}.toSet()
+        .replace(Regex("""[^\p{L}\p{N} ]""")," ").split(Regex("""\s+""")).filter{it.length>2}.toSet()
     fun findVideoId(title:String,artist:String):String? {
         val q=java.net.URLEncoder.encode("\"$title\" \"$artist\" Lied", "UTF-8")
         val c=(java.net.URL("https://www.youtube.com/results?search_query=$q").openConnection() as java.net.HttpURLConnection).apply {
