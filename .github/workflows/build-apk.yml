@@ -475,6 +475,47 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_intelligent_songbook.py
 
+      - name: YouTube-OAuth für das Songbook integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_youtube_oauth_songbook.py
+
+      - name: YouTube-OAuth-Integration validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["PROJECT_DIR"])
+          songbook = root / "app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt"
+          gradle = root / "app/build.gradle.kts"
+          marker = root / "YOUTUBE_OAUTH_SONGBOOK_V1.txt"
+          s = songbook.read_text(encoding="utf-8")
+          required = [
+              "AuthorizationRequest.builder()",
+              "Identity.getAuthorizationClient(requireContext())",
+              "https://www.googleapis.com/auth/youtube.readonly",
+              "getAuthorizationResultFromIntent",
+              "youtubeAuthLauncher",
+              "▶ YouTube verbinden",
+              "YouTube verbunden",
+              "fetchYoutubeChannel",
+              "Authorization: Bearer",
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: YouTube-OAuth unvollständig: " + ", ".join(missing))
+          if "com.google.android.gms:play-services-auth:22.0.0" not in gradle.read_text(encoding="utf-8"):
+              raise SystemExit("FEHLER: Google Identity Authorization SDK fehlt.")
+          if not marker.is_file():
+              raise SystemExit("FEHLER: YouTube-OAuth-Marker fehlt.")
+          print("YOUTUBE-OAUTH-SONGBOOK: PASS – per Nutzer autorisierbarer YouTube-Zugriff, Consent-Flow, Token-Verarbeitung und Kanalprüfung vorhanden.")
+          PY
+
       - name: Intelligentes Premium-Songbook validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
