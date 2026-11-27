@@ -638,8 +638,6 @@ jobs:
               "class SongbookFragment",
               "class SongbookDb",
               "object SongbookParser",
-              "PDFTextStripper",
-              "PDDocument.load",
               "saitenwerk_songbook.db",
               "songbookPlayerHtml(",
               "enablejsapi=1",
@@ -651,14 +649,27 @@ jobs:
               "fun removePdf(uri: String)",
               "MEINE IMPORTIERTEN PDFS",
               "PDF aus Songbook entfernen",
-              "PdfRenderer",
-              "TextRecognition.getClient",
-              "Tasks.await",
               "queryPdfDisplayName",
+              "SongbookLayoutImporter.import",
+              "db.replacePdfSongs(uri.toString(),songs)",
           ]
           missing = [x for x in required if x not in s]
           if missing:
               raise SystemExit("FEHLER: Intelligentes Songbook unvollständig: " + ", ".join(missing))
+          layout = (root / "app/src/main/java/de/saitenwerk/app/SongbookLayoutImporter.kt").read_text(encoding="utf-8")
+          layout_required = [
+              "internal object SongbookLayoutImporter",
+              "PDDocument.load(input)",
+              "PDFTextStripper()",
+              "PdfRenderer(descriptor)",
+              "TextRecognition.getClient",
+              "Tasks.await",
+              "SongbookLayoutParser.parse(pages,source)",
+              "[[CHORDS:",
+          ]
+          layout_missing = [x for x in layout_required if x not in layout]
+          if layout_missing:
+              raise SystemExit("FEHLER: Layout-PDF-Importer unvollständig: " + ", ".join(layout_missing))
           if "com.tom-roush:pdfbox-android:2.0.27.0" not in gradle.read_text(encoding="utf-8"):
               raise SystemExit("FEHLER: PDFBox-Android-Abhängigkeit fehlt.")
           if "com.google.mlkit:text-recognition:16.0.1" not in gradle.read_text(encoding="utf-8"):
