@@ -541,6 +541,36 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_auto_alignment.py
 
+      - name: Manuelle und automatische YouTube-Songverknüpfung integrieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_songbook_youtube_links.py
+
+      - name: YouTube-Songverknüpfung validieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          s = (Path(os.environ["PROJECT_DIR"]) / "app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt").read_text(encoding="utf-8")
+          required = [
+              "fun updateYoutube(songId: Long, videoId: String)",
+              "Link manuell eintragen",
+              "private fun parseYoutubeVideoId(value: String): String?",
+              "private fun searchYoutubeForSong(song: SongbookSong)",
+              "youtube/v3/search?part=snippet&type=video",
+              "persistYoutubeLink(song, matches[which].first)",
+          ]
+          missing = [x for x in required if x not in s]
+          if missing:
+              raise SystemExit("FEHLER: YouTube-Songverknüpfung unvollständig: " + ", ".join(missing))
+          print("YOUTUBE-SONG-LINKING: PASS")
+          PY
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
