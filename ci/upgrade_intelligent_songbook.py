@@ -403,7 +403,7 @@ if "SongbookFragment" not in s:
 
 # Ensure the Songbook tab always has a dedicated visible icon.
 s = MAIN.read_text(encoding="utf-8")
-s = re.sub(r'(menu\\.add\\(0,\\s*4,\\s*3,\\s*"Songbook"\\))(?!\\.setIcon)', r'\\1.setIcon(R.drawable.ic_nav_songbook)', s)
+s = re.sub(r'(menu\.add\(0,\s*4,\s*3,\s*"Songbook"\))(?!\.setIcon)', r'\1.setIcon(R.drawable.ic_nav_songbook)', s)
 MAIN.write_text(s, encoding="utf-8")
 icon = ROOT / "app/src/main/res/drawable/ic_nav_songbook.xml"
 icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
