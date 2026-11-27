@@ -527,6 +527,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_youtube_oauth_songbook.py
 
+      - name: Songbook-Lyrics automatisch mit YouTube-Untertiteln synchronisieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_auto_alignment.py
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
