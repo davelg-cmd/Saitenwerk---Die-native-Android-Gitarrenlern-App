@@ -118,17 +118,23 @@ internal object SongbookLayoutImporter {
         }
         return rows.map { row ->
             val ordered=row.sortedBy{it.x}
-            val text=buildString {
-                var previous:LayoutToken?=null
-                ordered.forEach { token ->
-                    val p=previous
-                    if(p!=null && token.x-(p.x+p.width)>max(1.4f,p.height*0.20f)) append(' ')
-                    append(token.text)
-                    previous=token
-                }
-            }.trim()
-            LayoutLine(text,ordered.minOf{it.x},ordered.map{it.y}.average().toFloat(),
-                ordered.map{it.height}.average().toFloat(),ordered)
+            val words=mutableListOf<MutableList<LayoutToken>>()
+            ordered.forEach { token ->
+                val word=words.lastOrNull()
+                val previous=word?.lastOrNull()
+                if(word==null || previous==null || token.x-(previous.x+previous.width)>max(1.8f,previous.height*0.34f))
+                    words += mutableListOf(token)
+                else word += token
+            }
+            val wordTokens=words.map { chars ->
+                LayoutToken(chars.joinToString(""){it.text},chars.first().x,
+                    chars.map{it.y}.average().toFloat(),
+                    (chars.last().x+chars.last().width-chars.first().x).coerceAtLeast(0.1f),
+                    chars.map{it.height}.average().toFloat())
+            }
+            val text=wordTokens.joinToString(" "){it.text}.trim()
+            LayoutLine(text,wordTokens.minOf{it.x},wordTokens.map{it.y}.average().toFloat(),
+                wordTokens.map{it.height}.average().toFloat(),wordTokens)
         }.filter{it.text.isNotBlank()}
     }
 }
