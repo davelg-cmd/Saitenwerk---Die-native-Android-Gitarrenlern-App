@@ -490,6 +490,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_pdf_management.py
 
+      - name: PDF-Inhaltsverzeichnis als verlässlichen Songindex auswerten
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_pdf_indexed_parser.py
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
@@ -649,6 +656,13 @@ jobs:
         run: |
           set -euo pipefail
           python3 ci/premium_visual_system.py
+
+      - name: Einheitliches kontrastreiches Dark-Theme und Songbook-Bedienelemente anwenden
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_accessible_dark_theme.py
 
       - name: Akkordwechsel-Auswahlrahmen vollständig darstellen
         run: |
