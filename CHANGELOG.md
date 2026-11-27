@@ -1,3 +1,9 @@
+## Songbook-Absturz beim Öffnen behoben – Build 525
+
+- **Ursache:** Die Karten-Hilfsfunktion fügte Karten bereits selbst zur Root-Ansicht hinzu. Die Aufrufer fügten dieselben Views anschließend erneut ein. Android quittierte das mit einer `IllegalStateException` („child already has a parent“).
+- **Korrektur:** `card()` erzeugt jetzt nur noch eine konfigurierte, nicht angehängte Karte. Die jeweilige aufrufende Ansicht fügt sie genau einmal an der richtigen Stelle ein – sowohl die Statistik-Karte als auch Songkarten und Songdetails.
+- **CI-Absicherung:** Die Korrektur liegt in der reproduzierbaren Songbook-Integrationsvorlage und wird damit auch bei zukünftigen Builds übernommen.
+
 ## Unreleased – YouTube-OAuth im intelligenten Songbook
 
 - **YouTube pro Nutzer verbinden:** Das Songbook erhält einen eigenen **„YouTube verbinden“**-Einstieg. Jeder App-Nutzer kann sein eigenes Google-/YouTube-Konto über den offiziellen Google-Authorization-Flow autorisieren.
