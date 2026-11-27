@@ -172,6 +172,17 @@ s = s.replace(
     1
 )
 
+# All existing Songbook search entry points must use the same real search flow;
+# never send the user to an external search page that cannot save a match.
+open_start = s.find("    private fun openYoutube(song: SongbookSong) {")
+if open_start >= 0:
+    open_end = s.find("\n    }", open_start) + len("\n    }")
+    if open_end <= open_start:
+        raise SystemExit("FEHLER: openYoutube()-Methode konnte nicht abgegrenzt werden.")
+    s = s[:open_start] + """    private fun openYoutube(song: SongbookSong) {
+        searchYoutubeForSong(song)
+    }""" + s[open_end:]
+
 required = [
     "fun updateYoutube(songId: Long, videoId: String)",
     "Link manuell eintragen",
@@ -179,6 +190,7 @@ required = [
     "private fun searchYoutubeForSong(song: SongbookSong)",
     "youtube/v3/search?part=snippet&type=video",
     "persistYoutubeLink(song, matches[which].first)",
+    "searchYoutubeForSong(song)\n    }",
 ]
 missing = [item for item in required if item not in s]
 if missing:
