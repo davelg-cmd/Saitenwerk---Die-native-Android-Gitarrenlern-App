@@ -95,7 +95,7 @@ repl='''        val import = button("＋  PDF analysieren & Songs importieren")
                 remove.setOnClickListener {
                     AlertDialog.Builder(requireContext())
                         .setTitle("Importiertes PDF entfernen?")
-                        .setMessage("${pdf.displayName}" und die ausschließlich daraus importierten Songs werden aus SaitenWerk entfernt. Die Originaldatei auf deinem Gerät bleibt erhalten.")
+                        .setMessage("\\\"${pdf.displayName}\\\" und die ausschließlich daraus importierten Songs werden aus SaitenWerk entfernt. Die Originaldatei auf deinem Gerät bleibt erhalten.")
                         .setNegativeButton("Abbrechen", null)
                         .setPositiveButton("Entfernen") { _, _ ->
                             db.removePdf(pdf.uri)
