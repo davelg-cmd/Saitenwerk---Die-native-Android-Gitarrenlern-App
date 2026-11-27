@@ -504,7 +504,7 @@ jobs:
               "▶ YouTube verbinden",
               "YouTube verbunden",
               "fetchYoutubeChannel",
-              "Authorization: Bearer",
+              'setRequestProperty("Authorization", "Bearer $token")',
           ]
           missing = [x for x in required if x not in s]
           if missing:
