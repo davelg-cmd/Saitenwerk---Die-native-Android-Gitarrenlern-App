@@ -120,7 +120,7 @@ object SongbookParser {
             val chords = linkedSetOf<String>()
             val m = chordPattern.matcher(clean)
             while(m.find()) chords += m.group(1)
-            songs += SongbookSong(title, "Unbekannter Künstler", clean, chords.toList(), source)
+            songs += SongbookSong(title=title, artist="Unbekannter Künstler", lyrics=clean, chords=chords.toList(), source=source)
         }
         return songs
     }
