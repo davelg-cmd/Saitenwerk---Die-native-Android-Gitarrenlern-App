@@ -60,33 +60,6 @@ class SongbookDb(context: Context) {
             youtube_confidence INTEGER NOT NULL DEFAULT 0,
             UNIQUE(title, artist)
         )""")
-        db.execSQL("""CREATE TABLE IF NOT EXISTS pdf_imports(
-            uri TEXT PRIMARY KEY, name TEXT NOT NULL, song_count INTEGER NOT NULL DEFAULT 0,
-            imported_at INTEGER NOT NULL
-        )""")
-    }
-    fun savePdf(uri: String, name: String, count: Int) {
-        val cv = android.content.ContentValues().apply {
-            put("uri", uri); put("name", name); put("song_count", count)
-            put("imported_at", System.currentTimeMillis())
-        }
-        db.insertWithOnConflict("pdf_imports", null, cv, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
-    }
-    fun pdfs(): List<Triple<String,String,Int>> {
-        val out = mutableListOf<Triple<String,String,Int>>()
-        db.rawQuery("SELECT uri,name,song_count FROM pdf_imports ORDER BY imported_at DESC", null).use { c ->
-            while (c.moveToNext()) out += Triple(c.getString(0), c.getString(1), c.getInt(2))
-        }
-        return out
-    }
-    fun removePdf(uri: String): Int {
-        db.beginTransaction()
-        return try {
-            val count = db.delete("songs", "source=?", arrayOf(uri))
-            db.delete("pdf_imports", "uri=?", arrayOf(uri))
-            db.setTransactionSuccessful()
-            count
-        } finally { db.endTransaction() }
     }
     fun upsert(song: SongbookSong): Long {
         val cv = android.content.ContentValues().apply {
@@ -94,8 +67,8 @@ class SongbookDb(context: Context) {
             put("chords", JSONArray(song.chords).toString()); put("source", song.source)
             put("youtube_id", song.youtubeId); put("youtube_confidence", song.youtubeConfidence)
         }
-        val existing = db.rawQuery("SELECT id FROM songs WHERE lower(title)=lower(?) AND lower(artist)=lower(?) AND source=?",
-            arrayOf(song.title, song.artist, song.source))
+        val existing = db.rawQuery("SELECT id FROM songs WHERE lower(title)=lower(?) AND lower(artist)=lower(?)",
+            arrayOf(song.title, song.artist))
         val id = if (existing.moveToFirst()) {
             val value = existing.getLong(0); existing.close()
             db.update("songs", cv, "id=?", arrayOf(value.toString())); value
@@ -191,29 +164,6 @@ class SongbookFragment : Fragment() {
         val import = button("＋  PDF analysieren & Songs importieren")
         import.setOnClickListener { importPdf.launch(arrayOf("application/pdf")) }
         root.addView(import)
-        val pdfs = db.pdfs()
-        if (pdfs.isNotEmpty()) {
-            addText("IMPORTIERTE PDF-DATEIEN", 13f, Color.LTGRAY, 2)
-            pdfs.forEach { pdf ->
-                val item = card()
-                item.addView(label(pdf.second, 15f, Color.WHITE))
-                item.addView(label("${pdf.third} erkannte Songs", 12f, Color.LTGRAY))
-                val remove = button("PDF und zugehörige Songs entfernen")
-                remove.setOnClickListener {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("PDF-Import entfernen?")
-                        .setMessage("„${pdf.second}“ und die daraus importierten Songs werden aus dem Songbook entfernt. Die Original-PDF auf deinem Gerät bleibt erhalten.")
-                        .setNegativeButton("Abbrechen", null)
-                        .setPositiveButton("Entfernen") { _, _ ->
-                            val deleted = db.removePdf(pdf.first)
-                            Toast.makeText(requireContext(), "$deleted Songs entfernt.", Toast.LENGTH_SHORT).show()
-                            buildHome()
-                        }.show()
-                }
-                item.addView(remove)
-                root.addView(item)
-            }
-        }
         val search = EditText(requireContext()).apply {
             hint="Song oder Künstler suchen"; setSingleLine(); setTextColor(Color.WHITE); setHintTextColor(Color.GRAY)
             setPadding(dp(16),0,dp(16),0); inputType=InputType.TYPE_CLASS_TEXT
@@ -291,30 +241,9 @@ class SongbookFragment : Fragment() {
                     if(input==null) error("PDF konnte nicht geöffnet werden.")
                     PDFBoxResourceLoader.init(requireContext().applicationContext)
                     PDDocument.load(input).use { doc ->
-                        var text=PDFTextStripper().getText(doc)
-                        var usedOcr = false
-                        if (text.replace(Regex("\\s"), "").length < 80) {
-                            usedOcr = true
-                            val renderer = com.tom_roush.pdfbox.rendering.PDFRenderer(doc)
-                            val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(
-                                com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
-                            )
-                            val pages = StringBuilder()
-                            for (page in 0 until minOf(doc.numberOfPages, 40)) {
-                                val bitmap = renderer.renderImageWithDPI(page, 180f)
-                                val image = com.google.mlkit.vision.common.InputImage.fromBitmap(bitmap, 0)
-                                pages.append(com.google.android.gms.tasks.Tasks.await(recognizer.process(image)).text)
-                                    .append("\\n\\n")
-                                bitmap.recycle()
-                            }
-                            recognizer.close()
-                            text = pages.toString()
-                        }
+                        val text=PDFTextStripper().getText(doc)
                         val songs=SongbookParser.parse(text,uri.toString())
-                        if (songs.isEmpty()) error("In dieser PDF konnten keine verwertbaren Songtexte erkannt werden.")
                         songs.forEach { db.upsert(it) }
-                        val fileName = queryDisplayName(uri)
-                        db.savePdf(uri.toString(), fileName, songs.size)
                         requireActivity().runOnUiThread {
                             if(progress.parent!=null) root.removeView(progress)
                             AlertDialog.Builder(requireContext()).setTitle("PDF analysiert")
@@ -331,16 +260,6 @@ class SongbookFragment : Fragment() {
                 }
             }
         }
-    }
-
-    private fun queryDisplayName(uri: Uri): String {
-        var name = uri.lastPathSegment ?: "Importierte PDF"
-        runCatching {
-            requireContext().contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
-                if (it.moveToFirst()) name = it.getString(0) ?: name
-            }
-        }
-        return name
     }
 
     private fun card(): LinearLayout = LinearLayout(requireContext()).apply {
@@ -370,8 +289,7 @@ if 'com.tom-roush:pdfbox-android:' not in g:
     marker = 'dependencies {'
     if marker not in g:
         raise SystemExit("FEHLER: dependencies-Block in app/build.gradle.kts nicht gefunden.")
-    g = g.replace(marker, marker + '\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
-    implementation("com.google.mlkit:text-recognition:16.0.1")', 1)
+    g = g.replace(marker, marker + '\n    implementation("com.tom-roush:pdfbox-android:2.0.27.0")', 1)
     GRADLE.write_text(g, encoding="utf-8")
 
 if MANIFEST.is_file():
@@ -389,7 +307,7 @@ if "SongbookFragment" not in s:
         r'([ \t]*menu\.add\(0,\s*3,\s*2,\s*"[^"]*Akkord[^"\n]*"\)[^\n]*\n)',
         r'([ \t]*menu\.add\(0,\s*2,\s*2,\s*"[^"\n]*"\)[^\n]*\n)'
     ]:
-        s,n=re.subn(pat, r'\1            menu.add(0, 4, 3, "Songbook").setIcon(R.drawable.ic_nav_songbook)\n', s, count=1)
+        s,n=re.subn(pat, r'\1            menu.add(0, 4, 3, "Songbook")\n', s, count=1)
         if n: inserted=True; break
     if not inserted:
         s,n=re.subn(r'([ \t]*menu\.add\([^\n]*Einstellungen[^\n]*\n)', r'            menu.add(0, 4, 3, "Songbook")\n\1', s, count=1)
@@ -400,16 +318,6 @@ if "SongbookFragment" not in s:
     if '"Songbook" to 4' not in s:
         s,n=re.subn(r'([ \t]*"[^"\n]*(?:Akkord|Lernstudio|Lernen)[^"\n]*" to \d+,[ \t]*\n)', r'\1            "Songbook" to 4,\n', s, count=1)
     MAIN.write_text(s, encoding="utf-8")
-
-# Ensure the Songbook tab always has a dedicated visible icon.
-s = MAIN.read_text(encoding="utf-8")
-s = re.sub(r'(menu\.add\(0,\s*4,\s*3,\s*"Songbook"\))(?!\.setIcon)', r'\1.setIcon(R.drawable.ic_nav_songbook)', s)
-MAIN.write_text(s, encoding="utf-8")
-icon = ROOT / "app/src/main/res/drawable/ic_nav_songbook.xml"
-icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M6,3.5C4.9,3.5 4,4.4 4,5.5V19c0,1.1 0.9,2 2,2h13V5.5c0,-1.1 -0.9,-2 -2,-2H6zM7,6h9v1.8H7V6zM7,10h9v1.8H7V10zM7,14h6v1.8H7V14z"/>
-</vector>""", encoding="utf-8")
 
 (ROOT / "SONGBOOK_INTEGRATION_V1.txt").write_text(
     "Saitenwerk Intelligent Songbook V1\n"
