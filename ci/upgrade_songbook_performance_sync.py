@@ -91,6 +91,7 @@ new=r'''    private fun showSong(song: SongbookSong) {
     """.trimIndent()
 
 '''
+new=new.replace(r'\${','${')
 s=s[:a]+new+s[b:]
 p.write_text(s,encoding="utf-8")
 print("SONGBOOK_PERFORMANCE_SYNC_V2: PASS")
