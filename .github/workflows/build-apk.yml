@@ -482,6 +482,14 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_youtube_oauth_songbook.py
 
+
+      - name: Songbook-PDF-Import, OCR, PDF-Verwaltung und Navigation erweitern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_pdf_management.py
+
       - name: YouTube-OAuth-Integration validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
@@ -541,12 +549,25 @@ jobs:
               "YouTube-Verknüpfung suchen",
               "enablejsapi=1",
               "Auto-Sync für Lyrics aktivieren",
+              "CREATE TABLE IF NOT EXISTS imported_pdfs",
+              "CREATE TABLE IF NOT EXISTS song_pdf_sources",
+              "fun removePdf(uri: String)",
+              "MEINE IMPORTIERTEN PDFS",
+              "PDF aus Songbook entfernen",
+              "PdfRenderer",
+              "TextRecognition.getClient",
+              "Tasks.await",
+              "queryPdfDisplayName",
           ]
           missing = [x for x in required if x not in s]
           if missing:
               raise SystemExit("FEHLER: Intelligentes Songbook unvollständig: " + ", ".join(missing))
           if "com.tom-roush:pdfbox-android:2.0.27.0" not in gradle.read_text(encoding="utf-8"):
               raise SystemExit("FEHLER: PDFBox-Android-Abhängigkeit fehlt.")
+          if "com.google.mlkit:text-recognition:16.0.1" not in gradle.read_text(encoding="utf-8"):
+              raise SystemExit("FEHLER: ML-Kit-OCR-Abhängigkeit fehlt.")
+          if "ic_nav_songbook" not in main.read_text(encoding="utf-8") or not (root / "app/src/main/res/drawable/ic_nav_songbook.xml").is_file():
+              raise SystemExit("FEHLER: Songbook-Symbol in der unteren Navigation fehlt.")
           if "SongbookFragment" not in main.read_text(encoding="utf-8"):
               raise SystemExit("FEHLER: Songbook-Navigation fehlt.")
           print("INTELLIGENTES-SONGBOOK: PASS – PDF-Import, Parser, SQLite-Datenbank, Songdetail, YouTube-Player und Synchronisationsoberfläche geprüft.")
