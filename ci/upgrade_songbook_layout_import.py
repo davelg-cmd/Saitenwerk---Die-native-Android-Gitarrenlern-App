@@ -32,7 +32,7 @@ private data class LayoutLine(val text:String,val x:Float,val y:Float,val height
 private data class LayoutPage(val number:Int,val width:Float,val height:Float,val lines:List<LayoutLine>)
 
 internal object SongbookLayoutImporter {
-    fun import(context:Context, uri:Uri, source:String):List<SongbookSong> {
+    fun importPdf(context:Context, uri:Uri, source:String):List<SongbookSong> {
         val resolver=context.contentResolver
         val descriptor=resolver.openFileDescriptor(uri,"r") ?: error("PDF-Datei konnte nicht geöffnet werden.")
         val renderer=PdfRenderer(descriptor)
@@ -236,7 +236,7 @@ method=r'''    private fun importPdf(uri:Uri) {
             try {
                 runCatching { requireContext().contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                 val displayName=queryPdfDisplayName(uri)
-                val songs=SongbookLayoutImporter.import(requireContext().applicationContext,uri,uri.toString())
+                val songs=SongbookLayoutImporter.importPdf(requireContext().applicationContext,uri,uri.toString())
                 if(songs.isEmpty()) error("Es konnten keine eindeutig abgrenzbaren Liedseiten erkannt werden. Es wurde nichts gespeichert, damit keine falschen Lieder entstehen.")
                 val savedCount=db.replacePdfSongs(uri.toString(),songs)
                 if(savedCount<=0) error("Es wurden keine Songs gespeichert.")
