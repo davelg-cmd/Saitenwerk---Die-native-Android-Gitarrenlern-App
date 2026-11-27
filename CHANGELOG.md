@@ -1,3 +1,14 @@
+## Unreleased – YouTube-OAuth im intelligenten Songbook
+
+- **YouTube pro Nutzer verbinden:** Das Songbook erhält einen eigenen **„YouTube verbinden“**-Einstieg. Jeder App-Nutzer kann sein eigenes Google-/YouTube-Konto über den offiziellen Google-Authorization-Flow autorisieren.
+- **Kein Passwort in Saitenwerk:** Die Anmeldung läuft über Googles Autorisierungsoberfläche; YouTube-/Google-Passwörter werden von Saitenwerk weder abgefragt noch gespeichert.
+- **Minimale Berechtigung:** Für die erste Integration wird ausschließlich `youtube.readonly` angefordert. Damit kann Saitenwerk auf das autorisierte YouTube-Konto zugreifen, ohne bereits Bearbeitungs- oder Uploadrechte zu verlangen.
+- **Offizieller Android-Flow:** Nutzung des Google Identity AuthorizationClient mit Activity-Result-Resolution statt eingebettetem WebView.
+- **Kanalzuordnung:** Nach erfolgreicher Autorisierung wird der verbundene YouTube-Kanal über die YouTube Data API geprüft und im Songbook angezeigt.
+- **Token-Sicherheit:** Das kurzlebige Access Token bleibt zur Laufzeit im Speicher; dauerhaft gespeichert werden nur der lokale Verbindungsstatus und – sofern verfügbar – der Kanalname.
+- **Verbindung trennen:** Der lokale Saitenwerk-Verbindungsstatus kann direkt im Songbook entfernt werden. Eine echte OAuth-Widerrufsfunktion kann in einem nächsten Schritt ergänzt werden, sobald die Kontoverwaltung/Identitätsverknüpfung des Songbooks erweitert wird.
+- **Build-Absicherung:** Die YouTube-OAuth-Integration wird im GitHub-Actions-Build automatisch auf SDK, Scope, Consent-Flow, Tokenverarbeitung, Kanalprüfung und UI-Einstieg validiert.
+
 ## Unreleased – Intelligentes Premium-Songbook
 
 - Neuer **Songbook-Bereich** als eigenständige Premium-Funktion in Saitenwerk.
