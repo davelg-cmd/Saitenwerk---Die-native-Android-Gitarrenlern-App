@@ -585,7 +585,7 @@ jobs:
               "private fun searchYoutubeForSong(song: SongbookSong)",
               "searchYoutubeForSong(song)",
               "results?search_query=",
-              "persistYoutubeLink(song, matches[which].first)",
+              "persistYoutubeLink(song, videoId)",
               "SAITENWERK_PLAYER_POLISH_V1",
               "SongbookChordDiagram",
               "currentChord.text=activeChord.ifBlank { \"—\" }",
