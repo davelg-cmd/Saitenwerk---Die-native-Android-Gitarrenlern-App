@@ -11,10 +11,14 @@ if "SAITENWERK_PLAYER_POLISH_V1" in s:
     raise SystemExit(0)
 
 status_line = next((line for line in s.splitlines(True) if "status=label(" in line and "Synchronisierung:" in line), None)
+# Declare nullable references before the WebView callback captures them.
+anchor = "        var status:TextView?=null\n"
+if anchor not in s: raise SystemExit("FEHLER: Statusvariablen-Anker fehlt.")
+s=s.replace(anchor, anchor + "        var currentChordLabel:TextView?=null\n        var currentDiagram:SongbookChordDiagram?=null\n", 1)
 if not status_line: raise SystemExit("FEHLER: Player-Status-Anker fehlt.")
-card = r'''        val currentChordLabel = label("—",32f,Color.rgb(255,158,35))
+card = r'''        currentChordLabel = label("—",32f,Color.rgb(255,158,35))
         val currentChordCard = card().apply { orientation=LinearLayout.HORIZONTAL; gravity=android.view.Gravity.CENTER_VERTICAL }
-        val currentDiagram = SongbookChordDiagram(requireContext())
+        currentDiagram = SongbookChordDiagram(requireContext())
         currentChordCard.addView(currentDiagram,LinearLayout.LayoutParams(dp(112),dp(112)))
         val currentInfo = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
         currentInfo.addView(label("JETZT SPIELEN",11f,Color.LTGRAY))
@@ -26,7 +30,7 @@ card = r'''        val currentChordLabel = label("—",32f,Color.rgb(255,158,35)
 s=s.replace(status_line,status_line+card,1)
 
 old="updateSongbookLine(seconds,times,lines,lineViews,scroll,status)"
-new="updateSongbookLine(seconds,times,chords,lines,lineViews,scroll,status,currentChordLabel,currentDiagram)"
+new="if(currentChordLabel!=null && currentDiagram!=null) updateSongbookLine(seconds,times,chords,lines,lineViews,scroll,status,currentChordLabel!!,currentDiagram!!)"
 if old not in s: raise SystemExit("FEHLER: Player-Zeitcallback fehlt.")
 s=s.replace(old,new,1)
 old_sig="private fun updateSongbookLine(seconds:Double,times:org.json.JSONObject,lines:List<String>,views:List<View>,scroll:ScrollView,status:TextView?)"
