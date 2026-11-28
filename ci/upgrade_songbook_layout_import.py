@@ -33,6 +33,8 @@ private data class LayoutLine(val text:String,val x:Float,val y:Float,val height
 private data class LayoutPage(val number:Int,val width:Float,val height:Float,val lines:List<LayoutLine>)
 
 internal object SongbookLayoutImporter {
+    @Volatile var lastDiagnostic:String = "Noch kein Diagnosebericht vorhanden."
+
     fun importPdf(context:Context, uri:Uri, source:String, progress:(String,Int,Int)->Unit = {_,_,_->}) :List<SongbookSong> {
         // pdfbox-android muss seine Android-Assets initialisieren, bevor PDFTextStripper
         // oder LegacyPDFStreamEngine erstmals geladen werden.
@@ -106,7 +108,21 @@ internal object SongbookLayoutImporter {
                     result
                 }
             }
-            return SongbookLayoutParser.parse(pages,source)
+            val songs=SongbookLayoutParser.parse(pages,source)
+            lastDiagnostic=buildString {
+                appendLine("SAITENWERK PDF-DIAGNOSE")
+                appendLine("Seiten gesamt: ${pages.size}")
+                appendLine("Erkannte Songs: ${songs.size}")
+                appendLine("Auswertung der ersten ${min(10,pages.size)} Seiten:")
+                pages.take(10).forEach { page ->
+                    appendLine("\n--- PDF-Seite ${page.number} | Zeilen: ${page.lines.size} | Zeichen: ${page.lines.sumOf{it.text.length}} ---")
+                    page.lines.take(24).forEachIndexed { index,line ->
+                        appendLine(String.format(Locale.US,"%02d | y=%.1f | x=%.1f | Schrift=%.1f | %s",index+1,line.y,line.x,line.fontSize,line.text.take(180)))
+                    }
+                }
+                appendLine("\nHinweis: Der Bericht enthält nur Textauszüge der ersten zehn Seiten.")
+            }
+            return songs
         } finally {
             recognizer.close()
             renderer.close()
@@ -344,8 +360,12 @@ method=r'''    private fun importPdf(uri:Uri) {
                     if(progress.parent!=null) root.removeView(progress)
                     buildHome()
                     AlertDialog.Builder(activity).setTitle("PDF layoutbasiert analysiert")
-                        .setMessage("$savedCount Songs erkannt und gespeichert. Akkordzeilen werden anhand ihrer tatsächlichen Position über den passenden Textzeilen abgelegt. Bei nicht eindeutig erkannten Seiten wird der Import abgebrochen, statt falsche Zuordnungen zu speichern.")
-                        .setPositiveButton("OK",null).show()
+                        .setMessage("$savedCount Songs erkannt und gespeichert. Für die Prüfung der Erkennung kannst du den Diagnosebericht kopieren.")
+                        .setNeutralButton("Diagnosebericht kopieren") { _, _ ->
+                            val clipboard=activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SaitenWerk PDF-Diagnose",SongbookLayoutImporter.lastDiagnostic))
+                            Toast.makeText(activity,"Diagnosebericht kopiert",Toast.LENGTH_SHORT).show()
+                        }.setPositiveButton("OK",null).show()
                 }
             } catch(t:Throwable) {
                 activity.runOnUiThread {
@@ -359,7 +379,11 @@ method=r'''    private fun importPdf(uri:Uri) {
                             append("\\n\\nAufrufstelle:")
                             t.stackTrace.take(5).forEach { append("\\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
                             t.cause?.stackTrace?.take(3)?.forEach { append("\\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
-                        }).setPositiveButton("OK",null).show()
+                        }).setNeutralButton("Diagnosebericht kopieren") { _, _ ->
+                            val clipboard=activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SaitenWerk PDF-Diagnose",SongbookLayoutImporter.lastDiagnostic))
+                            Toast.makeText(activity,"Diagnosebericht kopiert",Toast.LENGTH_SHORT).show()
+                        }.setPositiveButton("OK",null).show()
                 }
             }
         }
