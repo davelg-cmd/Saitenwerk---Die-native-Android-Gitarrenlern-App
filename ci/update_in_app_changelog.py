@@ -79,29 +79,29 @@ if "val changelogScroll = ScrollView(" not in s:
         raise SystemExit("FEHLER: App-Info-Karte der Über-Seite nicht gefunden.")
     # Wrap the complete About page content in a ScrollView at its existing root.
     # The page is the LinearLayout populated by the About section.
-    page_decl = re.search(r"val\\s+page\\s*=\\s*LinearLayout\\(a\\)", s)
+    page_decl = re.search(r"val\s+page\s*=\s*LinearLayout\(a\)", s)
     if not page_decl:
         raise SystemExit("FEHLER: Wurzel-Layout der Über-Seite nicht gefunden.")
     page_name = "page"
     # Replace the root content's insertion into its parent with a ScrollView wrapper.
     # Locate the exact final attachment of this page after all About cards are added.
-    attach = list(re.finditer(r"\\broot\\.addView\\(page(?:,|\\))", s))
+    attach = list(re.finditer(r"\broot\.addView\(page(?:,|\))", s))
     if not attach:
         raise SystemExit("FEHLER: Einbindung der Über-Seite in das Hauptlayout nicht gefunden.")
     m = attach[-1]
     wrapper = (
-        "        val aboutScroll = ScrollView(a).apply {\\n"
-        "            isFillViewport = true\\n"
-        "            isVerticalScrollBarEnabled = true\\n"
-        "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\\n"
-        "        }\\n"
-        "        aboutScroll.addView(page, ScrollView.LayoutParams(-1, -2))\\n"
+        "        val aboutScroll = ScrollView(a).apply {\n"
+        "            isFillViewport = true\n"
+        "            isVerticalScrollBarEnabled = true\n"
+        "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\n"
+        "        }\n"
+        "        aboutScroll.addView(page, ScrollView.LayoutParams(-1, -2))\n"
     )
     s = s[:m.start()] + wrapper + s[m.start():]
     s = s[m.start():] + s[m.start():] if False else s
     # Change only the located attachment to use the wrapper.
     tail = s[m.start()+len(wrapper):]
-    tail = re.sub(r"\\broot\\.addView\\(page", "root.addView(aboutScroll", tail, count=1)
+    tail = re.sub(r"\broot\.addView\(page", "root.addView(aboutScroll", tail, count=1)
     if "root.addView(aboutScroll" not in tail:
         raise SystemExit("FEHLER: ScrollView konnte nicht an die Über-Seite angeschlossen werden.")
     s = s[:m.start()+len(wrapper)] + tail
