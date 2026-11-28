@@ -33,7 +33,7 @@ private data class LayoutLine(val text:String,val x:Float,val y:Float,val height
 private data class LayoutPage(val number:Int,val width:Float,val height:Float,val lines:List<LayoutLine>)
 
 internal object SongbookLayoutImporter {
-    fun importPdf(context:Context, uri:Uri, source:String):List<SongbookSong> {
+    fun importPdf(context:Context, uri:Uri, source:String, progress:(String,Int,Int)->Unit = {_,_,_->}) :List<SongbookSong> {
         // pdfbox-android muss seine Android-Assets initialisieren, bevor PDFTextStripper
         // oder LegacyPDFStreamEngine erstmals geladen werden.
         PDFBoxResourceLoader.init(context.applicationContext)
@@ -46,7 +46,10 @@ internal object SongbookLayoutImporter {
                 if(input==null) error("PDF-Datei konnte nicht gelesen werden.")
                 PDDocument.load(input).use { document ->
                     val result=mutableListOf<LayoutPage>()
-                    for(index in 0 until document.numberOfPages) {
+                    val totalPages=document.numberOfPages
+                    progress("PDF wird analysiert…",0,totalPages)
+                    for(index in 0 until totalPages) {
+                        progress("Seite ${index+1} von $totalPages wird analysiert…",index+1,totalPages)
                         val page=document.getPage(index)
                         val pageWidth=page.mediaBox.width.coerceAtLeast(1f)
                         val pageHeight=page.mediaBox.height.coerceAtLeast(1f)
@@ -288,12 +291,46 @@ method=r'''    private fun importPdf(uri:Uri) {
             try {
                 runCatching { requireContext().contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                 val displayName=queryPdfDisplayName(uri)
-                val songs=SongbookLayoutImporter.importPdf(requireContext().applicationContext,uri,uri.toString())
+                val statusBox=LinearLayout(requireContext()).apply {
+                    orientation=LinearLayout.VERTICAL
+                    setPadding(dp(24),dp(8),dp(24),dp(8))
+                }
+                val statusText=android.widget.TextView(requireContext()).apply {
+                    text="PDF wird vorbereitet…"
+                    textSize=16f
+                }
+                val statusProgress=ProgressBar(requireContext(),null,android.R.attr.progressBarStyleHorizontal).apply {
+                    max=100
+                    progress=0
+                }
+                statusBox.addView(statusText,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT))
+                statusBox.addView(statusProgress,LinearLayout.LayoutParams(-1,dp(8)).apply{topMargin=dp(12)})
+                val statusDialog=AlertDialog.Builder(requireContext())
+                    .setTitle("PDF wird importiert")
+                    .setView(statusBox)
+                    .setCancelable(false)
+                    .create()
+                requireActivity().runOnUiThread { statusDialog.show() }
+                val songs=SongbookLayoutImporter.importPdf(
+                    requireContext().applicationContext,uri,uri.toString()
+                ) { message,current,total ->
+                    requireActivity().runOnUiThread {
+                        statusText.text=message
+                        statusProgress.max=total.coerceAtLeast(1)
+                        statusProgress.progress=current.coerceIn(0,statusProgress.max)
+                    }
+                }
+                requireActivity().runOnUiThread {
+                    statusText.text="Liedanfänge werden ausgewertet…"
+                    statusProgress.max=100
+                    statusProgress.progress=100
+                }
                 if(songs.isEmpty()) error("Es konnten keine eindeutig abgrenzbaren Liedseiten erkannt werden. Es wurde nichts gespeichert, damit keine falschen Lieder entstehen.")
                 val savedCount=db.replacePdfSongs(uri.toString(),songs)
                 if(savedCount<=0) error("Es wurden keine Songs gespeichert.")
                 db.registerPdf(uri.toString(),displayName,savedCount)
                 requireActivity().runOnUiThread {
+                    if(statusDialog.isShowing) statusDialog.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
                     buildHome()
                     AlertDialog.Builder(requireContext()).setTitle("PDF layoutbasiert analysiert")
@@ -302,6 +339,7 @@ method=r'''    private fun importPdf(uri:Uri) {
                 }
             } catch(t:Throwable) {
                 requireActivity().runOnUiThread {
+                    if(statusDialog.isShowing) statusDialog.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
                     AlertDialog.Builder(requireContext()).setTitle("Import fehlgeschlagen")
                         .setMessage(buildString {
