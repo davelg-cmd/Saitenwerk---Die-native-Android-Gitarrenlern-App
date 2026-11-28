@@ -285,79 +285,84 @@ helper_path.write_text(helper,encoding="utf-8")
 start=s.index("    private fun importPdf(uri:Uri) {")
 end=s.index("    private fun queryPdfDisplayName",start)
 method=r'''    private fun importPdf(uri:Uri) {
-        val progress=ProgressBar(requireContext())
+        // Sämtliche Android-Views und Dialoge werden auf dem aufrufenden UI-Thread erstellt.
+        val context=requireContext()
+        val activity=requireActivity()
+        val progress=ProgressBar(context)
         root.addView(progress,0,LinearLayout.LayoutParams(-1,dp(5)))
+        val statusBox=LinearLayout(context).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(24),dp(8),dp(24),dp(8))
+        }
+        val statusText=android.widget.TextView(context).apply {
+            text="PDF wird vorbereitet…"
+            textSize=16f
+        }
+        val statusProgress=ProgressBar(context,null,android.R.attr.progressBarStyleHorizontal).apply {
+            max=100
+            this.progress=0
+        }
+        statusBox.addView(statusText,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT))
+        statusBox.addView(statusProgress,LinearLayout.LayoutParams(-1,dp(8)).apply{topMargin=dp(12)})
+        val statusDialog=AlertDialog.Builder(context)
+            .setTitle("PDF wird importiert")
+            .setView(statusBox)
+            .setCancelable(false)
+            .create()
+        statusDialog.show()
         executor.execute {
-            var statusDialog:AlertDialog?=null
             try {
-                runCatching { requireContext().contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                runCatching { context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                 val displayName=queryPdfDisplayName(uri)
-                val statusBox=LinearLayout(requireContext()).apply {
-                    orientation=LinearLayout.VERTICAL
-                    setPadding(dp(24),dp(8),dp(24),dp(8))
-                }
-                val statusText=android.widget.TextView(requireContext()).apply {
-                    text="PDF wird vorbereitet…"
-                    textSize=16f
-                }
-                val statusProgress=ProgressBar(requireContext(),null,android.R.attr.progressBarStyleHorizontal).apply {
-                    max=100
-                    this.progress=0
-                }
-                statusBox.addView(statusText,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT))
-                statusBox.addView(statusProgress,LinearLayout.LayoutParams(-1,dp(8)).apply{topMargin=dp(12)})
-                statusDialog=AlertDialog.Builder(requireContext())
-                    .setTitle("PDF wird importiert")
-                    .setView(statusBox)
-                    .setCancelable(false)
-                    .create()
-                requireActivity().runOnUiThread { statusDialog.show() }
                 val songs=SongbookLayoutImporter.importPdf(
-                    requireContext().applicationContext,uri,uri.toString()
+                    context.applicationContext,uri,uri.toString()
                 ) { message,current,total ->
-                    requireActivity().runOnUiThread {
-                        statusText.text=message
-                        statusProgress.max=total.coerceAtLeast(1)
-                        statusProgress.progress=current.coerceIn(0,statusProgress.max)
+                    activity.runOnUiThread {
+                        if(!activity.isFinishing && statusDialog.isShowing) {
+                            statusText.text=message
+                            statusProgress.max=total.coerceAtLeast(1)
+                            statusProgress.progress=current.coerceIn(0,statusProgress.max)
+                        }
                     }
                 }
-                requireActivity().runOnUiThread {
-                    statusText.text="Liedanfänge werden ausgewertet…"
-                    statusProgress.max=100
-                    statusProgress.progress=100
+                activity.runOnUiThread {
+                    if(!activity.isFinishing && statusDialog.isShowing) {
+                        statusText.text="Liedanfänge werden ausgewertet…"
+                        statusProgress.max=100
+                        statusProgress.progress=100
+                    }
                 }
                 if(songs.isEmpty()) error("Es konnten keine eindeutig abgrenzbaren Liedseiten erkannt werden. Es wurde nichts gespeichert, damit keine falschen Lieder entstehen.")
                 val savedCount=db.replacePdfSongs(uri.toString(),songs)
                 if(savedCount<=0) error("Es wurden keine Songs gespeichert.")
                 db.registerPdf(uri.toString(),displayName,savedCount)
-                requireActivity().runOnUiThread {
-                    statusDialog?.takeIf{it.isShowing}?.dismiss()
+                activity.runOnUiThread {
+                    if(statusDialog.isShowing) statusDialog.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
                     buildHome()
-                    AlertDialog.Builder(requireContext()).setTitle("PDF layoutbasiert analysiert")
+                    AlertDialog.Builder(activity).setTitle("PDF layoutbasiert analysiert")
                         .setMessage("$savedCount Songs erkannt und gespeichert. Akkordzeilen werden anhand ihrer tatsächlichen Position über den passenden Textzeilen abgelegt. Bei nicht eindeutig erkannten Seiten wird der Import abgebrochen, statt falsche Zuordnungen zu speichern.")
                         .setPositiveButton("OK",null).show()
                 }
             } catch(t:Throwable) {
-                requireActivity().runOnUiThread {
-                    if(statusDialog?.isShowing == true) statusDialog?.dismiss()
+                activity.runOnUiThread {
+                    if(statusDialog.isShowing) statusDialog.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
-                    AlertDialog.Builder(requireContext()).setTitle("Import fehlgeschlagen")
+                    AlertDialog.Builder(activity).setTitle("Import fehlgeschlagen")
                         .setMessage(buildString {
                             append("Fehlertyp: ").append(t.javaClass.name)
-                            append("\nMeldung: ").append(t.message ?: "keine")
-                            t.cause?.let { append("\nUrsache: ").append(it.javaClass.name).append(": ").append(it.message ?: "keine Meldung") }
-                            append("\n\nAufrufstelle:")
-                            t.stackTrace.take(5).forEach { append("\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
-                            t.cause?.stackTrace?.take(3)?.forEach { append("\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
+                            append("\\nMeldung: ").append(t.message ?: "keine")
+                            t.cause?.let { append("\\nUrsache: ").append(it.javaClass.name).append(": ").append(it.message ?: "keine Meldung") }
+                            append("\\n\\nAufrufstelle:")
+                            t.stackTrace.take(5).forEach { append("\\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
+                            t.cause?.stackTrace?.take(3)?.forEach { append("\\n").append(it.className).append(".").append(it.methodName).append(":").append(it.lineNumber) }
                         }).setPositiveButton("OK",null).show()
                 }
             }
         }
     }
 
-'''
-s=s[:start]+method+s[end:]
+'''s=s[:start]+method+s[end:]
 
 # Render chord positions as a separate chord row above the matching lyric line.
 render_start=s.index("    private fun renderSongbookLines(")
