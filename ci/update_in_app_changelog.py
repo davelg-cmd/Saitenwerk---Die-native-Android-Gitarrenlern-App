@@ -64,35 +64,33 @@ if current_build != 427:
 # The changelog is rendered inside a bounded ScrollView so long histories remain
 # fully accessible on phones. Reuse the existing LinearLayout populated by
 # changes.forEach and replace only the dialog's setView target.
-list_pos = s.find("\\n        changes.forEach", start)
+list_pos = s.find("\n        changes.forEach", start)
 if list_pos < 0:
     raise SystemExit("FEHLER: Changelog-Renderer nicht gefunden.")
-renderer_end = s.find("\\n", list_pos + 1)
 tail = s[list_pos:]
 import re
-view_match = re.search(r"\\.setView\\((\\w+)\\)", tail)
+view_match = re.search(r"\.setView\((\w+)\)", tail)
 if not view_match:
     raise SystemExit("FEHLER: Changelog-Dialog mit setView(...) nicht gefunden.")
 container_name = view_match.group(1)
-decl_pattern = re.compile(r"val\\s+" + re.escape(container_name) + r"\\s*=\\s*LinearLayout\\(")
-decl_match = decl_pattern.search(s[:list_pos])
-if not decl_match:
+decl_pattern = re.compile(r"val\s+" + re.escape(container_name) + r"\s*=\s*LinearLayout\(")
+if not decl_pattern.search(s[:list_pos]):
     raise SystemExit("FEHLER: Changelog-Container ist kein LinearLayout.")
 scroll_code = (
-    "        val changelogScroll = ScrollView(" + container_name + ".context).apply {\\n"
-    "            isFillViewport = true\\n"
-    "            isVerticalScrollBarEnabled = true\\n"
-    "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\\n"
-    "        }\\n"
-    "        changelogScroll.addView(" + container_name + ", ScrollView.LayoutParams(\\n"
-    "            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT\\n"
-    "        ))\\n"
+    "        val changelogScroll = ScrollView(" + container_name + ".context).apply {\n"
+    "            isFillViewport = true\n"
+    "            isVerticalScrollBarEnabled = true\n"
+    "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\n"
+    "        }\n"
+    "        changelogScroll.addView(" + container_name + ", ScrollView.LayoutParams(\n"
+    "            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT\n"
+    "        ))\n"
 )
 if "val changelogScroll = ScrollView(" not in s:
-    s = s[:list_pos] + "\\n" + scroll_code + s[list_pos:]
-tail_start = s.find("\\n        changes.forEach", start)
+    s = s[:list_pos] + "\n" + scroll_code + s[list_pos:]
+tail_start = s.find("\n        changes.forEach", start)
 tail = s[tail_start:]
-tail = re.sub(r"\\.setView\\(" + re.escape(container_name) + r"\\)", ".setView(changelogScroll)", tail, count=1)
+tail = re.sub(r"\.setView\(" + re.escape(container_name) + r"\)", ".setView(changelogScroll)", tail, count=1)
 s = s[:tail_start] + tail
 
 main.write_text(s, encoding="utf-8")
