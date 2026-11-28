@@ -562,6 +562,13 @@ jobs:
           set -euo pipefail
           python3 ci/upgrade_songbook_layout_import.py
 
+      - name: Songplayer mit aktuellem Akkord und öffentlicher YouTube-Suche verbessern
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/upgrade_songbook_player_polish.py
+
       - name: YouTube-Songverknüpfung validieren
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
