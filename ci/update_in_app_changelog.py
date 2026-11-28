@@ -13,10 +13,19 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
+            "27.11.2026 · Build 540" to "PDF-Parser stabilisiert: Zeilenumbrüche und Textnormalisierung werden in der Kotlin-Integration korrekt verarbeitet, damit PDF-Inhalte nicht durch fehlerhafte Escape-Sequenzen beschädigt werden.",
+            "27.11.2026 · Build 543" to "PDF-Songbook erweitert: ein vorhandenes PDF-Inhaltsverzeichnis kann als Songindex ausgewertet werden. Zusätzlich wurden Kontraste und Bedienelemente im Dark-Theme vereinheitlicht.",
+            "27.11.2026 · Build 545" to "Songbook auf persönliche Bibliotheken umgestellt: jeder Nutzer startet mit einem eigenen leeren Songbestand und kann eigene PDFs importieren, statt ungefragt einen gemeinsamen Beispielbestand zu erhalten.",
+            "27.11.2026 · Build 551" to "Songbook-Datenmodell stabilisiert: Songs werden mit expliziten benannten Feldern gespeichert, damit Künstler, Liedtext, Akkorde und YouTube-Metadaten korrekt zugeordnet bleiben.",
+            "27.11.2026 · Build 559" to "Song-Praxis erweitert: synchronisierter Player mit Start/Stopp, Zeitmarken für Liedtext und Akkorde sowie zugehöriger Songbook-Wiedergabe.",
+            "27.11.2026 · Build 563" to "Songbook-Listenlayout korrigiert: Scrollbereich und Listencontainer verwenden passende Layoutparameter, damit die Songliste zuverlässig angezeigt wird.",
+            "27.11.2026 · Build 565" to "PDF-Inhaltsverzeichnis robuster erkannt: unterschiedliche Punktlinien, Seitenversätze und Formatierungen werden toleranter ausgewertet.",
+            "27.11.2026 · Build 572" to "PDF/OCR-Erkennung verbessert: fehlerhafte oder unvollständige Textauszüge werden zuverlässiger erkannt und bei Bedarf durch Texterkennung der gerenderten PDF-Seite ersetzt.",
             "25.11.2026 · Build 515" to "Premium-Akkordbibliothek: neuer Akkord-Atlas mit Suche, Favoriten, Qualitätsfiltern und zweispaltiger Übersicht. Detailansicht mit großem Griffbild, Saiten-/Fingerlegende und authentischer Gitarren-Hörprobe. Die zentrale ChordLibrary und alle vorhandenen Trainer bleiben erhalten.",
             "25.11.2026 · Build 520" to "Songbook erweitert: YouTube-Verbindung pro Nutzer über den offiziellen Google-Authorization-Flow. Minimale Leseberechtigung, sichere Token-Verarbeitung, Kanalprüfung und Möglichkeit zum Trennen der lokalen Verbindung.",
             "25.11.2026 · Build 525" to "Songbook-Absturz beim Öffnen behoben: Karten werden nur noch einmal zur Ansicht hinzugefügt. Statistik-, Songkarten- und Detailansichten verwenden dieselbe sichere Karten-Erzeugung.",
             "27.11.2026 · Build 581" to "PDF-Songbookimport neu aufgebaut: PDF-Seiten werden layoutbasiert ausgewertet, gescannte Seiten per OCR erkannt und Akkordzeilen anhand ihrer Position den passenden Liedtextzeilen zugeordnet. Importierte Songs werden lokal gespeichert.",
+            "27.11.2026 · Build 582" to "PDF-Import-Diagnose erweitert: bei einem Importfehler werden Fehlertyp, Ursache und relevante Aufrufstellen ausgegeben, damit Abstürze gezielt behoben werden können.",
             "27.11.2026 · Build 583" to "PDF-Import repariert: PDFBox-Android initialisiert jetzt vor der ersten Textanalyse seine Android-Ressourcen. Dadurch wird der Absturz beim Laden des PDF-Text-Engines verhindert.",
             "27.11.2026 · Build 584" to "PDF-Erkennung verbessert: Titelkandidaten werden anhand von Schriftgröße, Schriftstil, Abständen und nachfolgendem Liedtext bewertet. Inhaltsverzeichnisse, Seitenköpfe und doppelte Titel werden stärker herausgefiltert.",
             "27.11.2026 · Build 585" to "PDF-Import-Build repariert: Die CI-Bereinigung entfernt den generierten Songbook-Importer vor dessen erneuter Integration, statt ihn versehentlich vor dem Kompilieren zu löschen.",
