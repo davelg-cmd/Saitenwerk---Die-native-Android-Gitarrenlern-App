@@ -70,23 +70,19 @@ if current_build != 427:
         raise SystemExit("FEHLER: Build-426-Historieneintrag zum Ergänzen des Build-427-Verlaufs nicht gefunden.")
     changes = changes.replace(anchor, build_427 + anchor, 1)
 
-# The changelog is rendered inside a bounded ScrollView so long histories remain
-# fully accessible on phones. Reuse the existing LinearLayout populated by
-# changes.forEach and replace only the dialog's setView target.
-list_pos = s.find("\n        changes.forEach", start)
-if list_pos < 0:
-    raise SystemExit("FEHLER: Changelog-Renderer nicht gefunden.")
-tail = s[list_pos:]
+# Wrap the existing changelog column in a bounded ScrollView. The dialog's
+# setView(...) call is authored before the changes.forEach population loop.
 import re
-view_match = re.search(r"\.setView\((\w+)\)", tail)
+view_match = re.search(r"\.setView\((\w+)\)", s[start:])
 if not view_match:
     raise SystemExit("FEHLER: Changelog-Dialog mit setView(...) nicht gefunden.")
 container_name = view_match.group(1)
+view_start = start + view_match.start()
 decl_pattern = re.compile(r"val\s+" + re.escape(container_name) + r"\s*=\s*LinearLayout\(")
-if not decl_pattern.search(s[:list_pos]):
-    raise SystemExit("FEHLER: Changelog-Container ist kein LinearLayout.")
+if not decl_pattern.search(s[:view_start]):
+    raise SystemExit("FEHLER: Changelog-Container '" + container_name + "' nicht als LinearLayout gefunden.")
 scroll_code = (
-    "        val changelogScroll = ScrollView(" + container_name + ".context).apply {\n"
+    "val changelogScroll = ScrollView(" + container_name + ".context).apply {\n"
     "            isFillViewport = true\n"
     "            isVerticalScrollBarEnabled = true\n"
     "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\n"
@@ -96,11 +92,11 @@ scroll_code = (
     "        ))\n"
 )
 if "val changelogScroll = ScrollView(" not in s:
-    s = s[:list_pos] + "\n" + scroll_code + s[list_pos:]
-tail_start = s.find("\n        changes.forEach", start)
-tail = s[tail_start:]
-tail = re.sub(r"\.setView\(" + re.escape(container_name) + r"\)", ".setView(changelogScroll)", tail, count=1)
-s = s[:tail_start] + tail
+    s = s[:view_start] + scroll_code + s[view_start:]
+    # Recalculate and replace the dialog's content view with the scroll wrapper.
+    tail = s[view_start + len(scroll_code):]
+    tail = re.sub(r"\.setView\(" + re.escape(container_name) + r"\)", ".setView(changelogScroll)", tail, count=1)
+    s = s[:view_start + len(scroll_code)] + tail
 
 main.write_text(s, encoding="utf-8")
 
