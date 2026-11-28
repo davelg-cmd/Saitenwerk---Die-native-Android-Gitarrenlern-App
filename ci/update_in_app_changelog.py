@@ -70,23 +70,22 @@ if current_build != 427:
         raise SystemExit("FEHLER: Build-426-Historieneintrag zum Ergänzen des Build-427-Verlaufs nicht gefunden.")
     changes = changes.replace(anchor, build_427 + anchor, 1)
 
-# Locate the dialog inside the enclosing showChanges() function. The
-# setView(...) call can appear before the changes list itself.
+# Find the dialog's content view relative to the changelog list. In this
+# source the dialog may be constructed before the changes list declaration.
 import re
-function_start = s.rfind("fun showChanges()", 0, start)
-if function_start < 0:
-    raise SystemExit("FEHLER: showChanges()-Funktion nicht gefunden.")
-next_function = re.search(r"\n\s*(?:private\s+|public\s+|internal\s+)?fun\s+", s[start:])
-function_end = start + next_function.start() if next_function else len(s)
-function_body = s[function_start:function_end]
-view_match = re.search(r"\.setView\(\s*(\w+)", function_body)
-if not view_match:
-    raise SystemExit("FEHLER: setView-Aufruf innerhalb von showChanges() nicht gefunden.")
-container_name = view_match.group(1)
-view_start = function_start + view_match.start()
-decl_pattern = re.compile(r"val\s+" + re.escape(container_name) + r"\s*=\s*(?:LinearLayout|android\.widget\.LinearLayout)\(")
-if not decl_pattern.search(s[function_start:view_start]):
-    raise SystemExit("FEHLER: Changelog-Container '" + container_name + "' nicht vor setView(...) als LinearLayout deklariert.")
+view_candidates = []
+for match in re.finditer(r"\.setView\(\s*(\w+)\s*\)", s):
+    name = match.group(1)
+    declaration = re.search(
+        r"val\s+" + re.escape(name) + r"\s*=\s*(?:LinearLayout|android\.widget\.LinearLayout)\(",
+        s[max(0, match.start() - 12000):match.start()]
+    )
+    if declaration:
+        view_candidates.append((abs(match.start() - start), match, name))
+if not view_candidates:
+    raise SystemExit("FEHLER: Kein setView(...) mit zuvor deklariertem LinearLayout für den Changelog gefunden.")
+_, view_match, container_name = min(view_candidates, key=lambda item: item[0])
+view_start = view_match.start()
 scroll_code = (
     "val changelogScroll = ScrollView(" + container_name + ".context).apply {\n"
     "            isFillViewport = true\n"
@@ -97,14 +96,14 @@ scroll_code = (
     "            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT\n"
     "        ))\n"
 )
-if "val changelogScroll = ScrollView(" not in function_body:
+if "val changelogScroll = ScrollView(" not in s:
     s = s[:view_start] + scroll_code + s[view_start:]
     tail_start = view_start + len(scroll_code)
-    tail = s[tail_start:function_end + len(scroll_code)]
+    tail = s[tail_start:]
     tail = re.sub(r"\.setView\(\s*" + re.escape(container_name) + r"\s*\)", ".setView(changelogScroll)", tail, count=1)
     if ".setView(changelogScroll)" not in tail:
         raise SystemExit("FEHLER: Dialog-Content konnte nicht auf ScrollView umgestellt werden.")
-    s = s[:tail_start] + tail + s[function_end + len(scroll_code):]
+    s = s[:tail_start] + tail
 
 main.write_text(s, encoding="utf-8")
 
