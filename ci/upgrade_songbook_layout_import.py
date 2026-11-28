@@ -188,15 +188,21 @@ private object SongbookLayoutParser {
         // vom Liedtext abheben. Die frühere Regel zählte "Großbuchstaben" und
         // "Seitenanfang" als gleichwertige Signale. Dadurch wurden bei manchen
         // Songbooks viele normale Textzeilen als neue Titel erkannt.
-        val structural=(large.toInt()+bold.toInt()+isolated.toInt())
-        val visual=(large.toInt()+bold.toInt()+upper.toInt()+isolated.toInt())
-        val hasTitleGap=gapAfter>median*0.75f || large || bold
+        // Ein echter Titel muss sich sichtbar vom Fließtext abheben.
+        // Großschreibung allein reicht nicht: In vielen Songbooks stehen
+        // normale Liedzeilen ebenfalls komplett in Versalien.
+        val nextIsChord=page.lines.getOrNull(index+1)?.let{isChordLine(it)}==true
+        val strongGapBefore=gapBefore>median*1.25f
+        val strongGapAfter=gapAfter>median*0.75f
         val shortEnough=text.length<=70 && text.split(Regex("""\s+""")).size<=10
-        val lyricLike=Regex("""(?i).*(\\b(ich|du|er|sie|wir|ihr|the|you|and|love|baby|oh|yeah)\\b).*""").matches(text) &&
-            text.split(Regex("""\s+""")).size>=5
-        val titleLike=!lyricLike && !text.endsWith(".") && !text.endsWith(",") && !text.endsWith(":")
-        return songBody && shortEnough && hasTitleGap && titleLike &&
-            ((structural>=2 && visual>=3) || (bold && large) || (isolated && large))
+        val titleShape=!text.endsWith(".") && !text.endsWith(",") && !text.endsWith(":") &&
+            !text.matches(Regex("""(?i).*[!?].*[!?].*"""))
+        val styleSignal=large || bold || (upper && text.split(Regex("""\s+""")).size<=6)
+        val structurallySeparated =
+            (strongGapBefore && strongGapAfter && styleSignal) ||
+            (strongGapAfter && nextIsChord && (large || bold || upper)) ||
+            (line.y<page.height*0.10f && strongGapAfter && (large || bold))
+        return songBody && shortEnough && titleShape && structurallySeparated
     }
 
     private fun Boolean.toInt():Int=if(this)1 else 0
