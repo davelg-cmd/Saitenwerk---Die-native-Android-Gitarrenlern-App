@@ -97,7 +97,7 @@ if "val changelogScroll = ScrollView(" not in s:
         "            isVerticalScrollBarEnabled = true\n"
         "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\n"
         "        }\n"
-        "        aboutScroll.addView(page, ScrollView.LayoutParams(-1, -2))\n"
+        "        aboutScroll.addView(page, android.view.ViewGroup.LayoutParams(-1, -2))\n"
     )
     s = s[:m.start()] + wrapper + s[m.start():]
     s = s[m.start():] + s[m.start():] if False else s
