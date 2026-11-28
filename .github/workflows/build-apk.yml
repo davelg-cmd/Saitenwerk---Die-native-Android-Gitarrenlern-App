@@ -713,7 +713,7 @@ jobs:
           if missing: raise SystemExit("Songbook V2 unvollständig: "+", ".join(missing))
           import re
           db_section=s[s.find("class SongbookDb"):s.find("object SongbookParser")]
-          if re.search(r"(?<!fun )\\bseedPublicDomainSongsIfEmpty\\s*\\(\\s*\\)", db_section):
+          if re.search(r"(?<!fun )\bseedPublicDomainSongsIfEmpty\s*\(\s*\)", db_section):
               raise SystemExit("Gemeinfreie Klassiker dürfen nicht in die persönliche Songdatenbank geseedet werden.")
           if "WebView(requireContext())" in s[s.find("private fun showSong"):s.find("private fun transposeChord")]:
               raise SystemExit("Der native Songplayer darf keine YouTube-WebView mehr verwenden.")
