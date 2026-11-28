@@ -169,7 +169,7 @@ internal object SongbookLayoutImporter {
 }
 
 private object SongbookLayoutParser {
-    private val chord=Regex("""^[A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:\([^()]{1,8}\))?(?:/[A-G](?:#|b)?)?$""",RegexOption.IGNORE_CASE)
+    private val chord=Regex("""^[A-H](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:\([^()]{1,8}\))?(?:/[A-H](?:#|b)?)?$""",RegexOption.IGNORE_CASE)
     private fun chordValue(raw:String)=raw.trim().trim('(',')','[',']','{','}',',',':',';','|')
     private fun isChordToken(raw:String)=chord.matches(chordValue(raw))
     private val toc=Regex("""\s*(?:\.{2,}|…{1,})\s*\d{1,4}\s*$""")
