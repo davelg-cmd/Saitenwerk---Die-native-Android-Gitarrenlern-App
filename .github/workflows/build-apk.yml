@@ -708,7 +708,7 @@ jobs:
           import os
           from pathlib import Path
           s=(Path(os.environ["PROJECT_DIR"])/"app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt").read_text(encoding="utf-8")
-          required=["songbook_library_v2","Meine Songs","Favoriten","Klassiker","PDFs","Eigenes PDF importieren","songbook_player_v2","Akkord setzen","transposeChord","YouTube optional extern öffnen"]
+          required=["songbook_library_v2","Meine Songs","Favoriten","Klassiker","Lied manuell hinzufügen","showAddSongDialog()","songbook_player_v2","Akkord setzen","transposeChord","YouTube optional extern öffnen"]
           missing=[x for x in required if x not in s]
           if missing: raise SystemExit("Songbook V2 unvollständig: "+", ".join(missing))
           import re
