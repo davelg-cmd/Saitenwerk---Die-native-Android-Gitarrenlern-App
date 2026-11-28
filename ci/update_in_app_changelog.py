@@ -70,48 +70,41 @@ if current_build != 427:
         raise SystemExit("FEHLER: Build-426-Historieneintrag zum Ergänzen des Build-427-Verlaufs nicht gefunden.")
     changes = changes.replace(anchor, build_427 + anchor, 1)
 
-# Find the dialog's content view relative to the changelog list. In this
-# source the dialog may be constructed before the changes list declaration.
-import re
-view_candidates = []
-for match in re.finditer(r"\.setView\(\s*(\w+)\s*\)", s):
-    name = match.group(1)
-    declaration = re.search(
-        r"val\s+" + re.escape(name) + r"\s*=\s*(?:LinearLayout|android\.widget\.LinearLayout)\(",
-        s[max(0, match.start() - 12000):match.start()]
-    )
-    if declaration:
-        view_candidates.append((abs(match.start() - start), match, name))
-if not view_candidates:
-    print("DIAGNOSE: Changelog-Abschnitt (vor/nach changes-Liste):")
-    print(s[max(0, start - 5000):min(len(s), end + 5000)])
-    print("DIAGNOSE: Alle setView-Aufrufe:")
-    for m in re.finditer(r".{0,180}setView.{0,220}", s):
-        print(m.group(0).replace("\\n", " "))
-    print("DIAGNOSE: Alle Dialog-Erzeugungen:")
-    for m in re.finditer(r".{0,120}(?:AlertDialog\\.Builder|MaterialAlertDialogBuilder|Dialog\\().{0,220}", s):
-        print(m.group(0).replace("\\n", " "))
-    raise SystemExit("FEHLER: Changelog-Dialogstruktur muss anhand des echten Quellcodes angepasst werden.")
-_, view_match, container_name = min(view_candidates, key=lambda item: item[0])
-view_start = view_match.start()
-scroll_code = (
-    "val changelogScroll = ScrollView(" + container_name + ".context).apply {\n"
-    "            isFillViewport = true\n"
-    "            isVerticalScrollBarEnabled = true\n"
-    "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\n"
-    "        }\n"
-    "        changelogScroll.addView(" + container_name + ", ScrollView.LayoutParams(\n"
-    "            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT\n"
-    "        ))\n"
-)
+# The changelog is part of the scrollable About page, not an AlertDialog.
+# appInfoBox already belongs to the page's vertical content container.
 if "val changelogScroll = ScrollView(" not in s:
-    s = s[:view_start] + scroll_code + s[view_start:]
-    tail_start = view_start + len(scroll_code)
-    tail = s[tail_start:]
-    tail = re.sub(r"\.setView\(\s*" + re.escape(container_name) + r"\s*\)", ".setView(changelogScroll)", tail, count=1)
-    if ".setView(changelogScroll)" not in tail:
-        raise SystemExit("FEHLER: Dialog-Content konnte nicht auf ScrollView umgestellt werden.")
-    s = s[:tail_start] + tail
+    anchor = '        page.addView(appInfoCard'
+    pos = s.find(anchor)
+    if pos < 0:
+        raise SystemExit("FEHLER: App-Info-Karte der Über-Seite nicht gefunden.")
+    # Wrap the complete About page content in a ScrollView at its existing root.
+    # The page is the LinearLayout populated by the About section.
+    page_decl = re.search(r"val\\s+page\\s*=\\s*LinearLayout\\(a\\)", s)
+    if not page_decl:
+        raise SystemExit("FEHLER: Wurzel-Layout der Über-Seite nicht gefunden.")
+    page_name = "page"
+    # Replace the root content's insertion into its parent with a ScrollView wrapper.
+    # Locate the exact final attachment of this page after all About cards are added.
+    attach = list(re.finditer(r"\\broot\\.addView\\(page(?:,|\\))", s))
+    if not attach:
+        raise SystemExit("FEHLER: Einbindung der Über-Seite in das Hauptlayout nicht gefunden.")
+    m = attach[-1]
+    wrapper = (
+        "        val aboutScroll = ScrollView(a).apply {\\n"
+        "            isFillViewport = true\\n"
+        "            isVerticalScrollBarEnabled = true\\n"
+        "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\\n"
+        "        }\\n"
+        "        aboutScroll.addView(page, ScrollView.LayoutParams(-1, -2))\\n"
+    )
+    s = s[:m.start()] + wrapper + s[m.start():]
+    s = s[m.start():] + s[m.start():] if False else s
+    # Change only the located attachment to use the wrapper.
+    tail = s[m.start()+len(wrapper):]
+    tail = re.sub(r"\\broot\\.addView\\(page", "root.addView(aboutScroll", tail, count=1)
+    if "root.addView(aboutScroll" not in tail:
+        raise SystemExit("FEHLER: ScrollView konnte nicht an die Über-Seite angeschlossen werden.")
+    s = s[:m.start()+len(wrapper)] + tail
 
 main.write_text(s, encoding="utf-8")
 
