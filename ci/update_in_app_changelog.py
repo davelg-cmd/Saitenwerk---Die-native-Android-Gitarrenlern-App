@@ -83,7 +83,15 @@ for match in re.finditer(r"\.setView\(\s*(\w+)\s*\)", s):
     if declaration:
         view_candidates.append((abs(match.start() - start), match, name))
 if not view_candidates:
-    raise SystemExit("FEHLER: Kein setView(...) mit zuvor deklariertem LinearLayout für den Changelog gefunden.")
+    print("DIAGNOSE: Changelog-Abschnitt (vor/nach changes-Liste):")
+    print(s[max(0, start - 5000):min(len(s), end + 5000)])
+    print("DIAGNOSE: Alle setView-Aufrufe:")
+    for m in re.finditer(r".{0,180}setView.{0,220}", s):
+        print(m.group(0).replace("\\n", " "))
+    print("DIAGNOSE: Alle Dialog-Erzeugungen:")
+    for m in re.finditer(r".{0,120}(?:AlertDialog\\.Builder|MaterialAlertDialogBuilder|Dialog\\().{0,220}", s):
+        print(m.group(0).replace("\\n", " "))
+    raise SystemExit("FEHLER: Changelog-Dialogstruktur muss anhand des echten Quellcodes angepasst werden.")
 _, view_match, container_name = min(view_candidates, key=lambda item: item[0])
 view_start = view_match.start()
 scroll_code = (
