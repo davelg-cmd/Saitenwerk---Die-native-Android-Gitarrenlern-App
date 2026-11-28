@@ -147,7 +147,7 @@ s=s[:a]+player+s[b:]
 # Add state after replacing the player, so the splice cannot discard it.
 helper=s.find("    private fun renderSongbookLines(",a)
 if helper<0: raise SystemExit("renderSongbookLines anchor missing after player replacement")
-s=s[:helper] + "    private var songbookActiveLine: Int = 0\\n" + s[helper:]
+s=s[:helper] + "    private var songbookActiveLine: Int = 0\n" + s[helper:]
 (root/"SONGBOOK_REDESIGN_V2.txt").write_text("V2: personal library starts empty; separate public-domain shelf; favorites; native offline lyrics practice; chord assignment; transpose; external optional YouTube only.\n",encoding="utf-8")
 p.write_text(s,encoding="utf-8")
 print("SONGBOOK_REDESIGN_V2: PASS")
