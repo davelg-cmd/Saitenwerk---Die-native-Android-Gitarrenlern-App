@@ -19,10 +19,10 @@ if not status_line: raise SystemExit("FEHLER: Player-Status-Anker fehlt.")
 card = r'''        currentChordLabel = label("—",32f,Color.rgb(255,158,35))
         val currentChordCard = card().apply { orientation=LinearLayout.HORIZONTAL; gravity=android.view.Gravity.CENTER_VERTICAL }
         currentDiagram = SongbookChordDiagram(requireContext())
-        currentChordCard.addView(currentDiagram,LinearLayout.LayoutParams(dp(112),dp(112)))
+        currentChordCard.addView(currentDiagram!!,LinearLayout.LayoutParams(dp(112),dp(112)))
         val currentInfo = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
         currentInfo.addView(label("JETZT SPIELEN",11f,Color.LTGRAY))
-        currentInfo.addView(currentChordLabel)
+        currentInfo.addView(currentChordLabel!!)
         currentInfo.addView(label("Aktueller Akkord",13f,Color.WHITE))
         currentChordCard.addView(currentInfo,LinearLayout.LayoutParams(0,-2,1f))
         root.addView(currentChordCard)
