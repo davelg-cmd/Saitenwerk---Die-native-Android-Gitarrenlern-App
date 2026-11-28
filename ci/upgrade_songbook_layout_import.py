@@ -233,8 +233,15 @@ private object SongbookLayoutParser {
         val rawStarts=mutableListOf<Pair<Int,Int>>()
         pages.forEachIndexed { pi,page ->
             val median=(page.lines.map{it.height}.sorted().let{it.getOrNull(it.size/2)} ?: 8f).coerceAtLeast(1f)
+            // Dieses Liederbuch ist seitenweise aufgebaut: Die Diagnose zeigt
+            // den eigentlichen Songtitel jeweils als deutlich größere Kopfzeile
+            // im oberen Seitenbereich. Überschriften innerhalb des Liedtexts
+            // (Strophen/Refrains, Versalien oder hervorgehobene Zeilen) dürfen
+            // deshalb keine neuen Songs erzeugen.
             page.lines.indices.forEach { li ->
-                if(titleCandidate(page,li,median)) rawStarts += pi to li
+                val line=page.lines[li]
+                val atPageTop=line.y < page.height*0.10f
+                if(atPageTop && titleCandidate(page,li,median)) rawStarts += pi to li
             }
         }
 
@@ -246,7 +253,7 @@ private object SongbookLayoutParser {
             cleanTitle(pages[pi].lines[li].text).lowercase(Locale.ROOT) !in repeated
         }.toMutableList()
 
-        if(starts.size<2) return emptyList()
+        if(starts.isEmpty()) return emptyList()
         val songs=mutableListOf<SongbookSong>()
         starts.forEachIndexed { si,pair ->
             val (pageIndex,lineIndex)=pair
