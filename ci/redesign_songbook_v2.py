@@ -83,9 +83,8 @@ a=s.find("    private fun showSong(song: SongbookSong) {")
 b=s.find("    private fun renderSongbookLines(",a)
 if a<0 or b<0: raise SystemExit("Song player anchors missing")
 # Keep the active-line state in the exact class scope that owns the line-rendering helper.
-if "    private var songbookActiveLine: Int = 0\n" not in s:
-    s=s[:b] + "    private var songbookActiveLine: Int = 0\n" + s[b:]
-    b=s.find("    private fun renderSongbookLines(",a)
+s=s[:b] + "    private var songbookActiveLine: Int = 0\n" + s[b:]
+b=s.find("    private fun renderSongbookLines(",a)
 player=r'''    private fun showSong(song: SongbookSong) {
         root.removeAllViews()
         val prefs=requireContext().getSharedPreferences("songbook_player_v2",Context.MODE_PRIVATE)
