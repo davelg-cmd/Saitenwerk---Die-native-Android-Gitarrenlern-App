@@ -139,6 +139,17 @@ def remove_optional_line(source: str, pattern: str, label: str) -> str:
     return source
 
 def apply_removal():
+    # Der neue layoutbasierte PDF-Importer wird in einem späteren Workflow-Schritt
+    # frisch erzeugt. Falls er bereits im Ausgangsstand eines älteren Builds liegt,
+    # darf der Rückbau ihn nicht als verlassenen Alt-Songbook-Rest behandeln.
+    for rel in [
+        "app/src/main/java/de/saitenwerk/app/SongbookLayoutImporter.kt",
+        "SONGBOOK_LAYOUT_IMPORT_V2.txt",
+    ]:
+        path = ROOT / rel
+        if path.is_file():
+            path.unlink()
+            print(f"ENTFERNT: {rel} (wird vom neuen Songbook-Importer anschließend neu erzeugt)")
     s = MAIN.read_text(encoding="utf-8")
     s = remove_optional_line(
         s,
