@@ -340,7 +340,7 @@ method=r'''    private fun importPdf(uri:Uri) {
                 }
             } catch(t:Throwable) {
                 requireActivity().runOnUiThread {
-                    if(statusDialog.isShowing) statusDialog.dismiss()
+                    if(statusDialog?.isShowing == true) statusDialog?.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
                     AlertDialog.Builder(requireContext()).setTitle("Import fehlgeschlagen")
                         .setMessage(buildString {
