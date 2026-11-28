@@ -41,7 +41,8 @@ home=r'''    private fun buildHome() {
                 };return
             }
             val favorites=(prefs.getStringSet("favorites",emptySet())?:emptySet())
-            val songs=db.all().filter{song->
+            val allSongs=if(shelf=="classic") PublicDomainSongCatalog.songs.map{seed->SongbookSong(id=seed.title.hashCode().toLong(),title=seed.title,artist=seed.artist,lyrics=seed.lyrics,chords=seed.chords,source="builtin:public-domain",youtubeId=seed.youtubeId,youtubeConfidence=seed.confidence)} else db.all()
+            val songs=allSongs.filter{song->
                 val classic=song.source=="builtin:public-domain"
                 (when(shelf){"classic"->classic;"favorites"->!classic&&song.id.toString() in favorites;else->!classic}) &&
                 (q.isBlank()||(song.title+" "+song.artist).contains(q,true))
