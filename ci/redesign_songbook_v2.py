@@ -7,7 +7,7 @@ s=p.read_text(encoding="utf-8")
 s=s.replace("        seedPublicDomainSongsIfEmpty()\n","",1)
 a=s.find("    private fun buildHome() {")
 if a < 0: raise SystemExit("buildHome anchor missing")
-b=s.find("    private fun showAddSongDialog() {
+b=s.find("    private fun showAddSongDialog()",a)
         val form=LinearLayout(requireContext()).apply {
             orientation=LinearLayout.VERTICAL
             setPadding(dp(20),dp(8),dp(20),0)
