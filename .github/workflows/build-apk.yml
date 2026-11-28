@@ -583,8 +583,12 @@ jobs:
               "Link manuell eintragen",
               "private fun parseYoutubeVideoId(value: String): String?",
               "private fun searchYoutubeForSong(song: SongbookSong)",
-              "youtube/v3/search?part=snippet&type=video",
+              "openPublicYoutubeSearch(song)",
+              "results?search_query=",
               "persistYoutubeLink(song, matches[which].first)",
+              "SAITENWERK_PLAYER_POLISH_V1",
+              "SongbookChordDiagram",
+              "currentChord.text=activeChord.ifBlank { \"—\" }",
           ]
           missing = [x for x in required if x not in s]
           if missing:
