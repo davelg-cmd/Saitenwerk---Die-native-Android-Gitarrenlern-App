@@ -73,7 +73,7 @@ if current_build != 427:
 
 # The changelog is part of the scrollable About page, not an AlertDialog.
 # appInfoBox already belongs to the page's vertical content container.
-if "val changelogScroll = ScrollView(" not in s:
+if "val aboutScroll = ScrollView(" not in s:
     anchor = '        page.addView(appInfoCard'
     pos = s.find(anchor)
     if pos < 0:
