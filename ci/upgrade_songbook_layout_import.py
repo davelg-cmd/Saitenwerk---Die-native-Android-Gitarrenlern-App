@@ -28,8 +28,8 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-private data class LayoutToken(val text:String,val x:Float,val y:Float,val width:Float,val height:Float)
-private data class LayoutLine(val text:String,val x:Float,val y:Float,val height:Float,val tokens:List<LayoutToken>)
+private data class LayoutToken(val text:String,val x:Float,val y:Float,val width:Float,val height:Float,val fontSize:Float=0f,val fontName:String="")
+private data class LayoutLine(val text:String,val x:Float,val y:Float,val height:Float,val fontSize:Float,val fontName:String,val tokens:List<LayoutToken>)
 private data class LayoutPage(val number:Int,val width:Float,val height:Float,val lines:List<LayoutLine>)
 
 internal object SongbookLayoutImporter {
@@ -64,7 +64,8 @@ internal object SongbookLayoutImporter {
                             val value=p.unicode?.replace(Regex("""\s+"""),"") ?: ""
                             if(value.isBlank()) null else LayoutToken(
                                 value,p.xDirAdj.coerceAtLeast(0f),p.yDirAdj.coerceAtLeast(0f),
-                                p.widthDirAdj.coerceAtLeast(0.1f),p.heightDir.coerceAtLeast(1f)
+                                p.widthDirAdj.coerceAtLeast(0.1f),p.heightDir.coerceAtLeast(1f),
+                                p.fontSizeInPt.coerceAtLeast(1f),p.font?.name.orEmpty()
                             )
                         }
                         val extractedChars=tokens.sumOf{it.text.length}
@@ -87,7 +88,8 @@ internal object SongbookLayoutImporter {
                                                 ocrTokens += LayoutToken(
                                                     element.text,
                                                     bounds.left*scaleX,bounds.top*scaleY,
-                                                    bounds.width()*scaleX,bounds.height()*scaleY
+                                                    bounds.width()*scaleX,bounds.height()*scaleY,
+                                                    (bounds.height()*scaleY).coerceAtLeast(1f),"OCR"
                                                 )
                                             }
                                         }
@@ -134,11 +136,15 @@ internal object SongbookLayoutImporter {
                 LayoutToken(chars.joinToString(""){it.text},chars.first().x,
                     chars.map{it.y}.average().toFloat(),
                     (chars.last().x+chars.last().width-chars.first().x).coerceAtLeast(0.1f),
-                    chars.map{it.height}.average().toFloat())
+                    chars.map{it.height}.average().toFloat(),
+                    chars.map{it.fontSize}.average().toFloat(),
+                    chars.first().fontName)
             }
             val text=wordTokens.joinToString(" "){it.text}.trim()
             LayoutLine(text,wordTokens.minOf{it.x},wordTokens.map{it.y}.average().toFloat(),
-                wordTokens.map{it.height}.average().toFloat(),wordTokens)
+                wordTokens.map{it.height}.average().toFloat(),
+                wordTokens.map{it.fontSize}.maxOrNull() ?: 0f,
+                wordTokens.firstOrNull()?.fontName.orEmpty(),wordTokens)
         }.filter{it.text.isNotBlank()}
     }
 }
@@ -154,29 +160,53 @@ private object SongbookLayoutParser {
     private fun titleCandidate(page:LayoutPage,index:Int,median:Float):Boolean {
         val line=page.lines[index]
         val text=cleanTitle(line.text)
-        if(text.length !in 3..90 || letters(text)<3 || isChordLine(line) || toc.containsMatchIn(text)) return false
+        if(text.length !in 3..100 || letters(text)<3 || isChordLine(line) || toc.containsMatchIn(text)) return false
         if(Regex("""(?i)^(seite|page|inhalt|inhaltsverzeichnis|index|copyright|www\.)""").containsMatchIn(text)) return false
         if(text.matches(Regex("""\d{1,4}.*"""))) return false
-        val alpha=text.filter{it.isLetter()}
-        val upper=alpha.length>=4 && alpha.all{!it.isLowerCase()}
+        if(text.count{it in ".!?;:"}>=3 && text.length>35) return false
+        if(text.split(Regex("""\s+""")).size>14 && text.length>70) return false
+
         val prev=page.lines.getOrNull(index-1)
         val next=page.lines.getOrNull(index+1)
         val gapBefore=prev?.let{line.y-(it.y+it.height)} ?: line.y
         val gapAfter=next?.let{it.y-(line.y+line.height)} ?: line.height
-        val isolated=gapBefore>median*1.25f && gapAfter>median*0.75f
-        val larger=line.height>=median*1.22f
-        val atTop=line.y<page.height*0.14f
-        return upper || larger || atTop || (isolated && text.length<=64)
+        val alpha=text.filter{it.isLetter()}
+        val upper=alpha.length>=4 && alpha.all{!it.isLowerCase()}
+        val large=line.fontSize>=median*1.12f
+        val bold=Regex("""(?i)(bold|black|demi|heavy|semibold)""").containsMatchIn(line.fontName)
+        val isolated=gapBefore>median*1.15f && gapAfter>median*0.55f
+        val atTop=line.y<page.height*0.16f
+
+        var following=0
+        var chordFollowing=0
+        for(k in 1..min(6,page.lines.size-index-1)){
+            val n=page.lines[index+k]
+            if(isChordLine(n)) chordFollowing++ else if(letters(n.text)>=8) following++
+        }
+        val songBody=(following>=1 && (chordFollowing>=1 || following>=2))
+        val signal=(large.toInt()+bold.toInt()+upper.toInt()+isolated.toInt()+atTop.toInt())
+        return songBody && signal>=2
     }
+
+    private fun Boolean.toInt():Int=if(this)1 else 0
     fun parse(pages:List<LayoutPage>,source:String):List<SongbookSong> {
         if(pages.isEmpty()) return emptyList()
-        val starts=mutableListOf<Pair<Int,Int>>()
+        val rawStarts=mutableListOf<Pair<Int,Int>>()
         pages.forEachIndexed { pi,page ->
             val median=(page.lines.map{it.height}.sorted().let{it.getOrNull(it.size/2)} ?: 8f).coerceAtLeast(1f)
             page.lines.indices.forEach { li ->
-                if(titleCandidate(page,li,median)) starts += pi to li
+                if(titleCandidate(page,li,median)) rawStarts += pi to li
             }
         }
+
+        // Repeated running headers/footers are not songs. Remove candidate texts that
+        // occur on several different pages before segmenting the book.
+        val repeated=rawStarts.groupBy { cleanTitle(pages[it.first].lines[it.second].text).lowercase(Locale.ROOT) }
+            .filter { (_,v)->v.map{it.first}.distinct().size>=3 }.keys
+        val starts=rawStarts.filter { (pi,li)->
+            cleanTitle(pages[pi].lines[li].text).lowercase(Locale.ROOT) !in repeated
+        }.toMutableList()
+
         if(starts.size<2) return emptyList()
         val songs=mutableListOf<SongbookSong>()
         starts.forEachIndexed { si,pair ->
