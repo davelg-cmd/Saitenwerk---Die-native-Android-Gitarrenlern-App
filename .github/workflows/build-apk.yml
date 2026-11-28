@@ -583,7 +583,7 @@ jobs:
               "Link manuell eintragen",
               "private fun parseYoutubeVideoId(value: String): String?",
               "private fun searchYoutubeForSong(song: SongbookSong)",
-              "openPublicYoutubeSearch(song)",
+              "searchYoutubeForSong(song)",
               "results?search_query=",
               "persistYoutubeLink(song, matches[which].first)",
               "SAITENWERK_PLAYER_POLISH_V1",
