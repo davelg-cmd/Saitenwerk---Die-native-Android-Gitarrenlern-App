@@ -173,12 +173,11 @@ private object SongbookLayoutParser {
         val next=page.lines.getOrNull(index+1)
         val gapBefore=prev?.let{line.y-(it.y+it.height)} ?: line.y
         val gapAfter=next?.let{it.y-(line.y+line.height)} ?: line.height
-        val alpha=text.filter{it.isLetter()}
-        val upper=alpha.length>=4 && alpha.all{!it.isLowerCase()}
-        val large=line.fontSize>=median*1.12f
+        // Nur klar hervorgehobene Überschriften akzeptieren. Versalien allein
+        // sind in Gitarren-Liederbüchern häufig normale Liedtextzeilen.
+        val large=line.fontSize>=median*1.25f
         val bold=Regex("""(?i)(bold|black|demi|heavy|semibold)""").containsMatchIn(line.fontName)
-        val isolated=gapBefore>median*1.15f && gapAfter>median*0.55f
-        val atTop=line.y<page.height*0.16f
+        val atTop=line.y<page.height*0.10f
 
         var following=0
         var chordFollowing=0
@@ -200,12 +199,16 @@ private object SongbookLayoutParser {
         val shortEnough=text.length<=70 && text.split(Regex("""\s+""")).size<=10
         val titleShape=!text.endsWith(".") && !text.endsWith(",") && !text.endsWith(":") &&
             !text.matches(Regex("""(?i).*[!?].*[!?].*"""))
-        val styleSignal=large || bold || (upper && text.split(Regex("""\s+""")).size<=6)
+        val styleSignal=large || bold
+        // Innerhalb einer Seite braucht ein Titel Abstand vor UND nach sich.
+        // Am Seitenanfang genügt die deutliche typografische Hervorhebung plus
+        // Abstand zum folgenden Inhalt. Ein nachfolgender Akkordblock stützt
+        // die Erkennung, ersetzt aber niemals die Titel-Hervorhebung.
         val structurallySeparated =
             (strongGapBefore && strongGapAfter && styleSignal) ||
-            (strongGapAfter && nextIsChord && (large || bold || upper)) ||
-            (line.y<page.height*0.10f && strongGapAfter && (large || bold))
-        return songBody && shortEnough && titleShape && structurallySeparated
+            (atTop && strongGapAfter && styleSignal)
+        val supportedSongStart = songBody && (nextIsChord || following>=2)
+        return supportedSongStart && shortEnough && titleShape && structurallySeparated
     }
 
     private fun Boolean.toInt():Int=if(this)1 else 0
