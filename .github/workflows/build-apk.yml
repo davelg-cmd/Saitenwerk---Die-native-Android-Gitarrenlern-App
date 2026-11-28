@@ -568,6 +568,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 ci/upgrade_songbook_player_polish.py
+      - name: YouTube-WebView-Identität und Referer für Videoeinbettung korrigieren
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          python3 ci/fix_songbook_youtube_embed_identity.py
 
       - name: YouTube-Songverknüpfung validieren
         env:
