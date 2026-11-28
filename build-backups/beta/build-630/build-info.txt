@@ -1,0 +1,9 @@
+Product: Saitenwerk
+Track: Beta
+Build number: 630
+Version name: 3.1.0-beta.630
+Version code: 1630
+Source commit: 8f25c8a735fb78eef810611e3f422908914ee902
+Workflow run: https://github.com/davelg-cmd/Saitenwerk---Die-native-Android-Gitarrenlern-App/actions/runs/46117913307
+Backup created (UTC): 2026-11-28T06:44:42Z
+Contents: Complete project source as built by this workflow.
