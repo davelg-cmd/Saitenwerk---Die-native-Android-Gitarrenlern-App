@@ -7,7 +7,75 @@ s=p.read_text(encoding="utf-8")
 s=s.replace("        seedPublicDomainSongsIfEmpty()\n","",1)
 a=s.find("    private fun buildHome() {")
 if a < 0: raise SystemExit("buildHome anchor missing")
-b=s.find("    private fun autoLinkYoutubeSongs() {",a)
+b=s.find("    private fun showAddSongDialog() {
+        val form=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(20),dp(8),dp(20),0)
+        }
+        fun field(hintText:String,multiline:Boolean=false):EditText {
+            return EditText(requireContext()).apply {
+                hint=hintText
+                setTextColor(Color.WHITE)
+                setHintTextColor(Color.LTGRAY)
+                setPadding(dp(12),dp(10),dp(12),dp(10))
+                setBackgroundColor(Color.rgb(31,36,43))
+                if(multiline) {
+                    minLines=5
+                    gravity=android.view.Gravity.TOP
+                    inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                } else {
+                    setSingleLine(true)
+                    inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                }
+            }
+        }
+        val title=field("Liedtitel")
+        val artist=field("Interpret")
+        val lyrics=field("Liedtext – Akkorde kannst du direkt eintragen, z. B. [G]Heute ist ein schöner Tag")
+        val chordText=field("Akkorde (optional, z. B. G, D, Em, C)")
+        form.addView(title,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(8)})
+        form.addView(artist,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(8)})
+        form.addView(lyrics,LinearLayout.LayoutParams(-1,dp(180)).apply{bottomMargin=dp(8)})
+        form.addView(chordText,LinearLayout.LayoutParams(-1,dp(52)))
+        val scroll=ScrollView(requireContext()).apply{addView(form)}
+        val dialog=androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Eigenes Lied anlegen")
+            .setView(scroll)
+            .setNegativeButton("Abbrechen",null)
+            .setPositiveButton("Speichern",null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val songTitle=title.text.toString().trim()
+                val songArtist=artist.text.toString().trim().ifBlank{"Unbekannter Künstler"}
+                val songLyrics=lyrics.text.toString().trim()
+                if(songTitle.isBlank()) {
+                    title.error="Bitte einen Liedtitel eingeben"
+                    return@setOnClickListener
+                }
+                if(songLyrics.isBlank()) {
+                    lyrics.error="Bitte den Liedtext eintragen"
+                    return@setOnClickListener
+                }
+                val chordPattern=Regex("""(?<![A-Za-z0-9])([A-H](?:#|b)?(?:maj7|maj9|m7b5|m7|m9|sus2|sus4|add9|dim7|dim|aug|7|6|5|9|11|13|m)?)(?![A-Za-z0-9])""",RegexOption.IGNORE_CASE)
+                val found=(chordPattern.findAll(songLyrics+"\n"+chordText.text.toString()).map{it.groupValues[1]}).toMutableSet()
+                val song=SongbookSong(
+                    title=songTitle,
+                    artist=songArtist,
+                    lyrics=songLyrics,
+                    chords=found.toList(),
+                    source="manual"
+                )
+                db.upsert(song)
+                dialog.dismiss()
+                buildHome()
+                Toast.makeText(requireContext(),"„$songTitle“ wurde gespeichert.",Toast.LENGTH_LONG).show()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun autoLinkYoutubeSongs() {",a)
 if a<0 or b<0: raise SystemExit("Songbook home anchors missing")
 home=r'''    private fun buildHome() {
         root.removeAllViews()
@@ -21,8 +89,8 @@ home=r'''    private fun buildHome() {
         metrics.addView(label(mine.size.toString()+"\nEIGENE SONGS",17f,Color.WHITE),LinearLayout.LayoutParams(0,dp(62),1f))
         metrics.addView(label(mine.sumOf{it.chords.size}.toString()+"\nAKKORDE",15f,Color.WHITE),LinearLayout.LayoutParams(0,dp(62),1f))
         summary.addView(metrics);root.addView(summary)
-        val import=button("＋  Eigenes PDF importieren")
-        import.setOnClickListener{importPdf.launch(arrayOf("application/pdf"))};root.addView(import)
+        val addSong=button("＋  Lied manuell hinzufügen")
+        addSong.setOnClickListener{showAddSongDialog()};root.addView(addSong)
         val search=EditText(requireContext()).apply{hint="Song oder Künstler suchen";setSingleLine();setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);setPadding(dp(14),0,dp(14),0);setBackgroundColor(Color.rgb(25,38,48))}
         root.addView(search,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(10);bottomMargin=dp(8)})
         val tabs=LinearLayout(requireContext()).apply{orientation=LinearLayout.HORIZONTAL}
@@ -31,16 +99,6 @@ home=r'''    private fun buildHome() {
         root.addView(tabs);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         fun refresh(q:String=""){
             content.removeAllViews()
-            if(shelf=="pdf"){
-                val pdfs=db.importedPdfs()
-                if(pdfs.isEmpty())content.addView(label("Noch keine PDFs importiert.",15f,Color.LTGRAY))
-                pdfs.forEach{pdf->
-                    val c=card();c.addView(label(pdf.displayName,16f,Color.WHITE));c.addView(label(pdf.songCount.toString()+" Songs",12f,Color.LTGRAY))
-                    val remove=button("PDF und zugehörige Songs entfernen")
-                    remove.setOnClickListener{androidx.appcompat.app.AlertDialog.Builder(requireContext()).setTitle("PDF entfernen?").setMessage("Das PDF und ausschließlich daraus stammende Songs werden aus deinem Songbook entfernt.").setNegativeButton("Abbrechen",null).setPositiveButton("Entfernen"){_,_->db.removePdf(pdf.uri);refresh(q)}.show()}
-                    c.addView(remove);content.addView(c)
-                };return
-            }
             val favorites=(prefs.getStringSet("favorites",emptySet())?:emptySet())
             val allSongs=if(shelf=="classic") PublicDomainSongCatalog.songs.map{seed->SongbookSong(id=seed.title.hashCode().toLong(),title=seed.title,artist=seed.artist,lyrics=seed.lyrics,chords=seed.chords,source="builtin:public-domain",youtubeId=seed.youtubeId,youtubeConfidence=seed.confidence)} else db.all()
             val songs=allSongs.filter{song->
@@ -48,7 +106,7 @@ home=r'''    private fun buildHome() {
                 (when(shelf){"classic"->classic;"favorites"->!classic&&song.id.toString() in favorites;else->!classic}) &&
                 (q.isBlank()||(song.title+" "+song.artist).contains(q,true))
             }
-            if(songs.isEmpty())content.addView(label(when(shelf){"favorites"->"Noch keine Favoriten. Markiere Songs mit ☆.";"classic"->"Keine Klassiker vorhanden." ;else->"Dein Songbook ist leer. Importiere dein PDF, um loszulegen."},15f,Color.LTGRAY))
+            if(songs.isEmpty())content.addView(label(when(shelf){"favorites"->"Noch keine Favoriten. Markiere Songs mit ☆.";"classic"->"Keine Klassiker vorhanden." ;else->"Dein Songbook ist leer. Tippe auf „Lied manuell hinzufügen“, um dein erstes Lied anzulegen."},15f,Color.LTGRAY))
             songs.forEach{song->
                 val c=card();c.addView(label(song.title,18f,Color.WHITE));c.addView(label(song.artist+" · "+song.chords.size+" Akkorde",12f,Color.LTGRAY))
                 val actions=LinearLayout(requireContext()).apply{orientation=LinearLayout.HORIZONTAL}
@@ -64,7 +122,7 @@ home=r'''    private fun buildHome() {
         }
         fun drawTabs(){
             tabs.removeAllViews()
-            listOf("mine" to "Meine Songs","favorites" to "Favoriten","classic" to "Klassiker","pdf" to "PDFs").forEach{(key,title)->
+            listOf("mine" to "Meine Songs","favorites" to "Favoriten","classic" to "Klassiker").forEach{(key,title)->
                 val t=button(title);t.textSize=11f;t.setTextColor(if(shelf==key)Color.rgb(255,184,92)else Color.LTGRAY)
                 t.setOnClickListener{shelf=key;drawTabs();refresh(search.text.toString())}
                 tabs.addView(t,LinearLayout.LayoutParams(0,dp(44),1f))
