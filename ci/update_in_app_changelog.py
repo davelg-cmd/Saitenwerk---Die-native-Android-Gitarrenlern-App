@@ -13,6 +13,15 @@ if start < 0 or end < 0:
     raise SystemExit("FEHLER: In-App-Changelog-Liste nicht gefunden.")
 
 changes = """        val changes = listOf(
+            "25.11.2026 · Build 515" to "Premium-Akkordbibliothek: neuer Akkord-Atlas mit Suche, Favoriten, Qualitätsfiltern und zweispaltiger Übersicht. Detailansicht mit großem Griffbild, Saiten-/Fingerlegende und authentischer Gitarren-Hörprobe. Die zentrale ChordLibrary und alle vorhandenen Trainer bleiben erhalten.",
+            "25.11.2026 · Build 520" to "Songbook erweitert: YouTube-Verbindung pro Nutzer über den offiziellen Google-Authorization-Flow. Minimale Leseberechtigung, sichere Token-Verarbeitung, Kanalprüfung und Möglichkeit zum Trennen der lokalen Verbindung.",
+            "25.11.2026 · Build 525" to "Songbook-Absturz beim Öffnen behoben: Karten werden nur noch einmal zur Ansicht hinzugefügt. Statistik-, Songkarten- und Detailansichten verwenden dieselbe sichere Karten-Erzeugung.",
+            "27.11.2026 · Build 581" to "PDF-Songbookimport neu aufgebaut: PDF-Seiten werden layoutbasiert ausgewertet, gescannte Seiten per OCR erkannt und Akkordzeilen anhand ihrer Position den passenden Liedtextzeilen zugeordnet. Importierte Songs werden lokal gespeichert.",
+            "27.11.2026 · Build 583" to "PDF-Import repariert: PDFBox-Android initialisiert jetzt vor der ersten Textanalyse seine Android-Ressourcen. Dadurch wird der Absturz beim Laden des PDF-Text-Engines verhindert.",
+            "27.11.2026 · Build 584" to "PDF-Erkennung verbessert: Titelkandidaten werden anhand von Schriftgröße, Schriftstil, Abständen und nachfolgendem Liedtext bewertet. Inhaltsverzeichnisse, Seitenköpfe und doppelte Titel werden stärker herausgefiltert.",
+            "27.11.2026 · Build 585" to "PDF-Import-Build repariert: Die CI-Bereinigung entfernt den generierten Songbook-Importer vor dessen erneuter Integration, statt ihn versehentlich vor dem Kompilieren zu löschen.",
+            "27.11.2026 · Build 586" to "PDF-Titelerkennung weiter präzisiert: normale Liedtextzeilen werden strenger von echten Liedüberschriften unterschieden, um zu viele erkannte Songs zu vermeiden.",
+            "27.11.2026 · Build 587" to "PDF-Songgrenzen weiter verbessert: Großschreibung allein zählt nicht mehr als Titelmerkmal. Erforderlich sind stärkere Layout-Abstände und typografische Abhebung, damit Verszeilen nicht als neue Songs gezählt werden.",
             "25.11.2026 · Build 503" to "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken.",
             "25.11.2026 · Build 498" to "Akkord-Blitztrainer: vier technikbasierte Schwierigkeitsstufen (Anfänger, Fortgeschrittene Anfänger, Fortgeschritten, Experte). 93 eindeutige Griffbilder werden nach Grifftechnik einsortiert; Beschreibung und Akkordanzahl werden angezeigt. Adaptive Wiederholung, Fehlerliste und Einzelakkord-Statistiken bleiben erhalten; Fehlertraining bleibt innerhalb der gewählten Stufe.",\n            "25.11.2026 · Build 495" to "Akkordgriff-Korrektur: C#7 und D#7 um die fehlende Quinte ergänzt. Das C6-Griffbild wurde als gültiger Shell-Akkord mit Grundton, Terz und Sexte geprüft; die Quinte darf hier bewusst entfallen. Die CI prüft Tonklassen sowie Sechs-Saiten- und Fingerpositionen. Der Premium-Blitztrainer und seine adaptive Datenbank bleiben erhalten.",
             "25.11.2026 · Build 491" to "Akkord-Blitztrainer Premium: vier Modi (Griffbild erkennen, Griff zuordnen, 60-Sekunden-Blitzrunde und Fehlertraining), adaptive Wiederholung nach individueller Trefferquote, dauerhaft gespeicherte Fehlerliste, Reaktionszeit und Serien. Die zentrale ChordLibrary wurde von 67 auf 94 eindeutige Griffbilder erweitert; neue Dur-, Moll-, Sept-, Add-, Sus-, Power-, übermäßige und verminderte Akkorde mit geprüften Sechs-Saiten- und Fingerpositionen. Der vollständige Lernfortschritt-Reset löscht auch die neuen Einzelakkord-Statistiken, bewahrt aber Modus- und Kategorieeinstellungen.",
@@ -32,13 +41,13 @@ if current_build_for_entry > 503:
     from datetime import datetime
     build_date = datetime.now().strftime("%d.%m.%Y")
     description = (
-        "Premium-Akkordbereich: vollständige Bibliotheks-Startseite mit Suche, Favoriten, Qualitätsfiltern und zweispaltiger Akkordübersicht. "
-        "Detailansicht mit hochkantem Griffbild, Saiten-/Fingerlegende, authentischer Gitarren-Hörprobe und Favoritenverwaltung. "
-        "Navigation und leere Such-/Favoritenzustände überarbeitet; bestehende ChordLibrary und Lerntrainer bleiben gemeinsame Datenbasis."
-        if current_build_for_entry >= 504 else
-        "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten und dieselben vier Schwierigkeitsstufen. "
-        "Eigene Hör-Trefferquoten, Fehlerliste, Serien und Reaktionszeiten bleiben von der visuellen Akkorderkennung getrennt; stufengebundenes Hör-Fehlertraining. "
-        "Der vollständige Lernfortschritt-Reset löscht auch sämtliche Hör- und Einzelakkord-Statistiken."
+        "PDF-Songbookimport mit sichtbarem Fortschrittsfenster: Seitenanalyse mit laufender Anzeige „Seite X von Y“, anschließende Auswertung der Liedanfänge und automatisches Schließen des Statusfensters bei Erfolg oder Fehler. Das Changelog wurde um die seit Build 503 hinzugekommenen Funktionen und Reparaturen ergänzt und ist jetzt in einem eigenen Scrollbereich vollständig lesbar."
+        if current_build_for_entry >= 590 else
+        "PDF-Songbookimport: Seiten werden layoutbasiert analysiert; gescannte Seiten werden per OCR erkannt, Akkordpositionen den passenden Textzeilen zugeordnet und die Titelerkennung gegen falsche Songgrenzen abgesichert."
+        if current_build_for_entry >= 581 else
+        "Premium-Akkordbibliothek: Akkord-Atlas mit Suche, Favoriten, Qualitätsfiltern, zweispaltiger Übersicht, großem Griffbild und authentischer Gitarren-Hörprobe. Die zentrale ChordLibrary und alle vorhandenen Trainer bleiben erhalten."
+        if current_build_for_entry >= 515 else
+        "Akkord-Blitztrainer Hör-Quiz: Akkorde ausschließlich anhand authentischer Gitarrenklänge erkennen. Wiederholbare Wiedergabe, vier Antwortmöglichkeiten, vier Schwierigkeitsstufen, getrennte Hörstatistiken und stufengebundenes Hör-Fehlertraining."
     )
     entry = f'            "{build_date} · Build {current_build_for_entry}" to "{description}",\n'
     changes = changes.replace("val changes = listOf(\n", "val changes = listOf(\n" + entry, 1)
@@ -51,6 +60,41 @@ if current_build != 427:
     if anchor not in changes:
         raise SystemExit("FEHLER: Build-426-Historieneintrag zum Ergänzen des Build-427-Verlaufs nicht gefunden.")
     changes = changes.replace(anchor, build_427 + anchor, 1)
+
+# The changelog is rendered inside a bounded ScrollView so long histories remain
+# fully accessible on phones. Reuse the existing LinearLayout populated by
+# changes.forEach and replace only the dialog's setView target.
+list_pos = s.find("\\n        changes.forEach", start)
+if list_pos < 0:
+    raise SystemExit("FEHLER: Changelog-Renderer nicht gefunden.")
+renderer_end = s.find("\\n", list_pos + 1)
+tail = s[list_pos:]
+import re
+view_match = re.search(r"\\.setView\\((\\w+)\\)", tail)
+if not view_match:
+    raise SystemExit("FEHLER: Changelog-Dialog mit setView(...) nicht gefunden.")
+container_name = view_match.group(1)
+decl_pattern = re.compile(r"val\\s+" + re.escape(container_name) + r"\\s*=\\s*LinearLayout\\(")
+decl_match = decl_pattern.search(s[:list_pos])
+if not decl_match:
+    raise SystemExit("FEHLER: Changelog-Container ist kein LinearLayout.")
+scroll_code = (
+    "        val changelogScroll = ScrollView(" + container_name + ".context).apply {\\n"
+    "            isFillViewport = true\\n"
+    "            isVerticalScrollBarEnabled = true\\n"
+    "            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS\\n"
+    "        }\\n"
+    "        changelogScroll.addView(" + container_name + ", ScrollView.LayoutParams(\\n"
+    "            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT\\n"
+    "        ))\\n"
+)
+if "val changelogScroll = ScrollView(" not in s:
+    s = s[:list_pos] + "\\n" + scroll_code + s[list_pos:]
+tail_start = s.find("\\n        changes.forEach", start)
+tail = s[tail_start:]
+tail = re.sub(r"\\.setView\\(" + re.escape(container_name) + r"\\)", ".setView(changelogScroll)", tail, count=1)
+s = s[:tail_start] + tail
+
 main.write_text(s, encoding="utf-8")
 
 required = [
