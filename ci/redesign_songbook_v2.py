@@ -6,6 +6,8 @@ p=root/"app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt"
 s=p.read_text(encoding="utf-8")
 s=s.replace("        seedPublicDomainSongsIfEmpty()\n","",1)
 a=s.find("    private fun buildHome() {")
+if "private var songbookActiveLine" not in s:
+    s=s[:a]+ "    private var songbookActiveLine: Int = 0\\n" + s[a:]
 b=s.find("    private fun autoLinkYoutubeSongs() {",a)
 if a<0 or b<0: raise SystemExit("Songbook home anchors missing")
 home=r'''    private fun buildHome() {
