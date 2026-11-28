@@ -266,7 +266,11 @@ private object SongbookLayoutParser {
                 if(from<until) page.lines.subList(from,until).forEach{collected += page to it}
             }
             if(collected.size<3) return@forEachIndexed
-            val title=cleanTitle(collected.first().second.text).take(120)
+            val rawTitle=cleanTitle(collected.first().second.text)
+            // Format "Liedtitel (Interpret)" aus PDF-Kopfzeilen getrennt übernehmen.
+            val titleArtist=Regex("""^(.*?)\s+\(([^()]*)\)\s*$""").matchEntire(rawTitle)
+            val title=(titleArtist?.groupValues?.get(1)?.trim()?.takeIf{it.isNotBlank()} ?: rawTitle).take(120)
+            val artist=(titleArtist?.groupValues?.get(2)?.trim()?.takeIf{it.isNotBlank()} ?: "Unbekannter Künstler").take(100)
             val body=mutableListOf<String>()
             val allChords=linkedSetOf<String>()
             var pending=mutableListOf<LayoutToken>()
@@ -295,7 +299,7 @@ private object SongbookLayoutParser {
             if(letters(title)>=3 && lyrics.count{it.isLetter()}>=30) {
                 val fingerprint=title.lowercase(Locale.ROOT)
                 if(songs.none{it.title.lowercase(Locale.ROOT)==fingerprint}) {
-                    songs += SongbookSong(title=title,artist="Unbekannter Künstler",lyrics=lyrics,
+                    songs += SongbookSong(title=title,artist=artist,lyrics=lyrics,
                         chords=allChords.toList(),source=source)
                 }
             }
