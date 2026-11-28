@@ -6,8 +6,7 @@ p=root/"app/src/main/java/de/saitenwerk/app/IntelligentSongbook.kt"
 s=p.read_text(encoding="utf-8")
 s=s.replace("        seedPublicDomainSongsIfEmpty()\n","",1)
 a=s.find("    private fun buildHome() {")
-if a < 0: raise SystemExit("buildHome anchor missing before active-line insertion")
-s=s[:a]+ "    private var songbookActiveLine: Int = 0\n" + s[a:]
+if a < 0: raise SystemExit("buildHome anchor missing")
 b=s.find("    private fun autoLinkYoutubeSongs() {",a)
 if a<0 or b<0: raise SystemExit("Songbook home anchors missing")
 home=r'''    private fun buildHome() {
@@ -83,6 +82,10 @@ s=s.replace("        autoLinkYoutubeSongs()\n","",1)
 a=s.find("    private fun showSong(song: SongbookSong) {")
 b=s.find("    private fun renderSongbookLines(",a)
 if a<0 or b<0: raise SystemExit("Song player anchors missing")
+# Keep the active-line state in the exact class scope that owns the line-rendering helper.
+if "    private var songbookActiveLine: Int = 0\n" not in s:
+    s=s[:b] + "    private var songbookActiveLine: Int = 0\n" + s[b:]
+    b=s.find("    private fun renderSongbookLines(",a)
 player=r'''    private fun showSong(song: SongbookSong) {
         root.removeAllViews()
         val prefs=requireContext().getSharedPreferences("songbook_player_v2",Context.MODE_PRIVATE)
