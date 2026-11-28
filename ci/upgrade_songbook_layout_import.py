@@ -362,7 +362,8 @@ method=r'''    private fun importPdf(uri:Uri) {
         }
     }
 
-'''s=s[:start]+method+s[end:]
+'''
+s=s[:start]+method+s[end:]
 
 # Render chord positions as a separate chord row above the matching lyric line.
 render_start=s.index("    private fun renderSongbookLines(")
