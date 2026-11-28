@@ -288,6 +288,7 @@ method=r'''    private fun importPdf(uri:Uri) {
         val progress=ProgressBar(requireContext())
         root.addView(progress,0,LinearLayout.LayoutParams(-1,dp(5)))
         executor.execute {
+            var statusDialog:AlertDialog?=null
             try {
                 runCatching { requireContext().contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                 val displayName=queryPdfDisplayName(uri)
@@ -301,11 +302,11 @@ method=r'''    private fun importPdf(uri:Uri) {
                 }
                 val statusProgress=ProgressBar(requireContext(),null,android.R.attr.progressBarStyleHorizontal).apply {
                     max=100
-                    progress=0
+                    this.progress=0
                 }
                 statusBox.addView(statusText,LinearLayout.LayoutParams(-1,ViewGroup.LayoutParams.WRAP_CONTENT))
                 statusBox.addView(statusProgress,LinearLayout.LayoutParams(-1,dp(8)).apply{topMargin=dp(12)})
-                val statusDialog=AlertDialog.Builder(requireContext())
+                statusDialog=AlertDialog.Builder(requireContext())
                     .setTitle("PDF wird importiert")
                     .setView(statusBox)
                     .setCancelable(false)
@@ -330,7 +331,7 @@ method=r'''    private fun importPdf(uri:Uri) {
                 if(savedCount<=0) error("Es wurden keine Songs gespeichert.")
                 db.registerPdf(uri.toString(),displayName,savedCount)
                 requireActivity().runOnUiThread {
-                    if(statusDialog.isShowing) statusDialog.dismiss()
+                    statusDialog?.takeIf{it.isShowing}?.dismiss()
                     if(progress.parent!=null) root.removeView(progress)
                     buildHome()
                     AlertDialog.Builder(requireContext()).setTitle("PDF layoutbasiert analysiert")
