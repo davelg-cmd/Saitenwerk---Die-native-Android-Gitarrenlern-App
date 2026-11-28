@@ -184,8 +184,19 @@ private object SongbookLayoutParser {
             if(isChordLine(n)) chordFollowing++ else if(letters(n.text)>=8) following++
         }
         val songBody=(following>=1 && (chordFollowing>=1 || following>=2))
-        val signal=(large.toInt()+bold.toInt()+upper.toInt()+isolated.toInt()+atTop.toInt())
-        return songBody && signal>=2
+        // Ein Liedtitel muss sich nicht nur inhaltlich, sondern auch typografisch
+        // vom Liedtext abheben. Die frühere Regel zählte "Großbuchstaben" und
+        // "Seitenanfang" als gleichwertige Signale. Dadurch wurden bei manchen
+        // Songbooks viele normale Textzeilen als neue Titel erkannt.
+        val structural=(large.toInt()+bold.toInt()+isolated.toInt())
+        val visual=(large.toInt()+bold.toInt()+upper.toInt()+isolated.toInt())
+        val hasTitleGap=gapAfter>median*0.75f || large || bold
+        val shortEnough=text.length<=70 && text.split(Regex("""\s+""")).size<=10
+        val lyricLike=Regex("""(?i).*(\\b(ich|du|er|sie|wir|ihr|the|you|and|love|baby|oh|yeah)\\b).*""").matches(text) &&
+            text.split(Regex("""\s+""")).size>=5
+        val titleLike=!lyricLike && !text.endsWith(".") && !text.endsWith(",") && !text.endsWith(":")
+        return songBody && shortEnough && hasTitleGap && titleLike &&
+            ((structural>=2 && visual>=3) || (bold && large) || (isolated && large))
     }
 
     private fun Boolean.toInt():Int=if(this)1 else 0
