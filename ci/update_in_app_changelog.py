@@ -86,10 +86,11 @@ if "val changelogScroll = ScrollView(" not in s:
     page_name = "page"
     # Replace the root content's insertion into its parent with a ScrollView wrapper.
     # Locate the exact final attachment of this page after all About cards are added.
-    attach = list(re.finditer(r"\broot\.addView\(page(?:,|\))", s))
+    attach = list(re.finditer(r"([A-Za-z_][A-Za-z0-9_]*)\.addView\(page(?:,|\))", s))
     if not attach:
         raise SystemExit("FEHLER: Einbindung der Über-Seite in das Hauptlayout nicht gefunden.")
     m = attach[-1]
+    parent_name = m.group(1)
     wrapper = (
         "        val aboutScroll = ScrollView(a).apply {\n"
         "            isFillViewport = true\n"
@@ -102,8 +103,8 @@ if "val changelogScroll = ScrollView(" not in s:
     s = s[m.start():] + s[m.start():] if False else s
     # Change only the located attachment to use the wrapper.
     tail = s[m.start()+len(wrapper):]
-    tail = re.sub(r"\broot\.addView\(page", "root.addView(aboutScroll", tail, count=1)
-    if "root.addView(aboutScroll" not in tail:
+    tail = re.sub(r"\b" + re.escape(parent_name) + r"\.addView\(page", parent_name + ".addView(aboutScroll", tail, count=1)
+    if parent_name + ".addView(aboutScroll" not in tail:
         raise SystemExit("FEHLER: ScrollView konnte nicht an die Über-Seite angeschlossen werden.")
     s = s[:m.start()+len(wrapper)] + tail
 
