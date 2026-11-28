@@ -169,10 +169,12 @@ internal object SongbookLayoutImporter {
 }
 
 private object SongbookLayoutParser {
-    private val chord=Regex("""^[A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:/[A-G](?:#|b)?)?$""")
+    private val chord=Regex("""^[A-G](?:#|b)?(?:maj(?:7|9|11|13)?|m(?:aj7|7|9|11|13)?|sus[24]?|add9|dim7?|aug|[0-9]{1,2})?(?:\([^()]{1,8}\))?(?:/[A-G](?:#|b)?)?$""",RegexOption.IGNORE_CASE)
+    private fun chordValue(raw:String)=raw.trim().trim('(',')','[',']','{','}',',',':',';','|')
+    private fun isChordToken(raw:String)=chord.matches(chordValue(raw))
     private val toc=Regex("""\s*(?:\.{2,}|…{1,})\s*\d{1,4}\s*$""")
     private fun isChordLine(line:LayoutLine)=line.tokens.isNotEmpty() &&
-        line.tokens.all { chord.matches(it.text.trim(',',':',';','|')) } &&
+        line.tokens.all { isChordToken(it.text) } &&
         line.tokens.size<=18
     private fun letters(s:String)=s.count{it.isLetter()}
     private fun cleanTitle(s:String)=s.trim().trim('#','*','-','♪','♫',' ').replace(Regex("""\s+""")," ")
@@ -181,7 +183,9 @@ private object SongbookLayoutParser {
         val text=cleanTitle(line.text)
         if(text.length !in 3..100 || letters(text)<3 || isChordLine(line) || toc.containsMatchIn(text)) return false
         if(Regex("""(?i)^(seite|page|inhalt|inhaltsverzeichnis|index|copyright|www\.)""").containsMatchIn(text)) return false
-        if(text.matches(Regex("""\d{1,4}.*"""))) return false
+        // Nur eine reine Seitenzahl verwerfen; nummerierte Songtitel wie "99 Luftballons"
+        // oder "1000 und eine Nacht" sind gültige Titel.
+        if(text.matches(Regex("""^\d{1,4}$"""))) return false
         if(text.count{it in ".!?;:"}>=3 && text.length>35) return false
         if(text.split(Regex("""\s+""")).size>14 && text.length>70) return false
 
@@ -269,8 +273,10 @@ private object SongbookLayoutParser {
             val rawTitle=cleanTitle(collected.first().second.text)
             // Format "Liedtitel (Interpret)" aus PDF-Kopfzeilen getrennt übernehmen.
             val titleArtist=Regex("""^(.*?)\s+\(([^()]*)\)\s*$""").matchEntire(rawTitle)
-            val title=(titleArtist?.groupValues?.get(1)?.trim()?.takeIf{it.isNotBlank()} ?: rawTitle).take(120)
-            val artist=(titleArtist?.groupValues?.get(2)?.trim()?.takeIf{it.isNotBlank()} ?: "Unbekannter Künstler").take(100)
+            val titleDashArtist=if(titleArtist==null) Regex("""^(.*?)\s+[–—-]\s+(.+)$""").matchEntire(rawTitle) else null
+            val metadata=titleArtist ?: titleDashArtist
+            val title=(metadata?.groupValues?.get(1)?.trim()?.takeIf{it.isNotBlank()} ?: rawTitle).take(120)
+            val artist=(metadata?.groupValues?.get(2)?.trim()?.takeIf{it.isNotBlank()} ?: "Unbekannter Künstler").take(100)
             val body=mutableListOf<String>()
             val allChords=linkedSetOf<String>()
             var pending=mutableListOf<LayoutToken>()
@@ -283,7 +289,7 @@ private object SongbookLayoutParser {
                 } else {
                     val chordTokens=if(pending.isNotEmpty() && (line.y-pendingY)<max(18f,line.height*2.2f)) pending else mutableListOf()
                     val placements=chordTokens.mapNotNull { token ->
-                        val value=token.text.trim(',',':',';','|')
+                        val value=chordValue(token.text)
                         if(!chord.matches(value)) null else {
                             allChords += value
                             val x=(token.x/page.width).coerceIn(0f,0.98f)
